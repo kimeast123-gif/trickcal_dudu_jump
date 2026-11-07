@@ -1,0 +1,75 @@
+{
+  "idle": {
+    "frames": 31,
+    "fps": 24,
+    "facing": 1
+  },
+  "run": {
+    "frames": 19,
+    "fps": 24,
+    "facing": -1
+  },
+  "jump": {
+    "frames": 16,
+    "fps": 24,
+    "facing": -1
+  },
+  "spin": {
+    "frames": 14,
+    "fps": 24,
+    "facing": -1
+  },
+  "win": {
+    "frames": 72,
+    "fps": 24,
+    "facing": 1
+  },
+  "rest_angry_3": {
+    "frames": 26,
+    "fps": 24,
+    "cols": 8,
+    "facing": 1
+  },
+  "rest_blank_3": {
+    "frames": 33,
+    "fps": 24,
+    "cols": 8,
+    "facing": 1
+  },
+  "rest_close_1": {
+    "frames": 33,
+    "fps": 24,
+    "cols": 8,
+    "facing": 1
+  },
+  "rest_cute_3": {
+    "frames": 33,
+    "fps": 24,
+    "cols": 8,
+    "facing": 1
+  },
+  "rest_eat_2": {
+    "frames": 26,
+    "fps": 24,
+    "cols": 8,
+    "facing": 1
+  },
+  "rest_happy_1": {
+    "frames": 33,
+    "fps": 24,
+    "cols": 8,
+    "facing": 1
+  },
+  "rest_happy_2": {
+    "frames": 33,
+    "fps": 24,
+    "cols": 8,
+    "facing": 1
+  },
+  "rest_happy_8": {
+    "frames": 33,
+    "fps": 24,
+    "cols": 8,
+    "facing": 1
+  }
+}
