@@ -1,7 +1,7 @@
 'use strict';
-const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),$=s=>document.getElementById(s);const W=1280,H=720,STEP=1/120;let END=7400;
+const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),$=s=>document.getElementById(s);const W=1280,H=720,STEP=1/120;let END=7400,gameMode='story';
 let state='loading',time=0,cam=0,look=.42,acc=0,last=0,animTime=0,spin=0,land=0,toastTime=0,muted=false,audio,checkpoint=0,deaths=0,camY=0;
-let prevCam=0,prevCamY=0,renderAlpha=1,rCam=0,rCamY=0,rPx=150,rPy=580;
+let prevCam=0,prevCamY=0,camZoom=1,prevCamZoom=1,renderAlpha=1,rCam=0,rCamY=0,rCamZoom=1,rPx=150,rPy=580;
 let lookDownHold=0,lookDownOffset=0;
 const keys=new Set(),images={},meta={};let particles=[],coins=[],saved=new Set();
 const rest={clip:null,elapsed:0,wait:3.5,bag:[],previous:null};
@@ -14,7 +14,7 @@ const SPRITE_ANCHORS={
 };
 
 const debugMetrics={
- enabled:false,
+ enabled:new URLSearchParams(location.search).get('debug')==='1',
  physicsUpdates:0,renderFrames:0,fps:60,fpsAccum:0,fpsCount:0,
  camDelta:0,maxCamDelta:0,playerDrawDelta:0,maxPlayerDrawDelta:0,
  lastDrawPx:150,lastDrawCam:0,cameraProfile:'general'
@@ -67,11 +67,11 @@ function resetDuduVoiceCooldowns(){
  duduVoiceState.departedInRun=false;
 }
 
-function playDuduVoice(category){
+function playDuduVoice(category,opts={}){
  const pool=DUDU_VOICE_POOLS[category];
  if(!pool||!pool.length)return null;
  const nowSec=getVoiceClock();
- const minCd=DUDU_VOICE_COOLDOWNS[category]||0;
+ const minCd=opts.bypassCooldown?0.8:(DUDU_VOICE_COOLDOWNS[category]||0);
  const prevT=duduVoiceState.lastPlayTime[category]??-999;
  if(minCd>0&&(nowSec-prevT)<minCd){
   return null;
@@ -113,6 +113,9 @@ function playDuduVoice(category){
    clipAudio.play().catch(()=>{});
   }catch{}
  }
+ if(category==='idle_call'&&pick&&pick.startsWith('CallPlayer')&&typeof onDuduCallPlayerVoice==='function'){
+  onDuduCallPlayerVoice(pick);
+ }
  return pick;
 }
 
@@ -140,12 +143,14 @@ function updateRest(dt,dir){
  if(rest.clip){rest.elapsed+=dt;const duration=meta[rest.clip].frames/meta[rest.clip].fps*2;
   if(rest.elapsed>=duration){rest.clip=null;rest.elapsed=0;rest.wait=2.5+Math.random()*2;}
  }else{
+  const nearUnplayedFriend=(typeof isNearUnplayedVillageFriend==='function')&&isNearUnplayedVillageFriend();
+  if(nearUnplayedFriend&&rest.wait>1.15)rest.wait=1.15;
   rest.wait-=dt;
   if(rest.wait<=0){
    rest.clip=nextRest()||null;
    rest.elapsed=0;
    rest.wait=3.5;
-   if(rest.clip&&typeof playDuduVoice==='function')playDuduVoice('idle_call');
+   if(rest.clip&&typeof playDuduVoice==='function')playDuduVoice('idle_call',{bypassCooldown:nearUnplayedFriend});
   }
  }
 }
@@ -224,7 +229,7 @@ function add(x,y,w,h=20,thin=true,extra={}){
  const a={x,y,w,h,thin,baseX:x,baseY:y,prevX:x,prevY:y,dx:0,dy:0,collidable:true,blinkState:'on',blinkAlpha:1,...extra};
  platforms.push(a);return a;
 }
-const flags=[],sections=[];const completed=[false,false,false];let dashRequest=false,trail=[];
+const flags=[],sections=[];const completed=[false,false,false,false];let dashRequest=false,trail=[];
 const p={
  x:150,y:580,prevX:150,prevY:580,vx:0,vy:0,ground:true,on:platforms[0],
  jumps:0,coyote:.1,buffer:0,drop:null,face:1,hold:0,jumpHeld:false,jumpCut:false,
@@ -233,30 +238,55 @@ const p={
 };
 
 function getCameraProfile(px=p.x,py=p.y){
- if(levelIndex===1){
-  if(px>=3380&&px<=4490&&(py<576||(px>=3440&&px<=4440)))return 'ascent_shaft';
-  if(px>=8180&&px<=9440&&(py<576||px<=9360))return 'descent_shaft';
-  if(px>4490&&px<8180&&py<=-650)return 'rooftop';
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'&&typeof challengeLevels!=='undefined'){
+  const clv=challengeLevels[challengeStageIndex];
+  return (clv&&clv.cameraProfile)||'challenge_vertical';
+ }
+ if(levels[levelIndex]?.id==='monatium'&&typeof STAGE_ANCHORS!=='undefined'){
+  const m=STAGE_ANCHORS.monatium;
+  if(px>=m.ascentStart-20&&px<=m.ascentEnd+10&&(py<576||(px>=m.ascentStart+40&&px<=m.ascentEnd-40)))return 'ascent_shaft';
+  if(px>=m.descentStart-40&&px<=m.descentEnd+20&&(py<576||px<=m.descentEnd-60))return 'descent_shaft';
+  if(px>m.ascentEnd&&px<m.descentStart&&py<=-1100)return 'rooftop';
+ }
+ if(levels[levelIndex]?.id==='erpien'&&typeof STAGE_ANCHORS!=='undefined'){
+  const e=STAGE_ANCHORS.erpien;
+  if(px>=e.marieStart-120&&px<e.templeStart)return 'erpien_boss_zoom';
  }
  return 'general';
 }
 
 function computeInitialCameraForPoint(px,py){
  const prof=getCameraProfile(px,py);
+ const m=(typeof STAGE_ANCHORS!=='undefined')?STAGE_ANCHORS.monatium:{ascentCenterX:5142,descentCenterX:11920};
  let targetX=Math.max(0,Math.min(END-W,px-W*.42));
  let targetY=0;
  if(prof==='ascent_shaft'){
-  targetX=Math.round(3302+(px-3942)*0.14);
-  targetY=Math.min(0,Math.max(-1480,py-450));
+  const baseCamX=m.ascentCenterX-640;
+  const rawX=Math.round(baseCamX+(px-m.ascentCenterX)*0.55);
+  targetX=Math.max(m.ascentStart-30,Math.min(m.ascentEnd-W+30,rawX));
+  targetY=Math.min(0,Math.max(-2180,py-470));
  }else if(prof==='descent_shaft'){
-  targetX=Math.round(8180+(px-8820)*0.14);
-  targetY=Math.min(80,Math.max(-1480,py-265));
+  const baseCamX=m.descentCenterX-640;
+  const rawX=Math.round(baseCamX+(px-m.descentCenterX)*0.35);
+  targetX=Math.max(m.descentStart-30,Math.min(m.descentEnd-W+30,rawX));
+  targetY=Math.min(80,Math.max(-2180,py-265));
  }else if(prof==='rooftop'){
-  targetY=Math.min(0,Math.max(-1480,py-420));
+  targetY=Math.min(0,Math.max(-2180,py-430));
+ }else if(prof==='challenge_vertical'){
+  targetX=Math.max(0,Math.min(END-W,px-W*0.45));
+  targetY=Math.min(120,Math.max(-2480,py-430));
+ }else if(prof==='challenge_horizontal'){
+  targetX=Math.max(0,Math.min(END-W,px-W*0.36));
+  targetY=Math.min(100,Math.max(-450,py-440));
+ }else if(prof==='erpien_boss_zoom'){
+  const z=0.88;
+  targetX=STAGE_ANCHORS.erpien.arenaOrigin||15700;
+  targetY=-98;
+  return {cam:targetX,camY:targetY,zoom:z,profile:prof};
  }else{
   targetY=Math.min(140,Math.max(-650,py<360?py-360:0));
  }
- return {cam:Math.max(0,Math.min(END-W,targetX)),camY:targetY,profile:prof};
+ return {cam:Math.max(0,Math.min(END-W,targetX)),camY:targetY,zoom:1.0,profile:prof};
 }
 
 function platformStep(){
@@ -274,7 +304,7 @@ function platformStep(){
   }
   if(a.blink){
    const b=a.blink;
-   const onDur=b.on||2.0,warnDur=b.warning||0.55,offDur=b.off||0.95;
+   const onDur=b.on??2.0,warnDur=b.warning??0.55,offDur=b.off??0.95;
    const cycle=onDur+warnDur+offDur;
    const t=((levelClock+(b.phase||0))%cycle+cycle)%cycle;
    if(t<onDur){
@@ -284,15 +314,20 @@ function platformStep(){
    }else if(t<onDur+warnDur){
     a.collidable=true;
     a.blinkState='warning';
-    const pulseHz=a.fastBlink?11:8;
-    a.blinkAlpha=0.42+0.48*Math.abs(Math.sin((t-onDur)*Math.PI*pulseHz));
+    if(a.silentBlink){
+     const u=(t-onDur)/Math.max(0.01,warnDur);
+     a.blinkAlpha=0.22+0.64*(1-u*0.65)*(0.55+0.45*Math.cos(u*Math.PI*3));
+    }else{
+     const pulseHz=a.ultraFastBlink?16:(a.fastBlink?11:8);
+     a.blinkAlpha=0.42+0.48*Math.abs(Math.sin((t-onDur)*Math.PI*pulseHz));
+    }
    }else{
     a.collidable=false;
     a.blinkState='off';
-    a.blinkAlpha=0.15;
+    a.blinkAlpha=a.silentBlink?0.0:0.12;
    }
   }else{
-   a.collidable=true;
+   a.collidable=!(a.nonCollidable||a.hidden);
    a.blinkState='on';
    a.blinkAlpha=1.0;
   }
@@ -303,7 +338,6 @@ function platformStep(){
 }
 
 function chooseSection(n){
- if(typeof DuduAnalytics!=='undefined' && eventMode && state==='playing')DuduAnalytics.retry(levelIndex,n);
  checkpoint=n;
  coins.forEach(c=>{if(c.got)saved.add(c.id);});
  reset();
@@ -314,13 +348,20 @@ function tone(freq,dur=.1,type='sine',gain=.04){if(muted)return;try{audio??=new(
 function notify(s){if(!s)return;$('toast').textContent=s;toastTime=2.2;}
 function burst(x,y,color,n=10){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*160,vy:-Math.random()*130,life:.5+Math.random()*.3,color,r:2+Math.random()*4});}
 function syncRenderCoords(){
- p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;
+ const prof=getCameraProfile(p.x,p.y);
+ camZoom=prof==='erpien_boss_zoom'?0.88:1.0;
+ prevCamZoom=camZoom;rCamZoom=camZoom;
+ p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom;
  rPx=p.x;rPy=p.y;rCam=cam;rCamY=camY;
  debugMetrics.lastDrawPx=p.x;debugMetrics.lastDrawCam=cam;
  debugMetrics.maxCamDelta=0;debugMetrics.maxPlayerDrawDelta=0;
  debugMetrics.cameraProfile=getCameraProfile(p.x,p.y);
 }
 function reset(full=false){
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
+  if(typeof resetChallengePlayer==='function')resetChallengePlayer(full);
+  return;
+ }
  if(full){resetJourney();checkpoint=0;saved.clear();deaths=0;completed.fill(false);}
  resetPlatforms();
  if(typeof resetPendingSpecialCoins==='function')resetPendingSpecialCoins();
@@ -359,10 +400,10 @@ function updateHud(){
 function modal(tag,title,text,button){$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;$('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';}
 function pause(){if(state==='playing'){state='paused';keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}else if(state==='paused')start();}
 function start(){if(state==='loading')return;if(state==='won')reset(true);state='playing';$('overlay').hidden=true;canvas.focus();keys.clear();last=performance.now();acc=0;}
-$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<4;n++)$('section'+n).onclick=()=>chooseSection(n);$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'효과음 켜기':'효과음 끄기');if(!muted)tone(660);};$('full').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
+$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'효과음 켜기':'효과음 끄기');if(!muted)tone(660);};$('full').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
 window.addEventListener('keydown',e=>{
  if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code))e.preventDefault();
- if(e.code==='F3'){e.preventDefault();return;} // public build: disable developer HUD
+ if(e.code==='F3'){e.preventDefault();return;} // RELEASE: debug HUD disabled
  if(e.code==='Escape'&&!e.repeat){pause();return;}if(state!=='playing')return;
  if(e.code==='KeyR'&&!e.repeat){chooseSection(checkpoint);return;}
  keys.add(e.code);
@@ -459,7 +500,7 @@ function update(dt){
  for(const a of platforms){
   if(a.collidable===false)continue;
   if(p.x+18<=a.x||p.x-18>=a.x+a.w||p.drop===a)continue;
-  if(oldY<=Math.max(a.prevY,a.y)+1&&p.y>=a.y&&(a===attachedPlatform||p.vy-a.dy/dt>=-1)){
+  if(!a.noTopLand&&oldY<=Math.max(a.prevY,a.y)+1&&p.y>=a.y&&(a===attachedPlatform||p.vy-a.dy/dt>=-1)){
    if(!landing||a.y<landing.y)landing=a;
   }
   if(!a.thin&&p.vy<0&&oldY-62>=a.prevY+a.h&&p.y-62<=a.y+a.h){
@@ -475,7 +516,16 @@ function update(dt){
  if(!p.ground)p.jumpHeight=Math.max(p.jumpHeight,p.jumpOrigin-p.y);
 
  const killY=typeof getKillY==='function'?getKillY(p.x):850;
- if(p.y>killY){if(typeof DuduAnalytics!=='undefined')DuduAnalytics.fall(levelIndex,checkpoint);deaths++;reset();tone(180,.13);return;}
+ if(p.y>killY){
+  if(typeof gameMode!=='undefined'&&gameMode==='challenge'&&typeof challengeState!=='undefined'){
+   challengeState.deaths++;
+   challengeState.stageDeaths[challengeStageIndex]=(challengeState.stageDeaths[challengeStageIndex]||0)+1;
+   reset(false);
+  }else{
+   deaths++;reset();
+  }
+  tone(180,.13);return;
+ }
 
  // Gate G1-1 & G1-2: Tight King Candy hitbox + string-ID persistence
  coins.forEach(c=>{
@@ -505,9 +555,11 @@ function update(dt){
  if(camProfile==='ascent_shaft'){
   lookDownHold=0;
   lookDownOffset+=(0-lookDownOffset)*(1-Math.exp(-dt*8));
-  const shaftTargetX=Math.max(0,Math.min(END-W,3302+(p.x-3942)*0.14));
+  const m=STAGE_ANCHORS.monatium;
+  const rawX=(m.ascentCenterX-640)+(p.x-m.ascentCenterX)*0.55;
+  const shaftTargetX=Math.max(m.ascentStart-30,Math.min(m.ascentEnd-W+30,rawX));
   cam+=(shaftTargetX-cam)*(1-Math.exp(-dt*7.5));
-  const shaftTargetY=Math.min(0,Math.max(-1480,p.y-450));
+  const shaftTargetY=Math.min(0,Math.max(-2180,p.y-470));
   camY+=(shaftTargetY-camY)*(1-Math.exp(-dt*6.5));
  }else if(camProfile==='descent_shaft'){
   if(keys.has('ArrowDown')&&!stunned&&p.dash<=0&&Math.abs(p.vx)<200){
@@ -517,12 +569,14 @@ function update(dt){
   }
   const lookDownTarget=lookDownHold>0.10?235:0;
   lookDownOffset+=(lookDownTarget-lookDownOffset)*(1-Math.exp(-dt*7.0));
-  const descTargetX=Math.max(0,Math.min(END-W,8180+(p.x-8820)*0.14));
+  const m=STAGE_ANCHORS.monatium;
+  const rawX=(m.descentCenterX-640)+(p.x-m.descentCenterX)*0.35;
+  const descTargetX=Math.max(m.descentStart-30,Math.min(m.descentEnd-W+30,rawX));
   cam+=(descTargetX-cam)*(1-Math.exp(-dt*7.5));
-  const descTargetY=Math.min(140+lookDownOffset,Math.max(-1480,p.y-265+lookDownOffset));
+  const descTargetY=Math.min(140+lookDownOffset,Math.max(-2180,p.y-265+lookDownOffset));
   camY+=(descTargetY-camY)*(1-Math.exp(-dt*6.5));
  }else if(camProfile==='rooftop'){
-  if(keys.has('ArrowDown')&&!stunned&&p.dash<=0&&Math.abs(p.vx)<200&&p.x>7400){
+  if(keys.has('ArrowDown')&&!stunned&&p.dash<=0&&Math.abs(p.vx)<200&&p.x>(STAGE_ANCHORS.monatium.skywalkEnd-820)){
    lookDownHold=Math.min(0.6,lookDownHold+dt);
   }else{
    lookDownHold=Math.max(0,lookDownHold-dt*3.2);
@@ -535,14 +589,38 @@ function update(dt){
   const diffX=desired-cam;
   const dzX=Math.abs(diffX)<=3?0:diffX-Math.sign(diffX)*3;
   cam+=dzX*(1-Math.exp(-dt*7.2));
-  const roofTargetY=Math.min(0,Math.max(-1480,p.y-420+lookDownOffset));
+  const roofTargetY=Math.min(0,Math.max(-2180,p.y-430+lookDownOffset));
   camY+=(roofTargetY-camY)*(1-Math.exp(-dt*6.0));
+ }else if(camProfile==='challenge_vertical'){
+  lookDownHold=0;lookDownOffset=0;
+  const desiredX=Math.max(0,Math.min(END-W,p.x-W*0.45));
+  cam+=(desiredX-cam)*(1-Math.exp(-dt*7.5));
+  const desiredY=Math.min(120,Math.max(-2480,p.y-435));
+  camY+=(desiredY-camY)*(1-Math.exp(-dt*7.0));
+ }else if(camProfile==='challenge_horizontal'){
+  lookDownHold=0;lookDownOffset=0;
+  camZoom+=(1.0-camZoom)*(1-Math.exp(-dt*4.5));
+  const desiredX=Math.max(0,Math.min(END-W,p.x-W*0.36));
+  cam+=(desiredX-cam)*(1-Math.exp(-dt*8.0));
+  const desiredY=Math.min(100,Math.max(-450,p.y-440));
+  camY+=(desiredY-camY)*(1-Math.exp(-dt*6.5));
+ }else if(camProfile==='erpien_boss_zoom'){
+  lookDownHold=0;lookDownOffset=0;
+  const targetZoom=0.88;
+  camZoom+=(targetZoom-camZoom)*(1-Math.exp(-dt*5.5));
+  const e=STAGE_ANCHORS.erpien;
+  const desiredX=e.arenaOrigin||15700;
+  const desiredY=-98;
+  cam+=(desiredX-cam)*(1-Math.exp(-dt*7.5));
+  camY+=(desiredY-camY)*(1-Math.exp(-dt*7.5));
  }else{
   lookDownHold=0;
   lookDownOffset=0;
+  camZoom+=(1.0-camZoom)*(1-Math.exp(-dt*4.2));
+  const viewW=W/camZoom;
   const desiredLook=dir<0?.56:dir>0?.42:look;
   look+=(desiredLook-look)*(1-Math.exp(-dt*3.8));
-  const desired=Math.max(0,Math.min(END-W,p.x-W*look));
+  const desired=Math.max(0,Math.min(END-viewW,p.x-viewW*look));
   const diffX=desired-cam;
   const dzX=Math.abs(diffX)<=3?0:diffX-Math.sign(diffX)*3;
   cam+=dzX*(1-Math.exp(-dt*7.2));
@@ -550,7 +628,11 @@ function update(dt){
   camY+=(desiredY-camY)*(1-Math.exp(-dt*5.5));
  }
 
- $('progress').style.width=((levels.slice(0,levelIndex).reduce((v,lv)=>v+lv.worldWidth,0)+p.x)/levels.reduce((v,lv)=>v+lv.worldWidth,0)*100)+'%';
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
+  $('progress').style.width=Math.max(0,Math.min(100,(p.x/Math.max(1,END))*100))+'%';
+ }else{
+  $('progress').style.width=((levels.slice(0,levelIndex).reduce((v,lv)=>v+lv.worldWidth,0)+p.x)/levels.reduce((v,lv)=>v+lv.worldWidth,0)*100)+'%';
+ }
  $('dashStatus').textContent=p.guardStun>0?`경직 중 (${p.guardStun.toFixed(1)}s)`:p.dash>0?'대시 중':p.airDashUsed&&!p.ground?'대시 · 착지 후 충전':p.dashCooldown>0?'대시 · 충전 중':'L SHIFT · 대시 준비';
  $('jumpMeter').style.width=(p.jumpHeld?Math.min(100,p.hold/.24*100):0)+'%';
  $('jumpInfo').textContent=lookDownHold>0.10?'↓ 아래보기 활성화 중':'SPACE · 짧게 / 길게 · ↓ 아래보기';
@@ -580,11 +662,12 @@ function frame(now){
   renderAlpha=Math.max(0,Math.min(1,acc/STEP));
   rCam=prevCam+(cam-prevCam)*renderAlpha;
   rCamY=prevCamY+(camY-prevCamY)*renderAlpha;
+  rCamZoom=prevCamZoom+(camZoom-prevCamZoom)*renderAlpha;
   rPx=p.prevX+(p.x-p.prevX)*renderAlpha;
   rPy=p.prevY+(p.y-p.prevY)*renderAlpha;
  }else{
   if(state==='ready'||state==='won'){time+=dt;animTime+=dt;updateAnimation(dt);}
-  renderAlpha=1;rCam=cam;rCamY=camY;rPx=p.x;rPy=p.y;
+  renderAlpha=1;rCam=cam;rCamY=camY;rCamZoom=camZoom;rPx=p.x;rPy=p.y;
  }
  debugMetrics.renderFrames++;
  debugMetrics.fpsAccum+=dt;debugMetrics.fpsCount++;
@@ -619,4 +702,4 @@ async function load(){try{Object.assign(meta,{
   "rest_happy_1": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
   "rest_happy_2": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
   "rest_happy_8": {"frames": 33, "fps": 24, "cols": 8, "facing": 1}
-});await Promise.all(Object.keys(meta).map(name=>new Promise((ok,no)=>{let im=new Image();im.onload=()=>{images[name]=im;ok();};im.onerror=no;im.src='assets/'+name+'.png?v=12';})));await loadWorldImages();await loadNpcImages();if(typeof preloadEventImages==='function')await preloadEventImages();resetJourney();initVoiceClips();state='ready';$('start').disabled=false;$('start').textContent='이벤트 시작하기  →';updateHud();}catch(e){$('start').textContent='새로고침해 다시 불러오기';$('start').disabled=false;$('start').onclick=()=>location.reload();$('modalText').textContent='두두 모션을 불러오지 못했어요. 다시 시도해 주세요.';console.error(e);}}
+});await Promise.all(Object.keys(meta).map(name=>new Promise((ok,no)=>{let im=new Image();im.onload=()=>{images[name]=im;ok();};im.onerror=no;im.src='assets/'+name+'.png?v=12';})));if(document.fonts&&document.fonts.load){try{await document.fonts.load('16px "ONE Mobile POP"');}catch{}}await loadWorldImages();await loadNpcImages();if(typeof preloadEventImages==='function')await preloadEventImages();resetJourney();initVoiceClips();state='ready';$('start').disabled=false;$('start').textContent='이벤트 시작하기  →';updateHud();}catch(e){$('start').textContent='새로고침해 다시 불러오기';$('start').disabled=false;$('start').onclick=()=>location.reload();$('modalText').textContent='두두 모션을 불러오지 못했어요. 다시 시도해 주세요.';console.error(e);}}

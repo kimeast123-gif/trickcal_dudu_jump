@@ -153,7 +153,7 @@ function storyAdvance(){
   modal(
    wasSpecial?'황금 크레파스 올 컬렉션 달성!':'산책 이야기 끝',
    wasLate?'조금 늦어버렸어요':wasSpecial?'두두, 모든 황금 크레파스와 함께 집에 도착!':'두두, 무사히 집에 도착!',
-   `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wasSpecial?'<small>황금 크레파스 9개를 모두 모은 특별한 귀갓길!</small><br>':''}다시 시작하면 새로운 15분 산책이 시작됩니다.`,
+   `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wasSpecial?'<small>(전용 특수 엔딩 일러스트 미제공 단계로, 임시 리워드 안내 후 기본 성공 엔딩과 연결되었습니다.)</small><br>':''}다시 시작하면 새로운 15분 산책이 시작됩니다.`,
    '다시 산책하기 →'
   );
  }
@@ -161,8 +161,8 @@ function storyAdvance(){
 $('story').onclick=storyAdvance;$('story').onkeydown=e=>{if(e.code==='Space'||e.code==='Enter'){e.preventDefault();e.stopPropagation();if(!e.repeat)storyAdvance();}};
 
 function beginEvent(){
- if(typeof DuduAnalytics!=='undefined')DuduAnalytics.prepareRun();
  if(state==='loading')return;
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge')return;
  hideAllCutsceneLayers();
  reset(true);
  journeyResult=null;
@@ -194,8 +194,14 @@ start=function(){if(state==='paused'){normalStart();return;}beginEvent();};
 $('start').onclick=()=>start();
 $('restart').onclick=beginEvent;
 $('eventRestart').onclick=beginEvent;
-for(let n=0;n<4;n++)$('section'+n).onclick=()=>practiceRegion(n);
-$('retry').onclick=()=>{if(state==='playing'||state==='paused')normalChoose(checkpoint);};
+for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>practiceRegion(n);}
+$('retry').onclick=()=>{
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
+  if(typeof retryChallengeStage==='function')retryChallengeStage();
+  return;
+ }
+ if(state==='playing'||state==='paused')normalChoose(checkpoint);
+};
 
 function finishEvent(success){
  if(!eventMode||journeyResult!==null)return;
@@ -204,7 +210,6 @@ function finishEvent(success){
  const onTime=Boolean(success)&&eventElapsed<LIMIT;
  const allSpecialSecured=securedSpecialEvent.size>=TOTAL_SPECIAL_COINS;
  journeyResult=!onTime?'late':allSpecialSecured?'special':'success';
- if(typeof DuduAnalytics!=='undefined')DuduAnalytics.end(journeyResult);
  keys.clear();
  p.vx=p.vy=0;
  sceneElapsed=0;
@@ -225,6 +230,11 @@ function clockText(t){const s=Math.max(0,Math.ceil(t));return String(Math.floor(
 function eventTick(now){
  const dt=eventLast?Math.max(0,(now-eventLast)/1000):0;
  eventLast=now;
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
+  if(typeof challengeTick==='function')challengeTick(dt);
+  musicTick(Math.min(dt,.1));
+  return;
+ }
  if(state==='regionTransition'){
   regionTick(dt);
   musicTick(Math.min(dt,.1));
@@ -243,7 +253,6 @@ function eventTick(now){
     $('launchScene').hidden=true;
     $('launchScene').classList.remove('starting');
     state='playing';
-    if(typeof DuduAnalytics!=='undefined')DuduAnalytics.runStart();
     last=now;acc=0;keys.clear();
     if(typeof syncRenderCoords==='function')syncRenderCoords();
     canvas.focus();

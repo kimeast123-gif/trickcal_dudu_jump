@@ -1,12 +1,11 @@
 'use strict';
-// TEST12 Renderer:
-// - Gate G1: Renders unmodified `king_candy.png` (32x32px) for regular collectibles and `golden_crayon.png` (42x42px) for special collectibles across `available`, `pending`, and `secured` states.
-// - Gate G2: Renders high-rise Monatium tower structures (`y1=-1255..-1247`), 75px `M-ASC-12` (`single_small` without squashing), and faster Section 2 blinking skywalk indicators.
-// - Gate G5-2: Smooth cosine S-curve cross-fade (0.85~1.05s over 960px corridor `x=6120..7080`) + foreground ground seam blend at Erpien Gate -> City boundary (`x=6600`).
-// - Gate G5-3: Eliminates `erpien-city.webp` sub-pixel vertical downscaling shimmer via multi-step high-quality 720p pre-scaled panorama caching + integer source X snapping.
+// TEST16 Renderer:
+// - Gate 1 (P0): Renders Suin Village BACKGROUND_PROP and DECORATION layers separately from COLLIDABLE_PLATFORM with optional developer QA overlay (`window.__showArtQaOverlay`).
+// - Gate 4 (P0): Single Source of Truth (SSOT) panorama rendering from `levels[levelIndex].backgroundRanges` with smooth symmetric cross-fade and ZERO artificial white fog or boundary gradient boxes.
+// - Gate 6 (P0): Zero non-tutorial text labels on blinking platforms, moving platforms, golden crayons, or tower sectors; communicates blink/motion states purely through visual alpha, color rim, and vibration.
+
 const terrainImages = {};
 const structureImages = {};
-const preScaledPanoramas = {};
 
 const STRUCTURE_ASSET_LIST = [
   'tower_wall_left',
@@ -26,6 +25,18 @@ const TERRAIN_ASSET_LIST = [
   'forest/ground_cliff_left', 'forest/ground_cliff_right',
   'forest/decoration_flower_a', 'forest/decoration_flower_b', 'forest/decoration_bush',
   'forest/decoration_tree_a', 'forest/decoration_tree_b',
+  'village/left', 'village/middle_a', 'village/middle_b', 'village/middle_c', 'village/right',
+  'village/single_small', 'village/single_medium',
+  'village/ground_top', 'village/ground_top_a', 'village/ground_top_b', 'village/ground_top_c',
+  'village/ground_body_a', 'village/ground_body_b',
+  'village/ground_cliff_left', 'village/ground_cliff_right',
+  'village/decoration_house_a', 'village/decoration_house_b', 'village/decoration_house_c',
+  'village/decoration_stall', 'village/decoration_lamp',
+  'village/decoration_fence_short', 'village/decoration_fence_long', 'village/decoration_gate',
+  'village/decoration_stump', 'village/decoration_signpost',
+  'village/decoration_bush_flower', 'village/decoration_lupine',
+  'village/decoration_flower_yellow', 'village/decoration_flower_pink',
+  'village/decoration_bush', 'village/decoration_mushroom_red', 'village/decoration_mushroom_purple',
   'monatium/steel_left', 'monatium/steel_middle_a', 'monatium/steel_middle_b', 'monatium/steel_middle_c', 'monatium/steel_right',
   'monatium/steel_single_small', 'monatium/steel_single_medium',
   'monatium/steel_ceiling_left', 'monatium/steel_ceiling_middle', 'monatium/steel_ceiling_right',
@@ -61,15 +72,18 @@ const TERRAIN_ASSET_LIST = [
   'erpien/decoration_home_pedestal', 'erpien/decoration_home_lantern', 'erpien/decoration_gate_flower'
 ];
 
-const BACKGROUND_RANGES = {
-  'forest:forest-bg': [0, 7400],
-  'monatium:city-bg': [0, 19500],
-  'erpien:erpien-gate': [0, 6600],
-  'erpien:erpien-city': [6600, 14300],
-  'erpien:erpien-home': [14300, 21900]
-};
-
 const TERRAIN_SPECS = {
+  village: {
+    folder: 'village', prefix: '',
+    thinWalk: 14, thinScale: 0.52,
+    smallWalk: 14, medWalk: 14,
+    groundWalk: 47, groundScale: 0.54, bodyTopOffset: 84,
+    decorations: [
+      { key: 'village/decoration_flower_yellow', walkOffset: 88, scale: 0.48 },
+      { key: 'village/decoration_flower_pink', walkOffset: 88, scale: 0.48 },
+      { key: 'village/decoration_mushroom_purple', walkOffset: 90, scale: 0.46 }
+    ]
+  },
   grass: {
     folder: 'forest', prefix: '',
     thinWalk: 42, thinScale: 0.50,
@@ -153,43 +167,12 @@ function getTerrainImg(folder, prefix, part) {
   return terrainImages[`${folder}/${prefix}${part}`] || terrainImages[`${folder}/${part}`];
 }
 
-// Gate G5-3: Pre-scale 1024px-high world panoramas to exact canvas height H=720 using high-quality 2-step resampling
-// so per-frame scrolling samples 1:1 vertically (`sh=720 -> dh=720`, `sw=1280 -> dw=1280`) with zero sub-pixel shimmer!
-function buildPreScaledPanorama(key, im) {
-  if (!im || !im.width || !im.height) return;
-  try {
-    const scale = H / im.height;
-    const srcW = key === 'city-bg' ? Math.min(im.width, 1722) : im.width;
-    const targetW = Math.max(W, Math.round(srcW * scale));
-    const midH = Math.round((im.height + H) * 0.5);
-    const midW = Math.round(srcW * (midH / im.height));
-
-    const c1 = document.createElement('canvas');
-    c1.width = midW;
-    c1.height = midH;
-    const x1 = c1.getContext('2d');
-    x1.imageSmoothingEnabled = true;
-    x1.imageSmoothingQuality = 'high';
-    x1.drawImage(im, 0, 0, srcW, im.height, 0, 0, midW, midH);
-
-    const c2 = document.createElement('canvas');
-    c2.width = targetW;
-    c2.height = H;
-    const x2 = c2.getContext('2d');
-    x2.imageSmoothingEnabled = true;
-    x2.imageSmoothingQuality = 'high';
-    x2.drawImage(c1, 0, 0, midW, midH, 0, 0, targetW, H);
-
-    preScaledPanoramas[key] = c2;
-  } catch {}
-}
-
-function drawPanorama(segment, alpha = 1) {
-  const im = worldImages[segment.bg];
+// Gate 4 (P0): Single Source of Truth (SSOT) panorama rendering from `l.backgroundRanges[bgKey]`
+function drawPanoramaByBgKey(bgKey, alpha = 1) {
+  const im = worldImages[bgKey];
   if (!im) return;
-  const l = levels[levelIndex];
-  const rangeKey = `${l.id}:${segment.bg}`;
-  const [bgStart, bgEnd] = BACKGROUND_RANGES[rangeKey] || [segment.start, segment.end];
+  const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
+  const [bgStart, bgEnd] = (l.backgroundRanges && l.backgroundRanges[bgKey]) || [0, l.worldWidth];
   const travel = Math.max(1, bgEnd - bgStart - W);
   const progress = Math.max(0, Math.min(1, (rCam - bgStart) / travel));
 
@@ -198,54 +181,41 @@ function drawPanorama(segment, alpha = 1) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  const pre = preScaledPanoramas[segment.bg];
-  if (pre) {
-    const maxSx = Math.max(0, pre.width - W);
-    // Snap horizontal source crop to 0.5px increments to eliminate sub-pixel texture crawl while keeping smooth scrolling
-    const sx = Math.round(progress * maxSx * 2) * 0.5;
-    ctx.drawImage(pre, sx, 0, W, H, 0, 0, W, H);
-  } else {
-    const scale = H / im.height;
-    const effectiveImgW = segment.bg === 'city-bg' ? 1722 : im.width;
-    const sx = progress * Math.max(0, effectiveImgW - W / scale);
-    ctx.drawImage(im, sx, 0, Math.min(effectiveImgW, W / scale), im.height, 0, 0, W, H);
-  }
+  const scale = H / im.height;
+  const effectiveImgW = bgKey === 'city-bg' ? 1722 : im.width;
+  const sw = Math.min(effectiveImgW, Math.round(W / scale));
+  const maxSx = Math.max(0, effectiveImgW - sw);
+  const sx = Math.round(progress * maxSx);
+  ctx.drawImage(im, sx, 0, sw, im.height, 0, 0, W, H);
   ctx.restore();
 }
 
 function renderBackground() {
-  const l = levels[levelIndex], segments = l.segments;
+  const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex], segments = l.segments;
   const center = rCam + W * 0.5;
+  let activeIdx = segments.findIndex(s => center >= s.start && center < s.end);
+  if (activeIdx < 0) activeIdx = segments.length - 1;
+  const active = segments[activeIdx];
 
-  // Gate G5-2: Dedicated smooth S-curve cross-fade across Erpien Gate -> City boundary (center 6120 .. 7080, width 960px, ~0.9~1.1s duration)
-  if (levelIndex === 2 && center >= 6120 && center <= 7080) {
-    const gateSeg = segments[0];
-    const citySeg = segments[1];
-    const rawU = Math.max(0, Math.min(1, (center - 6120) / 960));
+  // Unified symmetric cross-fade (halfWindow = 320px) across any segment boundary where bg changes, with ZERO artificial white fog!
+  const halfWin = 320;
+  const prev = activeIdx > 0 ? segments[activeIdx - 1] : null;
+  const next = activeIdx < segments.length - 1 ? segments[activeIdx + 1] : null;
+
+  if (prev && prev.bg !== active.bg && center < active.start + halfWin) {
+    const rawU = Math.max(0, Math.min(1, (center - (active.start - halfWin)) / (halfWin * 2)));
     const smoothU = 0.5 - 0.5 * Math.cos(Math.PI * rawU);
-    drawPanorama(gateSeg, 1);
-    drawPanorama(citySeg, smoothU);
-    // Warm sunlit mist veil peaking smoothly at the boundary so the scene change feels organic
-    const mistAlpha = 0.20 * Math.sin(Math.PI * rawU);
-    if (mistAlpha > 0.005) {
-      ctx.save();
-      ctx.fillStyle = '#f8f2e4';
-      ctx.globalAlpha = mistAlpha;
-      ctx.fillRect(0, 0, W, H);
-      ctx.restore();
-    }
+    drawPanoramaByBgKey(prev.bg, 1);
+    drawPanoramaByBgKey(active.bg, smoothU);
+  } else if (next && next.bg !== active.bg && center > active.end - halfWin) {
+    const rawU = Math.max(0, Math.min(1, (center - (active.end - halfWin)) / (halfWin * 2)));
+    const smoothU = 0.5 - 0.5 * Math.cos(Math.PI * rawU);
+    drawPanoramaByBgKey(active.bg, 1);
+    drawPanoramaByBgKey(next.bg, smoothU);
   } else {
-    let active = segments.find(s => center >= s.start && center < s.end) || segments.at(-1);
-    drawPanorama(active);
-    const next = segments[segments.indexOf(active) + 1];
-    if (next && next.bg !== active.bg && center > active.end - 420) {
-      const rawU = Math.max(0, Math.min(1, (center - (active.end - 420)) / 420));
-      const smoothU = 0.5 - 0.5 * Math.cos(Math.PI * rawU);
-      drawPanorama(next, smoothU);
-    }
+    drawPanoramaByBgKey(active.bg, 1);
   }
 
-  let active = segments.find(s => center >= s.start && center < s.end) || segments.at(-1);
   const light = dayPhase();
   ctx.save();
   ctx.fillStyle = light.tint;
@@ -281,43 +251,21 @@ function renderBackground() {
 }
 
 function drawTowerStructures() {
-  if (levelIndex === 2) {
-    // Gate G5-2: Soft foreground archway/ground transition veil at Erpien Gate->City boundary (x = 6600)
-    if (rCam + W > 6450 && rCam < 6750) {
-      ctx.save();
-      const gGrad = ctx.createLinearGradient(6510, 0, 6690, 0);
-      gGrad.addColorStop(0, 'rgba(235, 228, 210, 0)');
-      gGrad.addColorStop(0.5, 'rgba(235, 228, 210, 0.36)');
-      gGrad.addColorStop(1, 'rgba(235, 228, 210, 0)');
-      ctx.fillStyle = gGrad;
-      ctx.fillRect(6510, 520, 180, 320);
-      ctx.restore();
-    }
-    // Temple Sanctuary entrance beam at x = 14300
-    if (rCam + W > 14200 && rCam < 14420) {
-      ctx.save();
-      const grad = ctx.createLinearGradient(14265, 0, 14335, 0);
-      grad.addColorStop(0, 'rgba(255, 244, 214, 0)');
-      grad.addColorStop(0.5, 'rgba(255, 244, 214, 0.38)');
-      grad.addColorStop(1, 'rgba(255, 244, 214, 0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(14265, 60, 70, 520);
-      ctx.restore();
-    }
-    return;
-  }
-  if (levelIndex !== 1) return;
+  const curId = (typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex])?.id;
+  if (curId !== 'monatium') return;
+  const m = STAGE_ANCHORS.monatium;
   const backdrop = structureImages['tower_backdrop'];
   const portalArch = structureImages['tower_portal_arch'];
   const pier = structureImages['rooftop_pier'];
   const truss = structureImages['rooftop_truss'];
 
-  // Gate G2-2: Rooftop Skybridge & Building Substructure shifted up by +475px (y = -1030 .. -995)
-  if (rCam + W > 4150 && rCam < 8300) {
+  // Rooftop Skybridge & Building Substructure (Gate 6: clean architectural sprites only, zero English sector boards!)
+  if (rCam + W > m.ascentEnd - 640 && rCam < m.skywalkEnd + 100) {
     const trussSpans = [
-      { x1: 4180, x2: 4620, y: -1030 },
-      { x1: 5820, x2: 6130, y: -1015 },
-      { x1: 7335, x2: 8220, y: -995 }
+      { x1: m.ascentEnd - 464, x2: m.skywalkStart + 456, y: -1720 },
+      { x1: m.skywalkMidStart, x2: m.skywalkMidEnd, y: -1705 },
+      { x1: m.skywalkStage2End, x2: m.skywalkStage3Start, y: -1680 },
+      { x1: m.skywalkEnd - 450, x2: m.skywalkEnd + 64, y: -1665 }
     ];
     if (truss) {
       for (const sp of trussSpans) {
@@ -335,10 +283,10 @@ function drawTowerStructures() {
     }
 
     const pierColumns = [
-      { x: 4300, topY: -1030, w: 220 },
-      { x: 5860, topY: -1015, w: 220 },
-      { x: 7420, topY: -995, w: 220 },
-      { x: 7940, topY: -995, w: 220 }
+      { x: m.skywalkStart + 36, topY: -1720, w: 220 },
+      { x: m.skywalkMidStart + 60, topY: -1705, w: 220 },
+      { x: m.skywalkStage2End + 45, topY: -1680, w: 220 },
+      { x: m.skywalkEnd - 360, topY: -1665, w: 220 }
     ];
     if (pier) {
       for (const pc of pierColumns) {
@@ -357,24 +305,24 @@ function drawTowerStructures() {
     }
   }
 
-  // West Ascent Tower & East Descent Tower Interior Backdrops & Portals (extended to y = -1255 / -1247)
+  // West Ascent Tower & East Descent Tower shafts (Gate 6: clean architectural portals & rails without floating text boxes)
   const shafts = [
     {
-      x1: 3464, x2: 4420, y1: -1255, y2: 580,
-      labelTop: 'MONATIUM WEST ASCENT TOWER · 제1수직상승타워 (12단 고층)',
+      x1: m.ascentStart + 64, x2: m.ascentEnd - 64, y1: -1945, y2: 580,
+      rails: [m.ascentStart + 240, m.ascentStart + 580, m.ascentStart + 1100, m.ascentStart + 1440],
       portals: [
-        { x: 3392, y: 356, w: 84, h: 224, label: '입구 ↑' },
-        { x: 4412, y: -1229, w: 84, h: 204, label: '옥상 출구 →' }
+        { x: m.ascentStart - 8, y: 356, w: 84, h: 224 },
+        { x: m.ascentEnd - 72, y: -1919, w: 84, h: 204 }
       ]
     },
     {
-      x1: 8284, x2: 9356, y1: -1247, y2: 580,
-      labelTop: 'MONATIUM EAST DESCENT TOWER · 제2수직하강타워 (6단 · 고속이동)',
+      x1: m.descentStart + 64, x2: m.descentEnd - 64, y1: -1937, y2: 580,
+      rails: [m.descentStart + 214, m.descentStart + 559, m.descentStart + 904],
       portals: [
-        { x: 8212, y: -1219, w: 84, h: 204, label: '하강 입구 ↓' },
-        { x: 9348, y: 356, w: 84, h: 224, label: '지상 출구 →' }
+        { x: m.descentStart - 8, y: -1909, w: 84, h: 204 },
+        { x: m.descentEnd - 72, y: 356, w: 84, h: 224 }
       ],
-      hasBottomPit: true, pitX1: 8284, pitX2: 8980
+      hasBottomPit: true, pitX1: m.descentStart + 64, pitX2: m.descentEnd - 64
     }
   ];
 
@@ -406,7 +354,7 @@ function drawTowerStructures() {
 
     ctx.strokeStyle = 'rgba(145, 185, 220, 0.20)';
     ctx.lineWidth = 4;
-    for (const rx of [sh.x1 + 150, sh.x1 + 495]) {
+    for (const rx of (sh.rails || [sh.x1 + 150, sh.x1 + 495])) {
       ctx.beginPath();
       ctx.moveTo(rx, sh.y1 + 40);
       ctx.lineTo(rx, sh.y2 - 20);
@@ -422,42 +370,130 @@ function drawTowerStructures() {
     }
     ctx.restore();
 
-    ctx.save();
-    ctx.fillStyle = '#263142ee';
-    ctx.strokeStyle = '#8aa4c8';
-    ctx.lineWidth = 2;
-    const plateW = 470, plateH = 30;
-    const plateX = Math.round((sh.x1 + sh.x2) * 0.5 - plateW * 0.5);
-    const plateY = sh.y1 - 40;
-    ctx.beginPath();
-    ctx.roundRect(plateX, plateY, plateW, plateH, 6);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#e5f2ff';
-    ctx.font = 'bold 14px "Malgun Gothic", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(sh.labelTop, (sh.x1 + sh.x2) * 0.5, plateY + 20);
-    ctx.restore();
-
     if (portalArch) {
       for (const pt of sh.portals) {
         ctx.drawImage(portalArch, pt.x, pt.y, pt.w, pt.h);
-        ctx.save();
-        ctx.fillStyle = '#1f2b3bcc';
-        ctx.beginPath();
-        ctx.roundRect(pt.x - 18, pt.y - 26, pt.w + 36, 22, 6);
-        ctx.fill();
-        ctx.fillStyle = '#9ef3e6';
-        ctx.font = 'bold 13px "Malgun Gothic", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(pt.label, pt.x + pt.w * 0.5, pt.y - 10);
-        ctx.restore();
       }
     }
   }
 }
 
+// Gate G1 (P0): Material-specific wall rendering!
+// - `grass` / `village`: Natural earthen cliff / mossy root barrier / grass-topped mound using forest terrain textures (ZERO steel bolts or grey metal plates!).
+// - `steel`: Original Monatium `tower_wall_*` structure preserved 100% pixel-identically.
 function drawStructuralWall(a, drawX, drawY) {
+  const mat = a.visual?.material || a.skin || 'steel';
+  if (mat === 'stone') {
+    const bodyA = getTerrainImg('erpien', 'stone_', 'ground_body_a');
+    const bodyB = getTerrainImg('erpien', 'stone_', 'ground_body_b') || bodyA;
+    const cliffL = getTerrainImg('erpien', 'stone_', 'ground_cliff_left');
+    const cliffR = getTerrainImg('erpien', 'stone_', 'ground_cliff_right');
+    const topLeft = getTerrainImg('erpien', 'stone_', 'left');
+    const topRight = getTerrainImg('erpien', 'stone_', 'right');
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(drawX, drawY, a.w, a.h, 8);
+    ctx.clip();
+    ctx.fillStyle = '#6c6574';
+    ctx.fillRect(drawX, drawY, a.w, a.h);
+    if (bodyA) {
+      const s = 0.45;
+      const bw = Math.max(36, Math.round(bodyA.width * s));
+      const bh = Math.max(36, Math.round(bodyA.height * s));
+      for (let gy = drawY; gy < drawY + a.h; gy += bh) {
+        for (let gx = drawX; gx < drawX + a.w; gx += bw) {
+          ctx.drawImage(bodyA, gx, gy, bw + 2, bh + 2);
+        }
+      }
+    }
+    if (cliffL && cliffR) {
+      const edgeW = Math.min(Math.round(a.w * 0.45), 26);
+      const edgeH = Math.max(64, Math.round(cliffL.height * 0.42));
+      for (let gy = drawY; gy < drawY + a.h; gy += edgeH - 8) {
+        ctx.drawImage(cliffL, drawX - 2, gy, edgeW + 4, edgeH);
+        ctx.drawImage(cliffR, drawX + a.w - edgeW - 2, gy, edgeW + 4, edgeH);
+      }
+    }
+    ctx.strokeStyle = '#3f3947';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
+    ctx.restore();
+    if (topLeft && topRight) {
+      const crownH = 26;
+      const halfW = Math.round(a.w * 0.52);
+      ctx.drawImage(topLeft, drawX - 2, drawY - 6, halfW + 2, crownH);
+      ctx.drawImage(topRight, drawX + a.w - halfW, drawY - 6, halfW + 2, crownH);
+    }
+    return;
+  }
+  if (mat === 'grass' || mat === 'village') {
+    const folder = mat === 'village' ? 'village' : 'forest';
+    const bodyA = getTerrainImg(folder, '', 'ground_body_a');
+    const bodyB = getTerrainImg(folder, '', 'ground_body_b') || bodyA;
+    const cliffL = getTerrainImg(folder, '', 'ground_cliff_left');
+    const cliffR = getTerrainImg(folder, '', 'ground_cliff_right');
+    const topLeft = getTerrainImg(folder, '', 'left');
+    const topRight = getTerrainImg(folder, '', 'right');
+    const topMid = getTerrainImg(folder, '', 'middle_a');
+    const bushImg = getTerrainImg('forest', '', 'decoration_bush');
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(drawX, drawY, a.w, a.h, 12);
+    ctx.clip();
+
+    // Rich earthen base fill + tiled forest soil body
+    ctx.fillStyle = '#5c4430';
+    ctx.fillRect(drawX, drawY, a.w, a.h);
+    if (bodyA) {
+      const s = 0.46;
+      const bw = Math.max(36, Math.round(bodyA.width * s));
+      const bh = Math.max(36, Math.round(bodyA.height * s));
+      let rIdx = 0;
+      for (let gy = drawY; gy < drawY + a.h; gy += bh, rIdx++) {
+        let cIdx = 0;
+        for (let gx = drawX; gx < drawX + a.w; gx += bw, cIdx++) {
+          const pick = (rIdx + cIdx) % 2 === 0 ? bodyA : bodyB;
+          ctx.drawImage(pick, gx, gy, bw + 2, bh + 2);
+        }
+      }
+    }
+    // Natural rocky/mossy cliff edges along left and right sides
+    if (cliffL && cliffR) {
+      const edgeW = Math.min(Math.round(a.w * 0.48), 34);
+      const edgeH = Math.max(64, Math.round(cliffL.height * 0.42));
+      for (let gy = drawY; gy < drawY + a.h; gy += edgeH - 8) {
+        ctx.drawImage(cliffL, drawX - 2, gy, edgeW + 4, edgeH);
+        ctx.drawImage(cliffR, drawX + a.w - edgeW - 2, gy, edgeW + 4, edgeH);
+      }
+    }
+    // Soft natural earthen shading border (no dark steel rectangle)
+    ctx.strokeStyle = 'rgba(54, 72, 38, 0.55)';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
+    ctx.restore();
+
+    // Lush grass crown aligned with collision top `drawY` so the walkable top & visual surface match!
+    if (topLeft && topRight) {
+      const s = 0.42;
+      const crownH = Math.min(34, Math.round(topLeft.height * s));
+      const topY = Math.round(drawY - 14 * s);
+      const halfW = Math.round(a.w * 0.52);
+      ctx.drawImage(topLeft, drawX - 2, topY, halfW + 2, crownH);
+      ctx.drawImage(topRight, drawX + a.w - halfW, topY, halfW + 2, crownH);
+      if (topMid && a.w > 76) {
+        ctx.drawImage(topMid, drawX + Math.round(a.w * 0.25), topY, Math.round(a.w * 0.5), crownH);
+      }
+    }
+    // Bottom mossy root / bush grounding if resting near ground
+    if (bushImg && a.h <= 70) {
+      const bw = Math.min(a.w + 12, 86);
+      const bh = Math.round(bushImg.height * (bw / bushImg.width));
+      ctx.drawImage(bushImg, Math.round(drawX + (a.w - bw) * 0.5), Math.round(drawY + a.h - bh + 4), bw, bh);
+    }
+    return;
+  }
+
   const side = a.wallSide === 'right' ? 'right' : 'left';
   const wallImg = structureImages[`tower_wall_${side}`] || structureImages['tower_wall_left'];
   const capImg = structureImages['tower_wall_cap'];
@@ -513,7 +549,8 @@ function drawGroundVisual(a, drawX, drawY) {
   const crW = (!a.joinRight && cr) ? Math.round(cr.width * s) : 0;
   const crH = (!a.joinRight && cr) ? Math.round(cr.height * s) : 0;
 
-  const bottomY = Math.max(drawY + a.h, Math.ceil(rCamY + H + 60));
+  const zoomNow = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+  const bottomY = Math.max(drawY + a.h, Math.ceil(rCamY + (H / zoomNow) + 80));
   const bodyStartY = mat === 'home' ? (topY + topH - 8) : (topY + Math.round(spec.bodyTopOffset * s));
 
   const bodyX1 = drawX + (clW > 0 ? Math.round(clW * 0.42) : 0);
@@ -579,6 +616,31 @@ function drawThinPlatformVisual(a, drawX, drawY) {
   const spec = TERRAIN_SPECS[mat] || TERRAIN_SPECS.grass;
   const seed = a.visual?.seed || 202;
 
+  if (a.ceiling && mat === 'stone') {
+    const leftImg = getTerrainImg('erpien', 'stone_', 'left');
+    const midImg = getTerrainImg('erpien', 'stone_', 'middle_a');
+    const rightImg = getTerrainImg('erpien', 'stone_', 'right');
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(drawX, drawY, a.w, a.h, 8);
+    ctx.clip();
+    ctx.fillStyle = '#6c6574';
+    ctx.fillRect(drawX, drawY, a.w, a.h);
+    if (leftImg && midImg && rightImg) {
+      const s = 0.42;
+      const lw = Math.round(leftImg.width * s), rw = Math.round(rightImg.width * s);
+      ctx.drawImage(leftImg, drawX, drawY - 6, lw, a.h + 12);
+      ctx.drawImage(rightImg, drawX + a.w - rw, drawY - 6, rw, a.h + 12);
+      for (let gx = drawX + lw; gx < drawX + a.w - rw; gx += 90) {
+        ctx.drawImage(midImg, gx, drawY - 6, 94, a.h + 12);
+      }
+    }
+    ctx.strokeStyle = '#3f3947';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
+    ctx.restore();
+    return;
+  }
   if (a.ceiling && mat === 'steel') {
     const cl = getTerrainImg('monatium', 'steel_ceiling_', 'left');
     const cm = getTerrainImg('monatium', 'steel_ceiling_', 'middle');
@@ -599,13 +661,15 @@ function drawThinPlatformVisual(a, drawX, drawY) {
     }
   }
 
-  // Gate G2-1(4): Use dedicated `single_small` sprite for narrow 75px `M-ASC-12` (`a.useSmallVisual || a.w <= 95`) preserving aspect ratio without squashing a 150px modular bar
-  if ((a.useSmallVisual || a.w <= 95 || (a.w <= 145 && !a.towerStep && !a.descentStep)) && a.behavior !== 'blink') {
+  if ((a.useSmallVisual || a.w <= 96 || (a.w <= 145 && !a.towerStep && !a.descentStep)) && a.behavior !== 'blink') {
     const smallImg = getTerrainImg(spec.folder, spec.prefix, 'single_small');
     if (smallImg) {
-      const s = a.w / smallImg.width;
-      const drawH = Math.round(smallImg.height * s);
-      const topY = Math.round(drawY - spec.smallWalk * s);
+      // Gate G2 (Section 3.1): Prevent narrow 38~70px platforms from shrinking into tiny flat specks!
+      // Maintain a minimum vertical thickness (minScale = 0.42 -> drawH >= 32px) so narrow perches have a clear, readable turf & root body whose width matches [drawX, drawX + a.w].
+      const rawS = a.w / smallImg.width;
+      const vS = Math.max(0.42, rawS);
+      const drawH = Math.round(smallImg.height * vS);
+      const topY = Math.round(drawY - spec.smallWalk * vS);
       ctx.drawImage(smallImg, drawX, topY, a.w, drawH);
       return;
     }
@@ -673,13 +737,32 @@ function drawThinPlatformVisual(a, drawX, drawY) {
   ctx.drawImage(rightImg, drawX + a.w - rw, topY, rw, drawH);
 }
 
+// Gate 1 (P0): Render separated stage props (`BACKGROUND_PROP` & `DECORATION`) with grounded anchorBottom
+function drawStageProps(layerFilter) {
+  const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
+  if (!l || !l.villageProps || !l.villageProps.length) return;
+  for (const fp of l.villageProps) {
+    if (fp.layer !== layerFilter) continue;
+    if (fp.x2 < rCam - 160 || fp.x1 > rCam + W + 160) continue;
+    const im = terrainImages[fp.key];
+    if (!im) continue;
+    const dw = Math.round(im.width * fp.scale);
+    const dh = Math.round(im.height * fp.scale);
+    const dx = Math.round(fp.x - dw * 0.5);
+    const dy = Math.round(fp.anchorBottom - fp.walkOffset * fp.scale);
+    ctx.drawImage(im, dx, dy, dw, dh);
+  }
+}
+
 function drawPlatformDecorations(a, drawX, drawY) {
+  if (a.noAutoDecor) return;
   if (a.customDecorations && a.customDecorations.length) {
     for (const dec of a.customDecorations) {
       const im = terrainImages[dec.key];
       if (!im) continue;
       const dx = dec.x;
-      if (dx < rCam - 160 || dx > rCam + W + 160) continue;
+      const decViewW = (typeof rCamZoom === 'number' && rCamZoom > 0) ? (W / rCamZoom) : W;
+    if (dx < rCam - 160 || dx > rCam + decViewW + 160) continue;
       const dw = Math.round(im.width * dec.scale);
       const dh = Math.round(im.height * dec.scale);
       const dy = Math.round(drawY - dec.walkOffset * dec.scale);
@@ -693,6 +776,7 @@ function drawPlatformDecorations(a, drawX, drawY) {
   const spec = TERRAIN_SPECS[mat];
   if (!spec || !spec.decorations || !spec.decorations.length) return;
   const seed = a.visual?.seed || 303;
+  const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
 
   const margin = 130;
   const usableW = a.w - margin * 2;
@@ -710,11 +794,13 @@ function drawPlatformDecorations(a, drawX, drawY) {
 
     const jitter = (seededUnit(seed, i * 53 + 5) - 0.5) * 140;
     const dx = Math.round(drawX + margin + i * step + step * 0.4 + jitter);
-    if (dx < rCam - 160 || dx > rCam + W + 160) continue;
+    const decViewW = (typeof rCamZoom === 'number' && rCamZoom > 0) ? (W / rCamZoom) : W;
+    if (dx < rCam - 160 || dx > rCam + decViewW + 160) continue;
 
     if (flags.some(f => Math.abs(f.x - dx) < 90)) continue;
-    if (levelIndex === 1 && dx > 18480 && dx < 19120) continue;
-    const g = levels[levelIndex]?.goal;
+    if (l.decorFootprints && l.decorFootprints.some(fp => dx >= fp.x1 - 40 && dx <= fp.x2 + 40)) continue;
+    if (l.id === 'monatium' && dx > (STAGE_ANCHORS.monatium.bukgyeongBldgX - 100) && dx < (STAGE_ANCHORS.monatium.bukgyeongBldgX + 540)) continue;
+    const g = l.goal;
     if (g && dx > g.x - 120 && dx < g.x + g.w + 120) continue;
 
     const dw = Math.round(im.width * dec.scale);
@@ -725,6 +811,7 @@ function drawPlatformDecorations(a, drawX, drawY) {
 }
 
 function drawPlatform(a) {
+  if (a.hidden) return;
   const drawX = Math.round((a.prevX ?? a.x) + (a.x - (a.prevX ?? a.x)) * renderAlpha);
   const drawY = Math.round((a.prevY ?? a.y) + (a.y - (a.prevY ?? a.y)) * renderAlpha);
 
@@ -739,23 +826,31 @@ function drawPlatform(a) {
     ctx.restore();
   }
 
+  // Gate 6 (P0): Blinking platforms communicate state purely via alpha, subtle vibration, and color rim — ZERO text labels!
   if (a.behavior === 'blink') {
+    if (a.silentBlink && a.blinkState === 'off') {
+      // Unmarked blink platforms vanish cleanly when OFF so player never mistakes them for solid ground!
+      return;
+    }
     ctx.save();
+    const shakeX = (a.blinkState === 'warning' && !a.silentBlink) ? Math.round(Math.sin(time * 55) * 2) : 0;
     ctx.globalAlpha = a.blinkAlpha ?? 1;
-    drawThinPlatformVisual(a, drawX, drawY);
-    if (a.blinkState === 'warning') {
-      ctx.strokeStyle = a.fastBlink ? '#ff6b4a' : '#ffcf4d';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(drawX + 2, drawY - 4, a.w - 4, 24);
-      ctx.fillStyle = a.fastBlink ? '#ffd8cc' : '#ffe58f';
-      ctx.font = 'bold 13px "Malgun Gothic", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(a.fastBlink ? '⚡ 고속 점멸' : '⚡ 점멸 주의', drawX + a.w * 0.5, drawY - 12);
-    } else if (a.blinkState === 'off') {
-      ctx.setLineDash([6, 5]);
-      ctx.strokeStyle = '#9cc5ff88';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(drawX + 2, drawY, a.w - 4, 18);
+    drawThinPlatformVisual(a, drawX + shakeX, drawY);
+    if (!a.silentBlink) {
+      if (a.ultraFastBlink && a.blinkState === 'on') {
+        ctx.strokeStyle = '#ff922bcc';
+        ctx.lineWidth = 2.2;
+        ctx.strokeRect(drawX + 2, drawY - 1, a.w - 4, 20);
+      } else if (a.blinkState === 'warning') {
+        ctx.strokeStyle = a.ultraFastBlink ? '#ff2b5e' : (a.fastBlink ? '#ff6b4a' : '#ffcf4d');
+        ctx.lineWidth = 3;
+        ctx.strokeRect(drawX + shakeX + 2, drawY - 2, a.w - 4, 22);
+      } else if (a.blinkState === 'off') {
+        ctx.setLineDash([5, 6]);
+        ctx.strokeStyle = a.ultraFastBlink ? '#ff6b9d66' : '#9cc5ff55';
+        ctx.lineWidth = 1.8;
+        ctx.strokeRect(drawX + 3, drawY + 2, a.w - 6, 14);
+      }
     }
     ctx.restore();
     return;
@@ -769,17 +864,6 @@ function drawPlatform(a) {
     if (a.rooftop || a.customDecorations) drawPlatformDecorations(a, drawX, drawY);
   }
 
-  if (a.descendHint) {
-    const gx = a.descendHint === 'left' ? drawX - 24 : drawX + a.w + 24;
-    const gy = drawY + 18 + Math.sin(time * 4) * 4;
-    ctx.save();
-    ctx.fillStyle = '#73f0df';
-    ctx.font = 'bold 17px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(a.descendHint === 'left' ? '↙' : '↘', gx, gy);
-    ctx.restore();
-  }
-
   if (a.motion) {
     ctx.save();
     ctx.strokeStyle = a.fastMoving ? '#ffbe4d' : '#93e8dd';
@@ -789,11 +873,9 @@ function drawPlatform(a) {
     ctx.lineTo(drawX + a.w - 6, drawY);
     ctx.stroke();
     ctx.restore();
-    label(a.motion.axis === 'x' ? (a.fastMoving ? '⚡ ↔' : '↔') : '↕', drawX + a.w / 2, drawY - 26);
   }
 }
 
-// Gate G1-1 & G1-3: Render Golden Crayons (`golden_crayon.png`, 42x42px) across available, pending, and secured states
 function drawSpecialCoins() {
   if (typeof specialCoins === 'undefined' || !specialCoins.length) return;
   if (typeof syncSpecialCoinPositions === 'function') syncSpecialCoinPositions();
@@ -807,7 +889,6 @@ function drawSpecialCoins() {
       if (sc.x < rCam - 70 || sc.x > rCam + W + 70 || sc.y - rCamY > H + 130 || sc.y - rCamY < -130) continue;
       ctx.save();
       ctx.translate(sc.x, sc.y + bob);
-      // Golden outer pulse aura so Golden Crayon stands out distinctly from King Candy
       const pulseR = 23 + Math.sin(time * 5.2 + i) * 2.5;
       const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, pulseR + 6);
       grad.addColorStop(0, 'rgba(255, 232, 130, 0.55)');
@@ -827,15 +908,6 @@ function drawSpecialCoins() {
       if (crayonImg) {
         const sz = 42;
         ctx.drawImage(crayonImg, -sz * 0.5, -sz * 0.5, sz, sz);
-      }
-      if (sc.parentPlatformId) {
-        ctx.font = 'bold 11px "Malgun Gothic", sans-serif';
-        ctx.fillStyle = '#fff5cf';
-        ctx.strokeStyle = '#5c3409';
-        ctx.lineWidth = 3;
-        ctx.textAlign = 'center';
-        ctx.strokeText('발판 착지 획득', 0, -27);
-        ctx.fillText('발판 착지 획득', 0, -27);
       }
       ctx.restore();
     } else if (sc.state === 'pending') {
@@ -866,10 +938,6 @@ function drawSpecialCoins() {
       if (crayonImg) {
         ctx.drawImage(crayonImg, -15, -15, 30, 30);
       }
-      ctx.font = 'bold 11px "Malgun Gothic", sans-serif';
-      ctx.fillStyle = '#9e4c14';
-      ctx.textAlign = 'center';
-      ctx.fillText('안전 착지!', 0, -20);
       ctx.restore();
     } else if (sc.state === 'secured') {
       if (sc.x < rCam - 70 || sc.x > rCam + W + 70 || sc.y - rCamY > H + 130 || sc.y - rCamY < -130) continue;
@@ -889,38 +957,86 @@ function drawSpecialCoins() {
   }
 }
 
+// Developer QA Overlay for Gate 1.4 (`window.__showArtQaOverlay = true` draws reservedFootprint, art anchorBottom, and collision tops)
+function drawDeveloperQaOverlay() {
+  if (!window.__showArtQaOverlay) return;
+  const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
+  ctx.save();
+  ctx.font = 'bold 11px monospace';
+  if (l.villageProps) {
+    for (const fp of l.villageProps) {
+      if (fp.x2 < rCam - 100 || fp.x1 > rCam + W + 100) continue;
+      ctx.strokeStyle = fp.assetType === 'BACKGROUND_PROP' ? '#ff922bcc' : '#51cf66cc';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(fp.x1, fp.y1, fp.x2 - fp.x1, fp.y2 - fp.y1);
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ff2b5e';
+      ctx.beginPath();
+      ctx.arc(fp.x, fp.anchorBottom, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(`${fp.id} [${fp.assetType}] anchor=${fp.anchorBottom}`, fp.x1 + 4, fp.y1 - 6);
+    }
+  }
+  for (const a of platforms) {
+    if (a.x + a.w < rCam - 100 || a.x > rCam + W + 100) continue;
+    ctx.strokeStyle = a.groundTile ? '#339af0' : '#00f5d4';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(a.x + a.w, a.y);
+    ctx.stroke();
+    ctx.fillStyle = '#00f5d4';
+    ctx.fillText(`${a.id} (y=${a.y}, w=${a.w})`, a.x + 4, a.y + 14);
+  }
+  ctx.restore();
+}
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
   renderBackground();
+  const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+  const viewW = W / zoom;
+  const viewH = H / zoom;
   ctx.save();
+  if (Math.abs(zoom - 1) > 0.001) {
+    ctx.scale(zoom, zoom);
+  }
   ctx.translate(-Math.round(rCam), -Math.round(rCamY));
 
   drawTowerStructures();
 
   for (const a of platforms) {
     if (!a.groundTile) continue;
-    if (a.x + a.w < rCam - 80 || a.x > rCam + W + 80) continue;
+    if (a.x + a.w < rCam - 120 || a.x > rCam + viewW + 120) continue;
     drawPlatform(a);
   }
+  // Gate 1: Render BACKGROUND_PROP (cottages/stalls/gates) and midground DECORATION behind floating platforms & player!
+  drawStageProps('background');
+  drawStageProps('midground');
+
   for (const a of platforms) {
     if (a.groundTile) continue;
-    if (a.x + a.w < rCam - 120 || a.x > rCam + W + 120 || a.y - rCamY > H + 260 || a.y + a.h - rCamY < -260) continue;
+    if (a.x + a.w < rCam - 160 || a.x > rCam + viewW + 160 || a.y - rCamY > viewH + 280 || a.y + a.h - rCamY < -280) continue;
     drawPlatform(a);
   }
 
-  drawActors();
-  drawBombs();
-  if (typeof drawWindDarts === 'function') drawWindDarts();
+  if (typeof gameMode !== 'undefined' && gameMode === 'challenge') {
+    if (typeof drawChallengeHazards === 'function') drawChallengeHazards();
+  } else {
+    drawActors();
+    drawBombs();
+    if (typeof drawWindDarts === 'function') drawWindDarts();
+  }
 
-  // Gate G1-1: Render regular collectibles using unmodified `king_candy.png` (32x32px, 1:1 aspect ratio)
   const candyImg = collectibleImages['king_candy'];
   for (let i = 0; i < coins.length; i++) {
     const c = coins[i];
-    if (c.got || c.x < rCam - 40 || c.x > rCam + W + 40 || c.y - rCamY > H + 90 || c.y - rCamY < -90) continue;
+    if (c.got || c.x < rCam - 60 || c.x > rCam + viewW + 60 || c.y - rCamY > viewH + 110 || c.y - rCamY < -110) continue;
     const cy = c.y + Math.sin(time * 3.2 + i * 0.7) * 3;
     ctx.save();
     ctx.translate(Math.round(c.x), Math.round(cy));
-    // Soft warm backing halo for clear readability against all backgrounds
     ctx.fillStyle = 'rgba(255, 245, 235, 0.32)';
     ctx.beginPath();
     ctx.arc(0, 0, 16, 0, Math.PI * 2);
@@ -936,7 +1052,7 @@ function draw() {
 
   for (let i = 0; i < flags.length; i++) {
     const f = flags[i];
-    if (f.x < rCam - 100 || f.x > rCam + W + 100) continue;
+    if (f.x < rCam - 100 || f.x > rCam + viewW + 100) continue;
     line(f.x, f.y, f.x, f.y - 100, '#665d52', 4);
     ctx.fillStyle = checkpoint > i ? '#87bb90' : '#f4ce83';
     ctx.beginPath();
@@ -945,19 +1061,24 @@ function draw() {
     ctx.lineTo(f.x, f.y - 65);
     ctx.fill();
   }
-  for (const s of levels[levelIndex].signs) {
-    if (s.x < rCam - 250 || s.x > rCam + W + 250 || s.y - rCamY > H + 120 || s.y - rCamY < -120) continue;
-    ctx.font = 'bold 17px "Malgun Gothic",sans-serif';
-    const width = ctx.measureText(s.text).width + 26;
-    ctx.fillStyle = '#fff9e8ed';
-    ctx.beginPath();
-    ctx.roundRect(s.x - width / 2, s.y - 25, width, 39, 12);
-    ctx.fill();
-    ctx.fillStyle = '#465646';
-    ctx.textAlign = 'center';
-    ctx.fillText(s.text, s.x, s.y);
+  // Section 1-2 (P0): Render tutorial signs ONLY when in Story Mode AND active level is Suin Forest!
+  const activeLvForSigns = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
+  if ((typeof gameMode === 'undefined' || gameMode === 'story') && activeLvForSigns?.id === 'forest') {
+    for (const s of (activeLvForSigns.signs || [])) {
+      if (s.x < rCam - 250 || s.x > rCam + W + 250 || s.y - rCamY > H + 120 || s.y - rCamY < -120) continue;
+      ctx.font = 'bold 17px "Malgun Gothic",sans-serif';
+      const width = ctx.measureText(s.text).width + 26;
+      ctx.fillStyle = '#fff9e8ed';
+      ctx.beginPath();
+      ctx.roundRect(s.x - width / 2, s.y - 25, width, 39, 12);
+      ctx.fill();
+      ctx.fillStyle = '#465646';
+      ctx.textAlign = 'center';
+      ctx.fillText(s.text, s.x, s.y);
+    }
   }
-  const goal = levels[levelIndex].goal;
+  const activeLv = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
+  const goal = activeLv ? activeLv.goal : null;
   if (goal) {
     ctx.fillStyle = '#80634d';
     ctx.beginPath();
@@ -971,7 +1092,7 @@ function draw() {
     ctx.font = 'bold 18px "Malgun Gothic"';
     ctx.fillStyle = '#6c5742';
     ctx.textAlign = 'center';
-    ctx.fillText('엄마의 방', goal.x + goal.w / 2, goal.y - goal.h - 18);
+    ctx.fillText(goal.label || '엄마의 방', goal.x + goal.w / 2, goal.y - goal.h - 18);
   }
   for (const t of trail) {
     ctx.save();
@@ -989,7 +1110,9 @@ function draw() {
   ellipse(Math.round(rPx), shadow.y, shadow.width, 4, '#334b3a');
   ctx.restore();
   renderCharacter();
+  drawStageProps('foreground');
   drawProtection();
+  drawDeveloperQaOverlay();
   ctx.restore();
   if (state === 'night') {
     ctx.save();
