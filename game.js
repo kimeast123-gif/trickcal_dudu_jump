@@ -273,8 +273,11 @@ function computeInitialCameraForPoint(px,py){
  }else if(prof==='rooftop'){
   targetY=Math.min(0,Math.max(-2180,py-430));
  }else if(prof==='challenge_vertical'){
+  const actLv=(typeof getActiveLevel==='function')?getActiveLevel():null;
+  const minCY=(actLv&&typeof actLv.minCamY==='number')?actLv.minCamY:-3860;
+  const maxCY=(actLv&&typeof actLv.maxCamY==='number')?actLv.maxCamY:120;
   targetX=Math.max(0,Math.min(END-W,px-W*0.45));
-  targetY=Math.min(120,Math.max(-2480,py-430));
+  targetY=Math.min(maxCY,Math.max(minCY,py-430));
  }else if(prof==='challenge_horizontal'){
   targetX=Math.max(0,Math.min(END-W,px-W*0.36));
   targetY=Math.min(100,Math.max(-450,py-440));
@@ -351,7 +354,7 @@ function syncRenderCoords(){
  const prof=getCameraProfile(p.x,p.y);
  camZoom=prof==='erpien_boss_zoom'?0.88:1.0;
  prevCamZoom=camZoom;rCamZoom=camZoom;
- p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom;
+ p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom;prevCamZoom=camZoom;
  rPx=p.x;rPy=p.y;rCam=cam;rCamY=camY;
  debugMetrics.lastDrawPx=p.x;debugMetrics.lastDrawCam=cam;
  debugMetrics.maxCamDelta=0;debugMetrics.maxPlayerDrawDelta=0;
@@ -409,7 +412,7 @@ window.addEventListener('keydown',e=>{
  keys.add(e.code);
  if(p.guardStun>0)return;
  if(e.code==='Space'&&!e.repeat){
-  if(keys.has('ArrowDown')&&p.ground&&p.on?.thin){
+  if(keys.has('ArrowDown')&&p.ground&&p.on?.thin&&!p.on?.dropThroughDisabled){
    p.drop=p.on;p.y+=3;p.ground=false;p.on=null;p.coyote=0;p.jumps=1;p.vy=70;p.buffer=0;p.jumpHeld=false;
    lookDownHold=0;
   }else p.buffer=.12;
@@ -593,9 +596,13 @@ function update(dt){
   camY+=(roofTargetY-camY)*(1-Math.exp(-dt*6.0));
  }else if(camProfile==='challenge_vertical'){
   lookDownHold=0;lookDownOffset=0;
+  camZoom=1.0;prevCamZoom=1.0;
+  const actLv=(typeof getActiveLevel==='function')?getActiveLevel():null;
+  const minCY=(actLv&&typeof actLv.minCamY==='number')?actLv.minCamY:-3860;
+  const maxCY=(actLv&&typeof actLv.maxCamY==='number')?actLv.maxCamY:120;
   const desiredX=Math.max(0,Math.min(END-W,p.x-W*0.45));
   cam+=(desiredX-cam)*(1-Math.exp(-dt*7.5));
-  const desiredY=Math.min(120,Math.max(-2480,p.y-435));
+  const desiredY=Math.min(maxCY,Math.max(minCY,p.y-435));
   camY+=(desiredY-camY)*(1-Math.exp(-dt*7.0));
  }else if(camProfile==='challenge_horizontal'){
   lookDownHold=0;lookDownOffset=0;
@@ -607,12 +614,22 @@ function update(dt){
  }else if(camProfile==='erpien_boss_zoom'){
   lookDownHold=0;lookDownOffset=0;
   const targetZoom=0.88;
-  camZoom+=(targetZoom-camZoom)*(1-Math.exp(-dt*5.5));
   const e=STAGE_ANCHORS.erpien;
   const desiredX=e.arenaOrigin||15700;
   const desiredY=-98;
-  cam+=(desiredX-cam)*(1-Math.exp(-dt*7.5));
-  camY+=(desiredY-camY)*(1-Math.exp(-dt*7.5));
+  if(typeof arena!=='undefined'&&arena&&arena.entered&&(arena.phase==='combat'||arena.phase==='finale'||Math.abs(desiredX-cam)<1.2)){
+   // Gate 7 (P0): After the initial entry zoom-out, lock the arena camera 100% still with ZERO X/Y/Zoom jitter!
+   camZoom=targetZoom;prevCamZoom=targetZoom;
+   cam=desiredX;prevCam=desiredX;
+   camY=desiredY;prevCamY=desiredY;
+  }else{
+   camZoom+=(targetZoom-camZoom)*(1-Math.exp(-dt*5.5));
+   cam+=(desiredX-cam)*(1-Math.exp(-dt*7.5));
+   camY+=(desiredY-camY)*(1-Math.exp(-dt*7.5));
+   if(Math.abs(targetZoom-camZoom)<0.002)camZoom=targetZoom;
+   if(Math.abs(desiredX-cam)<0.8)cam=desiredX;
+   if(Math.abs(desiredY-camY)<0.8)camY=desiredY;
+  }
  }else{
   lookDownHold=0;
   lookDownOffset=0;

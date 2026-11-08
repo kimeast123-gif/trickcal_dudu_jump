@@ -250,11 +250,12 @@ village.segments=[{start:0,end:7800,bg:'village-bg',skin:'village',name:'수인�
 // --- V1 (0 ~ 1920): 마을 어귀 광장 (0..1050 건물·장식 전용 평지 / 1120..1920 그루터기·시냇물 도약 구간) ---
 floor(village,0,1560,'village',580,{id:'V-GND-01',noAutoDecor:true});
 checkpointAt(village,160,'수인마을 어귀','',580);
-// V1 Background Props & Decorations (Strictly in x = 220..980; ZERO floating platforms in 0..1100!)
-addStageProp(village,{id:'V-DEC-SIGN-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_signpost',x:260,anchorBottom:580,walkOffset:165,scale:0.52,rawW:183,rawH:169,pad:12});
-addStageProp(village,{id:'V-PROP-HOUSE-A',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_house_a',x:560,anchorBottom:580,walkOffset:242,scale:0.66,rawW:419,rawH:246,pad:30});
-addStageProp(village,{id:'V-DEC-LAMP-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_lamp',x:810,anchorBottom:580,walkOffset:186,scale:0.56,rawW:140,rawH:190,pad:12});
-addStageProp(village,{id:'V-DEC-FENCE-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_fence_short',x:950,anchorBottom:580,walkOffset:98,scale:0.54,rawW:185,rawH:102,pad:12});
+// Gate 6 (P0): Suin Village Props & Decorations calibrated to true solid base contact row (`groundAnchorPx` / `walkOffset`)
+// so that every cottage wall base, stall leg, wooden gate door, fence post, lamp base, and bush beds firmly into the solid lawn surface (`y = 584..591`) with ZERO floating gaps!
+addStageProp(village,{id:'V-DEC-SIGN-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_signpost',x:260,anchorBottom:580,walkOffset:153,groundAnchorPx:153,prevWalkOffset:165,scale:0.52,rawW:183,rawH:169,pad:12});
+addStageProp(village,{id:'V-PROP-HOUSE-A',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_house_a',x:560,anchorBottom:580,walkOffset:228,groundAnchorPx:228,prevWalkOffset:242,scale:0.66,rawW:419,rawH:246,pad:30});
+addStageProp(village,{id:'V-DEC-LAMP-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_lamp',x:810,anchorBottom:580,walkOffset:175,groundAnchorPx:175,prevWalkOffset:186,scale:0.56,rawW:140,rawH:190,pad:12});
+addStageProp(village,{id:'V-DEC-FENCE-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_fence_short',x:950,anchorBottom:580,walkOffset:86,groundAnchorPx:86,prevWalkOffset:98,scale:0.54,rawW:185,rawH:102,pad:12});
 // V1 Collidable Platforms (Strictly in x = 1140..1830 over open lawn & stream 1560..1920!)
 surface(village,1160,505,190,'village',{id:'V-STEP-01'});
 surface(village,1630,490,200,'village',{id:'V-BRIDGE-01'});
@@ -263,10 +264,10 @@ surface(village,1630,490,200,'village',{id:'V-BRIDGE-01'});
 floor(village,1920,1720,'village',580,{id:'V-GND-02',noAutoDecor:true});
 checkpointAt(village,2040,'마을 장터 광장','',580);
 // V2 Background Props & Decorations (Strictly in x = 2120..3120; ZERO floating platforms in 1920..3220!)
-addStageProp(village,{id:'V-DEC-LAMP-02',assetType:'DECORATION',layer:'midground',key:'village/decoration_lamp',x:2170,anchorBottom:580,walkOffset:186,scale:0.56,rawW:140,rawH:190,pad:12});
-addStageProp(village,{id:'V-PROP-STALL-01',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_stall',x:2400,anchorBottom:580,walkOffset:184,scale:0.60,rawW:311,rawH:188,pad:28});
-addStageProp(village,{id:'V-DEC-BUSH-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_bush_flower',x:2620,anchorBottom:580,walkOffset:98,scale:0.50,rawW:207,rawH:102,pad:10});
-addStageProp(village,{id:'V-PROP-HOUSE-B',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_house_b',x:2910,anchorBottom:580,walkOffset:288,scale:0.66,rawW:455,rawH:292,pad:30});
+addStageProp(village,{id:'V-DEC-LAMP-02',assetType:'DECORATION',layer:'midground',key:'village/decoration_lamp',x:2170,anchorBottom:580,walkOffset:175,groundAnchorPx:175,prevWalkOffset:186,scale:0.56,rawW:140,rawH:190,pad:12});
+addStageProp(village,{id:'V-PROP-STALL-01',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_stall',x:2400,anchorBottom:580,walkOffset:173,groundAnchorPx:173,prevWalkOffset:184,scale:0.60,rawW:311,rawH:188,pad:28});
+addStageProp(village,{id:'V-DEC-BUSH-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_bush_flower',x:2620,anchorBottom:580,walkOffset:86,groundAnchorPx:86,prevWalkOffset:98,scale:0.50,rawW:207,rawH:102,pad:10});
+addStageProp(village,{id:'V-PROP-HOUSE-B',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_house_b',x:2910,anchorBottom:580,walkOffset:274,groundAnchorPx:274,prevWalkOffset:288,scale:0.66,rawW:455,rawH:292,pad:30});
 // V2 Collidable Platforms (Strictly in x = 3260..4110 after the market buildings & across stream 3640..4160!)
 surface(village,3260,500,195,'village',{id:'V-MARKET-01'});
 surface(village,3710,485,175,'village',{id:'V-STREAM-01'});
@@ -276,9 +277,9 @@ surface(village,3935,450,175,'village',{id:'V-STREAM-02'});
 floor(village,4160,1580,'village',580,{id:'V-GND-03',noAutoDecor:true});
 checkpointAt(village,4280,'덩굴 오두막 정원','',580);
 // V3 Background Props & Decorations (Strictly in x = 4380..5040; ZERO floating platforms in 4160..5120!)
-addStageProp(village,{id:'V-DEC-LUPINE-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_lupine',x:4410,anchorBottom:580,walkOffset:108,scale:0.52,rawW:177,rawH:112,pad:10});
-addStageProp(village,{id:'V-PROP-HOUSE-C',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_house_c',x:4690,anchorBottom:580,walkOffset:286,scale:0.66,rawW:451,rawH:290,pad:30});
-addStageProp(village,{id:'V-DEC-FENCE-02',assetType:'DECORATION',layer:'midground',key:'village/decoration_fence_long',x:5000,anchorBottom:580,walkOffset:100,scale:0.52,rawW:344,rawH:103,pad:12});
+addStageProp(village,{id:'V-DEC-LUPINE-01',assetType:'DECORATION',layer:'midground',key:'village/decoration_lupine',x:4410,anchorBottom:580,walkOffset:96,groundAnchorPx:96,prevWalkOffset:108,scale:0.52,rawW:177,rawH:112,pad:10});
+addStageProp(village,{id:'V-PROP-HOUSE-C',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_house_c',x:4690,anchorBottom:580,walkOffset:270,groundAnchorPx:270,prevWalkOffset:286,scale:0.66,rawW:451,rawH:290,pad:30});
+addStageProp(village,{id:'V-DEC-FENCE-02',assetType:'DECORATION',layer:'midground',key:'village/decoration_fence_long',x:5000,anchorBottom:580,walkOffset:89,groundAnchorPx:89,prevWalkOffset:100,scale:0.52,rawW:344,rawH:103,pad:12});
 // V3 Collidable Platforms (Strictly in x = 5160..6060 in the open clearing & over stream 5740..6220!)
 surface(village,5160,495,195,'village',{id:'V-GARDEN-01'});
 surface(village,5460,440,200,'village',{id:'V-GARDEN-02'});
@@ -289,10 +290,10 @@ floor(village,6220,1580,'village',580,{id:'V-GND-04',noAutoDecor:true});
 checkpointAt(village,6300,'마을 출구 대문','',580);
 surface(village,6400,505,190,'village',{id:'V-EXIT-01'});
 // V4 Background Props & Decorations (Strictly in x = 6740..7620; ZERO floating platforms in 6600..7800!)
-addStageProp(village,{id:'V-PROP-STALL-02',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_stall',x:6860,anchorBottom:580,walkOffset:184,scale:0.60,rawW:311,rawH:188,pad:28});
-addStageProp(village,{id:'V-DEC-LAMP-03',assetType:'DECORATION',layer:'midground',key:'village/decoration_lamp',x:7110,anchorBottom:580,walkOffset:186,scale:0.56,rawW:140,rawH:190,pad:12});
-addStageProp(village,{id:'V-PROP-GATE',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_gate',x:7360,anchorBottom:580,walkOffset:128,scale:0.64,rawW:271,rawH:131,pad:24});
-addStageProp(village,{id:'V-DEC-SIGN-02',assetType:'DECORATION',layer:'midground',key:'village/decoration_signpost',x:7580,anchorBottom:580,walkOffset:165,scale:0.52,rawW:183,rawH:169,pad:12});
+addStageProp(village,{id:'V-PROP-STALL-02',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_stall',x:6860,anchorBottom:580,walkOffset:173,groundAnchorPx:173,prevWalkOffset:184,scale:0.60,rawW:311,rawH:188,pad:28});
+addStageProp(village,{id:'V-DEC-LAMP-03',assetType:'DECORATION',layer:'midground',key:'village/decoration_lamp',x:7110,anchorBottom:580,walkOffset:175,groundAnchorPx:175,prevWalkOffset:186,scale:0.56,rawW:140,rawH:190,pad:12});
+addStageProp(village,{id:'V-PROP-GATE',assetType:'BACKGROUND_PROP',layer:'background',key:'village/decoration_gate',x:7360,anchorBottom:580,walkOffset:116,groundAnchorPx:116,prevWalkOffset:128,scale:0.64,rawW:271,rawH:131,pad:24});
+addStageProp(village,{id:'V-DEC-SIGN-02',assetType:'DECORATION',layer:'midground',key:'village/decoration_signpost',x:7580,anchorBottom:580,walkOffset:153,groundAnchorPx:153,prevWalkOffset:165,scale:0.52,rawW:183,rawH:169,pad:12});
 
 // Suin Village 24 Forward-Path King Candies (placed along clean ground & platform arcs, avoiding building centers)
 for(const [idx,[cx,cy]] of [
@@ -488,99 +489,103 @@ addSpecialCoinDef(
  {parentPlatformId:'M-DOWN-02-P',localOffsetX:44,localOffsetY:-34,requireLanding:true}
 );
 
-// --- M5. 진압반 4종 전술 블록 (SKY_SHIFT = +1000 일괄 반영: 13456 ~ 25060) ---
+// --- M5. 진압반 4종 전술 블록 (Gate 8: 상·하 및 좌·우 과밀 플랫폼 시각 이격 정돈 · 13456 ~ 25060) ---
 floor(city,13456,624,'road',580,{id:'M-G1-GND1'});
 checkpointAt(city,13720,'진압반 제1구역','',580);
-surface(city,14240,500,145,'steel',{id:'M-G1-STEP1'});
-surface(city,14520,455,290,'pavement',{id:'M-G1-LOW1'});
-wall(city,14640,175,52,185,'steel',{id:'M-G1-BAFFLE1'});
-surface(city,14940,495,135,'steel',{id:'M-G1-EXIT1'});
+surface(city,14200,515,130,'steel',{id:'M-G1-STEP1',useSmallVisual:true});
+surface(city,14500,420,290,'pavement',{id:'M-G1-LOW1'});
+wall(city,14630,130,52,190,'steel',{id:'M-G1-BAFFLE1',noTopLand:true});
+surface(city,14930,495,130,'steel',{id:'M-G1-EXIT1',useSmallVisual:true});
 floor(city,15180,440,'road',580,{id:'M-G1-GND2'});
 checkpointAt(city,15340,'진압반 제1교차점','',580);
 surface(city,15790,480,310,'pavement',{id:'M-G1-LOW2'});
-wall(city,15920,195,52,190,'steel',{id:'M-G1-BAFFLE2'});
-surface(city,16280,385,165,'steel',{id:'M-G1-HIGH2'});
+wall(city,15920,190,52,190,'steel',{id:'M-G1-BAFFLE2',noTopLand:true});
+surface(city,16280,375,160,'steel',{id:'M-G1-HIGH2'});
 floor(city,16660,340,'road',580,{id:'M-G1-GND3',joinRight:true});
 
-// M5-G2 (17000 ~ 20500)
-floor(city,17000,420,'pavement',580,{id:'M-G2-ENTRY'});
+// M5-G2 (17000 ~ 20500 — Gate 8: 상부 교량 y=420과 하부 트렌치 y=565를 145px 수직 분리하여 철골 겹침 완전 해소!)
+floor(city,17000,380,'pavement',580,{id:'M-G2-ENTRY'});
 checkpointAt(city,17120,'진압반 공중 교량','',580);
-surface(city,17660,475,300,'steel',{id:'M-GRD-BR1',thin:true});
-wall(city,18030,190,56,195,'steel',{id:'M-G2-BAFFLE1'});
-surface(city,18190,435,155,'steel',{
+surface(city,17440,500,110,'steel',{id:'M-G2-STEP1',useSmallVisual:true});
+surface(city,17650,420,300,'steel',{id:'M-GRD-BR1',thin:true});
+wall(city,18035,125,56,200,'steel',{id:'M-G2-BAFFLE1',noTopLand:true});
+surface(city,18220,385,150,'steel',{
  id:'M-G2-BLINK1',thin:true,behavior:'blink',fastBlink:true,
  blink:{on:1.50,warning:0.45,off:1.15,phase:0.80}
 });
-surface(city,17700,555,115,'steel',{
- id:'M-G2-TRENCH-L',behavior:'blink',fastBlink:true,
+// Lower Trench Blink Route for M-GUARD-01 (145~160px below upper bridge/blink relay, with useSmallVisual:true for crisp separation)
+surface(city,17620,565,110,'steel',{
+ id:'M-G2-TRENCH-L',useSmallVisual:true,behavior:'blink',fastBlink:true,
  blink:{on:1.60,warning:0.45,off:0.90,phase:0.00}
 });
-surface(city,17910,555,105,'steel',{
- id:'M-GUARD-01-P',specialBranch:'M-GUARD-01',challenge:'special',
+surface(city,17885,565,105,'steel',{
+ id:'M-GUARD-01-P',specialBranch:'M-GUARD-01',challenge:'special',useSmallVisual:true,
  behavior:'blink',fastBlink:true,
  blink:{on:1.60,warning:0.45,off:0.90,phase:0.55}
 });
-surface(city,18110,525,115,'steel',{
- id:'M-G2-TRENCH-R',behavior:'blink',fastBlink:true,
+surface(city,18150,540,110,'steel',{
+ id:'M-G2-TRENCH-R',useSmallVisual:true,behavior:'blink',fastBlink:true,
  blink:{on:1.60,warning:0.45,off:0.90,phase:1.10}
 });
 addSpecialCoinDef(
- city,'M-GUARD-01',17962,519,'경비 1 · 교량 하부 트렌치 잠입 회수',
+ city,'M-GUARD-01',17937,529,'경비 1 · 교량 하부 트렌치 잠입 회수',
  {x1:18680,x2:20500,yMin:420,yMax:585},
- {parentPlatformId:'M-GUARD-01-P',localOffsetX:52,localOffsetY:-36,requireLanding:true}
+ {parentPlatformId:'M-GUARD-01-P',localOffsetX:52,localOffsetY:-36,requireLanding:true,
+  allowedReturnPlatforms:['M-G2-MID','M-GRD-BR2','M-G2-BLINK2','M-G2-EXIT']}
 );
 
 floor(city,18680,360,'pavement',580,{id:'M-G2-MID'});
 checkpointAt(city,18780,'제2교량 입구','',580);
-surface(city,19260,465,290,'steel',{id:'M-GRD-BR2',thin:true});
-wall(city,19620,180,56,195,'steel',{id:'M-G2-BAFFLE2'});
-surface(city,19760,425,150,'steel',{
+surface(city,19240,460,290,'steel',{id:'M-GRD-BR2',thin:true});
+wall(city,19615,170,56,195,'steel',{id:'M-G2-BAFFLE2',noTopLand:true});
+surface(city,19770,415,150,'steel',{
  id:'M-G2-BLINK2',thin:true,behavior:'blink',fastBlink:true,
  blink:{on:1.45,warning:0.45,off:1.10,phase:1.60}
 });
 floor(city,20160,440,'pavement',580,{id:'M-G2-EXIT'});
 
-// M5-G3 (20600 ~ 23400)
+// M5-G3 (20600 ~ 23400 — Gate 8: 다층 교차로 수평·수직 간격 확대)
 floor(city,20600,360,'pavement',580,{id:'M-G3-GND1',joinLeft:true});
 checkpointAt(city,20700,'진압반 다층 교차로','',580);
-surface(city,21120,495,290,'steel',{id:'M-G3-MID1'});
-wall(city,21435,340,52,220,'steel',{id:'M-G3-BAFFLE1'});
-surface(city,21540,355,300,'steel',{id:'M-G3-UPPER'});
-wall(city,21665,95,52,175,'steel',{id:'M-G3-BAFFLE2'});
-floor(city,22040,380,'pavement',580,{id:'M-G3-GND2'});
+surface(city,21090,500,285,'steel',{id:'M-G3-MID1'});
+wall(city,21435,330,50,220,'steel',{id:'M-G3-BAFFLE1',noTopLand:true});
+surface(city,21560,345,295,'steel',{id:'M-G3-UPPER'});
+wall(city,21685,80,50,175,'steel',{id:'M-G3-BAFFLE2',noTopLand:true});
+floor(city,22040,360,'pavement',580,{id:'M-G3-GND2'});
 checkpointAt(city,22160,'다층 교차로 후반','',580);
-surface(city,22550,435,130,'steel',{id:'M-G3-STEP-HI'});
-wall(city,22705,180,52,265,'steel',{id:'M-G3-BAFFLE3'});
-surface(city,22760,515,250,'steel',{id:'M-G3-MID2'});
-surface(city,23060,365,135,'steel',{id:'M-G3-HIGH-EXIT'});
-floor(city,23220,180,'pavement',580,{id:'M-G3-GND3',joinRight:true});
+surface(city,22500,425,125,'steel',{id:'M-G3-STEP-HI',useSmallVisual:true});
+wall(city,22675,170,50,265,'steel',{id:'M-G3-BAFFLE3',noTopLand:true});
+surface(city,22765,515,245,'steel',{id:'M-G3-MID2'});
+surface(city,23065,360,125,'steel',{id:'M-G3-HIGH-EXIT',useSmallVisual:true});
+floor(city,23240,160,'pavement',580,{id:'M-G3-GND3',joinRight:true});
 
-// M5-G4 (23400 ~ 25060)
+// M5-G4 (23400 ~ 25060 — Gate 8: 상공 황금 크레파스 분기 M-GUARD-02와 하부 경비교량 간 수직 이격 145~245px 확보!)
 floor(city,23400,260,'pavement',580,{id:'M-G4-GND1'});
 checkpointAt(city,23480,'특수 진압반 구역','',580);
-surface(city,23830,485,280,'steel',{id:'M-GRD-BR3A',thin:true});
-wall(city,24145,190,56,205,'steel',{id:'M-G4-BAFFLE1'});
-surface(city,24240,445,135,'steel',{
+surface(city,23780,485,280,'steel',{id:'M-GRD-BR3A',thin:true});
+wall(city,24110,185,52,205,'steel',{id:'M-G4-BAFFLE1',noTopLand:true});
+surface(city,24220,440,130,'steel',{
  id:'M-G4-BLINK1',thin:true,behavior:'blink',fastBlink:true,
  blink:{on:1.35,warning:0.40,off:1.05,phase:0.40}
 });
-surface(city,24510,410,290,'steel',{id:'M-GRD-BR3B',thin:true});
-surface(city,24890,455,125,'steel',{
+surface(city,24470,400,285,'steel',{id:'M-GRD-BR3B',thin:true});
+surface(city,24860,455,125,'steel',{
  id:'M-G4-BLINK2',thin:true,behavior:'blink',fastBlink:true,
  blink:{on:1.35,warning:0.40,off:1.00,phase:1.50}
 });
-surface(city,24710,285,86,'steel',{
+surface(city,24695,255,86,'steel',{
  id:'M-GUARD-02-P1',specialBranch:'M-GUARD-02',challenge:'special',useSmallVisual:true,
  behavior:'blink',fastBlink:true,blink:{on:1.50,warning:0.42,off:0.88,phase:0.45}
 });
-surface(city,24450,210,78,'steel',{
+surface(city,24415,155,78,'steel',{
  id:'M-GUARD-02-P',specialBranch:'M-GUARD-02',challenge:'special',useSmallVisual:true,
  behavior:'blink',fastBlink:true,blink:{on:1.50,warning:0.42,off:0.88,phase:1.15}
 });
 addSpecialCoinDef(
- city,'M-GUARD-02',24489,174,'경비 2 · 이중 경비·점멸 교량 상공 왕복 돌파',
+ city,'M-GUARD-02',24454,119,'경비 2 · 이중 경비·점멸 교량 상공 왕복 돌파',
  {x1:25060,x2:26400,yMin:440,yMax:590},
- {parentPlatformId:'M-GUARD-02-P',localOffsetX:39,localOffsetY:-36,requireLanding:true}
+ {parentPlatformId:'M-GUARD-02-P',localOffsetX:39,localOffsetY:-36,requireLanding:true,
+  allowedReturnPlatforms:['M-GND-BUKGYEONG','M-GRD-BR3B','M-G4-BLINK2']}
 );
 
 // --- M6. 북경성 광장 (25060 ~ 26800, bldgX = 26180, doorCenterX = 26465 단일 출입문 대표·부대표 이벤트 보존) ---
@@ -670,14 +675,22 @@ surface(erpien,9040,395,185,'stone',{id:'E-CITY-05B'});
 // Chasm E2-3 (9320..9960, 640px)
 surface(erpien,9480,480,180,'stone',{id:'E-CITY-06'});
 surface(erpien,9730,435,170,'stone',{id:'E-CITY-06B'});
-// [E2 황금 크레파스 #8: E-CITY-C01 — 마요 포획 추격 중 상층 처마 3단(9040->9360->9720) 돌파 후 전방 복귀]
-surface(erpien,9120,285,88,'stone',{id:'E-CITY-C01-P1',specialBranch:'E-CITY-C01',challenge:'special',useSmallVisual:true});
-surface(erpien,9410,210,80,'stone',{id:'E-CITY-C01-P2',specialBranch:'E-CITY-C01',challenge:'special',useSmallVisual:true});
-surface(erpien,9710,195,76,'stone',{id:'E-CITY-C01-P3',specialBranch:'E-CITY-C01',challenge:'special',useSmallVisual:true});
+// [Gate 10 (P0): E2 황금 크레파스 #8 `E-CITY-C01` — 전방 세로 차단벽 + 하향 통과 금지 + 좌향 역방향 후퇴 강제!]
+// - `dropThroughDisabled: true` prevents `↓+SPACE` drop-through on `E-CITY-C01-P1..P3`.
+// - `E-CITY-C01-WALL` (x=9802, y=-90..340, noTopLand:true) blocks jumping forward from P3 to E-CITY-GND4.
+// - `E-CITY-C01-EAVES` (x=9345..9854, y=306..340, noTopLand:true) blocks dropping straight down from P2/P3 onto E-CITY-06/06B
+//   and blocks climbing directly from the right, while leaving 95~140px clear headroom above main-route E-CITY-06 (y=480) & E-CITY-06B (y=435).
+// - After acquiring `E-CITY-C01` on P3 (`PENDING`), Dudu MUST retreat leftward (`P3 -> P2 -> P1 -> E-CITY-05B / E-CITY-GND3`) while Mayo pursues!
+surface(erpien,9120,285,88,'stone',{id:'E-CITY-C01-P1',specialBranch:'E-CITY-C01',challenge:'special',useSmallVisual:true,dropThroughDisabled:true});
+surface(erpien,9410,210,80,'stone',{id:'E-CITY-C01-P2',specialBranch:'E-CITY-C01',challenge:'special',useSmallVisual:true,dropThroughDisabled:true});
+surface(erpien,9710,195,76,'stone',{id:'E-CITY-C01-P3',specialBranch:'E-CITY-C01',challenge:'special',useSmallVisual:true,dropThroughDisabled:true});
+wall(erpien,9802,-90,52,430,'stone',{id:'E-CITY-C01-WALL',wallSide:'right',noTopLand:true,role:'E-CITY-C01 전방 탈출 차단 세로벽(상단 착지 불가)'});
+wall(erpien,9345,306,509,34,'stone',{id:'E-CITY-C01-EAVES',ceiling:true,noTopLand:true,role:'E-CITY-C01 직하강 탈출 및 우측 역진입 차단 처마(상단 착지 불가)'});
 addSpecialCoinDef(
- erpien,'E-CITY-C01',9748,159,'도심 1 · 마요 추격 상층 처마 3단 돌파',
- {x1:9960,x2:10880,yMin:420,yMax:585},
- {parentPlatformId:'E-CITY-C01-P3',localOffsetX:38,localOffsetY:-36,requireLanding:true}
+ erpien,'E-CITY-C01',9748,159,'도심 1 · 마요 추격 상층 처마 돌파 후 좌향 역방향 후퇴',
+ {x1:8680,x2:10880,yMin:380,yMax:585},
+ {parentPlatformId:'E-CITY-C01-P3',localOffsetX:38,localOffsetY:-36,requireLanding:true,
+  allowedReturnPlatforms:['E-CITY-05B','E-CITY-05','E-CITY-GND3','E-CITY-06','E-CITY-06B','E-CITY-GND4','E-CITY-07']}
 );
 
 floor(erpien,9960,920,'stone',580,{id:'E-CITY-GND4'});

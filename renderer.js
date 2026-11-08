@@ -741,6 +741,7 @@ function drawThinPlatformVisual(a, drawX, drawY) {
 function drawStageProps(layerFilter) {
   const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
   if (!l || !l.villageProps || !l.villageProps.length) return;
+  const topA = l.id === 'village' ? (getTerrainImg('village', '', 'ground_top_a') || getTerrainImg('village', '', 'ground_top')) : null;
   for (const fp of l.villageProps) {
     if (fp.layer !== layerFilter) continue;
     if (fp.x2 < rCam - 160 || fp.x1 > rCam + W + 160) continue;
@@ -749,8 +750,24 @@ function drawStageProps(layerFilter) {
     const dw = Math.round(im.width * fp.scale);
     const dh = Math.round(im.height * fp.scale);
     const dx = Math.round(fp.x - dw * 0.5);
-    const dy = Math.round(fp.anchorBottom - fp.walkOffset * fp.scale);
+    const anchorRow = (typeof fp.groundAnchorPx === 'number') ? fp.groundAnchorPx : fp.walkOffset;
+    const dy = Math.round(fp.anchorBottom - anchorRow * fp.scale);
     ctx.drawImage(im, dx, dy, dw, dh);
+    // Gate 6 (P0): Subtle natural grass-blade rim blend at the bottom 5px of village props so cottages/stalls/gates/fences bed seamlessly into the lawn
+    if (topA && fp.anchorBottom === 580 && l.id === 'village') {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(dx + 6, 581, Math.max(0, dw - 12), 8);
+      ctx.clip();
+      ctx.globalAlpha = 0.65;
+      const tileW = Math.round(topA.width * 0.54);
+      const tileH = Math.round(topA.height * 0.54);
+      const startX = Math.floor(dx / tileW) * tileW;
+      for (let gx = startX; gx < dx + dw; gx += tileW) {
+        ctx.drawImage(topA, gx, 555, tileW + 1, tileH);
+      }
+      ctx.restore();
+    }
   }
 }
 

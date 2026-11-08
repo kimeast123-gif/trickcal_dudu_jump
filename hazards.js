@@ -191,10 +191,10 @@ const encounterPresets={
  tower:{levelId:'monatium',title:'상승 타워 입구',x:4180,y:580},
  skywalk:{levelId:'monatium',title:'모나티엄 옥상 입구',x:6160,y:-1785},
  descent:{levelId:'monatium',title:'옥상 하강 입구',x:12120,y:-1730},
- guards:{levelId:'monatium',title:'특수 진압반 구역',x:23480,y:580},
+ guards:{levelId:'monatium',title:'진압반 공중 교량',x:17120,y:580},
  bukgyeong:{levelId:'monatium',title:'북경성 앞 광장',x:25750,y:580},
  mayo:{levelId:'erpien',title:'에르피엔 도심 입구',x:5520,y:580},
- fairies:{levelId:'erpien',title:'빵집 처마 거리',x:8500,y:580},
+ fairies:{levelId:'erpien',title:'빵집 처마 거리',x:8950,y:580},
  marie:{levelId:'erpien',title:'마리 광장 진입로',x:16370,y:540}
 };
 
@@ -300,19 +300,19 @@ function resetHazards(){
   const doorX=BUKGYEONG_LANDMARK.doorCenterX;
   bukgyeongEvent=initBukgyeongEvent();
   actors=[
-   // M5-G1 (SKY_SHIFT = +1000: M-G1-LOW1 [14520..14810] & M-G1-LOW2 [15790..16100])
-   actor('guard1',14760,455,{id:'G-01',platformId:'M-G1-LOW1',patrol:195,baseSpeed:162,returnSpeed:132,speedMult:1.05,patrolDir:-1}),
+   // M5-G1 (Gate 8 de-crowded: M-G1-LOW1 [14500..14790, y=420] & M-G1-LOW2 [15790..16100, y=480])
+   actor('guard1',14740,420,{id:'G-01',platformId:'M-G1-LOW1',patrol:195,baseSpeed:162,returnSpeed:132,speedMult:1.05,patrolDir:-1}),
    actor('guard2',16040,480,{id:'G-02',platformId:'M-G1-LOW2',patrol:215,baseSpeed:176,returnSpeed:142,speedMult:1.08,patrolDir:-1,delay:0.30}),
-   // M5-G2 (SKY_SHIFT = +1000: M-GRD-BR1 [17660..17960], M-GRD-BR2 [19260..19550])
-   actor('guard1',17915,475,{id:'G-03',platformId:'M-GRD-BR1',patrol:215,baseSpeed:172,returnSpeed:138,speedMult:1.15,patrolDir:-1}),
-   actor('guard2',19305,465,{id:'G-04',platformId:'M-GRD-BR2',patrol:205,baseSpeed:182,returnSpeed:145,speedMult:1.15,patrolDir:1,delay:0.35}),
-   // M5-G3 (SKY_SHIFT = +1000: M-G3-MID1 [21120..21410], M-G3-UPPER [21540..21840], M-G3-MID2 [22760..23010])
-   actor('guard1',21360,495,{id:'G-05',platformId:'M-G3-MID1',patrol:200,baseSpeed:168,returnSpeed:138,speedMult:1.08,patrolDir:-1}),
-   actor('guard2',21585,355,{id:'G-06',platformId:'M-G3-UPPER',patrol:210,baseSpeed:184,returnSpeed:146,speedMult:1.10,patrolDir:1,delay:0.40}),
+   // M5-G2 (Gate 8 de-crowded: M-GRD-BR1 [17650..17950, y=420], M-GRD-BR2 [19240..19530, y=460])
+   actor('guard1',17905,420,{id:'G-03',platformId:'M-GRD-BR1',patrol:215,baseSpeed:172,returnSpeed:138,speedMult:1.15,patrolDir:-1}),
+   actor('guard2',19285,460,{id:'G-04',platformId:'M-GRD-BR2',patrol:205,baseSpeed:182,returnSpeed:145,speedMult:1.15,patrolDir:1,delay:0.35}),
+   // M5-G3 (Gate 8 de-crowded: M-G3-MID1 [21090..21375, y=500], M-G3-UPPER [21560..21855, y=345], M-G3-MID2 [22765..23010, y=515])
+   actor('guard1',21330,500,{id:'G-05',platformId:'M-G3-MID1',patrol:195,baseSpeed:168,returnSpeed:138,speedMult:1.08,patrolDir:-1}),
+   actor('guard2',21605,345,{id:'G-06',platformId:'M-G3-UPPER',patrol:205,baseSpeed:184,returnSpeed:146,speedMult:1.10,patrolDir:1,delay:0.40}),
    actor('guard1',22960,515,{id:'G-06B',platformId:'M-G3-MID2',patrol:165,baseSpeed:172,returnSpeed:140,speedMult:1.08,patrolDir:-1,delay:0.20}),
-   // M5-G4 (SKY_SHIFT = +1000: M-GRD-BR3A [23830..24110] & M-GRD-BR3B [24510..24800])
-   actor('guard1',24065,485,{id:'G-07-BR3',platformId:'M-GRD-BR3A',patrol:205,baseSpeed:168,returnSpeed:165,speedMult:1.5,specialGuard:true,patrolDir:-1,delay:0.0}),
-   actor('guard2',24550,410,{id:'G-08-BR3',platformId:'M-GRD-BR3B',patrol:215,baseSpeed:182,returnSpeed:174,speedMult:1.5,specialGuard:true,patrolDir:1,delay:0.55}),
+   // M5-G4 (Gate 8 de-crowded: M-GRD-BR3A [23780..24060, y=485] & M-GRD-BR3B [24470..24755, y=400])
+   actor('guard1',24015,485,{id:'G-07-BR3',platformId:'M-GRD-BR3A',patrol:205,baseSpeed:168,returnSpeed:165,speedMult:1.5,specialGuard:true,patrolDir:-1,delay:0.0}),
+   actor('guard2',24515,400,{id:'G-08-BR3',platformId:'M-GRD-BR3B',patrol:210,baseSpeed:182,returnSpeed:174,speedMult:1.5,specialGuard:true,patrolDir:1,delay:0.55}),
    // M6 (25060~26800): Beijing Castle Single-Door Easter Egg at doorCenterX = 26465
    actor('president',doorX,580,{photo:true,cutout:'president_cutout',patrol:390,speed:230,hiddenInDoor:true}),
    actor('vice',doorX,580,{photo:true,cutout:'vice_cutout',patrol:510,speed:305,hiddenInDoor:true})
@@ -345,7 +345,7 @@ function resetHazards(){
     actor('fairy1',12220,580,{id:'F-03',platformId:'E-CITY-GND5',patrol:185,baseSpeed:192,speedMult:1.20}),
     actor('marie',e.mariePerchX,e.mariePerchY,{
      id:'MARIE',platformId:'B-MARIE-PODIUM',retreating:false,
-     groggyTimer:0,groggyBubble:''
+     groggyTimer:0,invulnTimer:0,groggyBubble:''
     })
    ];
    arena={
@@ -358,6 +358,7 @@ function resetHazards(){
     bannerText:'마요를 유도해 마리를 세 번 맞추세요!',
     marieHits:0,
     maxHits:3,
+    marieInvulnTimer:0,
     groggyTimer:0,
     finaleTimer:0,
     finaleStep:0,
@@ -623,8 +624,9 @@ function updateWalker(a,dt){
 function getMayoProfile(px){
  const e=STAGE_ANCHORS.erpien;
  const prog=clamp((px-e.mayoActivateX)/Math.max(1,e.marieStart-e.mayoActivateX),0,1);
- const chaseSpeed=Math.round(278+26*Math.pow(prog,0.85)); // 278 -> 304 px/s (strictly < Dudu's 320 px/s!)
- const smoothAccel=Math.round(540+180*prog);
+ // Gate 9 (P1): Initial speed ~279 px/s, late-stage top pursuit speed 314 px/s (strictly < Dudu's 320 px/s run speed, clear dash separation!)
+ const chaseSpeed=Math.round(279+35*Math.pow(prog,0.85)); // 279 -> 314 px/s
+ const smoothAccel=Math.round(550+210*prog);
  const stage=prog<0.35?'A':prog<0.70?'B':'C';
  return {
   stage,progress:Number(prog.toFixed(3)),
@@ -729,6 +731,7 @@ function enterMarieBossArena(){
   marie.prevY=marie.y;
   marie.face=-1;
   marie.groggyTimer=0;
+  marie.invulnTimer=0;
   marie.groggyBubble='';
   npcClip(marie,'idle');
  }
@@ -740,6 +743,7 @@ function enterMarieBossArena(){
  arena.bannerTimer=2.8;
  arena.bannerText='마요를 유도해 마리를 세 번 맞추세요!';
  arena.marieHits=0;
+ arena.marieInvulnTimer=0;
  arena.groggyTimer=0;
  arena.finaleTimer=0;
  arena.finaleStep=0;
@@ -1128,23 +1132,38 @@ function releaseBombs(a){
  const vIdx=arena.volleys||0;
  const handX=a.x+a.face*24,handY=a.y-82;
 
- function pickSurfaceY(tx){
+ // Gate 11 (P0): Arena-aware surface & pit/air corridor target resolver
+ function pickArenaTarget(tx){
   const surf=platforms.filter(pl=>!pl.wall&&!pl.ceiling&&pl.id!=='B-MARIE-PODIUM'&&tx>=pl.x&&tx<=pl.x+pl.w).sort((u,v)=>u.y-v.y)[0];
-  return surf?surf.y:520;
+  if(surf)return {ty:surf.y,overPit:false,surfaceId:surf.id};
+  // Open chasm between platforms (x = 16010..16750): bomb arcs through mid-air combat corridor and falls into the chasm (ty=615) without a fake mid-air ground explosion at y=520!
+  return {ty:615,overPit:true,surfaceId:'PIT-AIR-CORRIDOR'};
+ }
+ function pickSurfaceY(tx){
+  return pickArenaTarget(tx).ty;
  }
 
- // 1. Base 3 Bombs (dispersed across left/center/right sectors with non-overlapping jitter)
- const baseAnchors=[15905,16365,16655];
+ // 1. Gate 11 (P0): Base 3 Bombs cover the ENTIRE combat arena (`15750..16940`: Left Ground/Pads, Center Pit/Spawn/Air Corridors, Right Pads/Exit Ground) across 0/3, 1/3, and 2/3!
+ const arenaZones=[
+  {minX:15755,maxX:16155}, // Left sector: B-ENTRY-LEFT, B-LEFT-PAD-A/B/C, left pit gap
+  {minX:16175,maxX:16555}, // Center sector: Left/Right pit air corridors, B-CENTER-SPAWN, B-RIGHT-PAD-A
+  {minX:16575,maxX:16935}  // Right sector: B-RIGHT-PAD-B/C, right pit gap, B-EXIT-RIGHT
+ ];
+ const chosenBaseX=[];
  for(let i=0;i<3;i++){
-  const u=npcSeedUnit(911+hits*37,vIdx*13+i*7);
-  const jitter=Math.round((u-0.5)*76);
-  const tx=clamp(baseAnchors[i]+jitter,e.marieStart+80,e.exitWallX-130);
-  const ty=pickSurfaceY(tx);
+  const z=arenaZones[i];
+  const u=npcSeedUnit(911+hits*53,vIdx*19+i*11);
+  let tx=Math.round(z.minX+u*(z.maxX-z.minX));
+  if(chosenBaseX.length>0&&Math.abs(tx-chosenBaseX[chosenBaseX.length-1])<180){
+   tx=clamp(chosenBaseX[chosenBaseX.length-1]+195,z.minX,z.maxX);
+  }
+  chosenBaseX.push(tx);
+  const tgt=pickArenaTarget(tx);
   bombs.push({
    bombIndex:i+1,
    bombKind:'base',
    x0:handX,y0:handY,
-   tx,ty,
+   tx,ty:tgt.ty,overPit:tgt.overPit,surfaceId:tgt.surfaceId,
    arcHeight:210,
    bx:handX,by:handY,prevBx:handX,prevBy:handY,
    age:-i*0.20,flight:1.72,radius:46,bodyRadius:13,hitPlayerDone:false,sounded:false,finale:false
@@ -1203,6 +1222,10 @@ function updateMarie(a,dt){
   return;
  }
 
+ if(arena.marieInvulnTimer>0){
+  arena.marieInvulnTimer=Math.max(0,arena.marieInvulnTimer-dt);
+ }
+ a.invulnTimer=arena.marieInvulnTimer||0;
  if(arena.groggyTimer>0){
   arena.groggyTimer=Math.max(0,arena.groggyTimer-dt);
   a.groggyTimer=arena.groggyTimer;
@@ -1311,20 +1334,29 @@ function updateHazards(dt){
   wd.y+=wd.vy*dt;
   if(wd.hit||wd.age>wd.maxAge)continue;
 
-  // 1. In E3 Boss Arena: Check First-Contact with Marie's Hitbox (`x = 16342..16398, y = 210..303`)!
-  if(wd.bossLureDart&&arena&&arena.phase==='combat'&&arena.groggyTimer<=0&&marie&&!marie.retreating){
+  // 1. Gate 12 (P0): In E3 Boss Arena, check Marie's Hitbox (`x = 16342..16398, y = 210..303`) with strict 2.00s Invulnerability & Blink!
+  if(wd.bossLureDart&&arena&&arena.phase==='combat'&&marie&&!marie.retreating){
    const mBox=segmentIntersectsBox(wd.prevX,wd.prevY,wd.x,wd.y,e.mariePerchX-28,e.mariePerchY-95,e.mariePerchX+28,e.mariePerchY-2);
    if(mBox.hit){
     wd.hit=true;
+    if((arena.marieInvulnTimer||0)>0||(arena.groggyTimer||0)>0){
+     // Complete immunity during the 2.00s invulnerability window: consume dart with 0 additional hit count!
+     burst(mBox.x,mBox.y,'#ffe066',6);
+     continue;
+    }
     arena.marieHits=Math.min(3,(arena.marieHits||0)+1);
     burst(mBox.x,mBox.y,'#63e6be',18);
     burst(e.mariePerchX,e.mariePerchY-54,'#ffd43b',14);
     tone(820,0.14,'triangle',0.05);
     if(arena.marieHits>=3){
+     arena.marieInvulnTimer=0;
+     marie.invulnTimer=0;
      startBoss3HitFinale();
     }else{
-     arena.groggyTimer=1.60;
-     marie.groggyTimer=1.60;
+     arena.marieInvulnTimer=2.00;
+     arena.groggyTimer=2.00;
+     marie.invulnTimer=2.00;
+     marie.groggyTimer=2.00;
      bombs=[];
      marie.groggyBubble=arena.marieHits===1?'으앗! 마요야 어딜 쏘는 거야?! (1/3)':'아야야! 마요 눈 똑바로 안 떠?! (2/3)';
      notify(`마리에게 마요 바람총 명중! (${arena.marieHits}/3)`);
@@ -1374,10 +1406,14 @@ function updateHazards(dt){
     }
    }
   }else if(b.age>=b.flight&&b.age<b.flight+.35){
-   if(!b.sounded){b.sounded=true;burst(b.tx,b.ty-10,'#ffce8f',12);tone(110,.16,'triangle',.035);}
-   if(!b.hitPlayerDone&&Math.abs(p.x-b.tx)<b.radius+14&&p.y>b.ty-56&&p.y-56<b.ty+10){
-    b.hitPlayerDone=true;
-    applyStunHit(b.tx,'marie_bomb');
+   if(b.overPit){
+    b.sounded=true;
+   }else{
+    if(!b.sounded){b.sounded=true;burst(b.tx,b.ty-10,'#ffce8f',12);tone(110,.16,'triangle',.035);}
+    if(!b.hitPlayerDone&&Math.abs(p.x-b.tx)<b.radius+14&&p.y>b.ty-56&&p.y-56<b.ty+10){
+     b.hitPlayerDone=true;
+     applyStunHit(b.tx,'marie_bomb');
+    }
    }
   }
  }
@@ -1577,6 +1613,9 @@ function drawActors(){
    drawNpcFrame(a,a.clip,a.anim,a.blend);
    ctx.save();
    ctx.translate(Math.round(ax),Math.round(ay));
+   if(a.kind==='marie'&&arena&&(arena.marieInvulnTimer||0)>0&&arena.phase==='combat'){
+    ctx.globalAlpha=(Math.floor(hazardClock*16)%2===0)?0.95:0.35;
+   }
    ctx.scale(-a.face,1);
    const m=npcMeta[a.kind+'_idle'],size=m.display;
    ctx.drawImage(npcCanvas,-m.anchor/256*size,-m.foot/256*size,size,size);
@@ -1773,6 +1812,20 @@ function practiceEncounter(key){
  const initCam=typeof computeInitialCameraForPoint==='function'?computeInitialCameraForPoint(p.x,p.y):{cam:Math.max(0,Math.min(END-W,p.x-W*.42)),camY:0};
  cam=initCam.cam;
  camY=initCam.camY;
+ if(key==='mayo'||key==='fairies'){
+  const mayoAct=actors.find(a=>a.kind==='mayo');
+  if(mayoAct){
+   mayoAct.active=true;
+   mayoAct.mode='CHASE';
+   mayoAct.x=Math.max(5420,p.x-380);
+   mayoAct.prevX=mayoAct.x;
+   mayoAct.y=580;
+   mayoAct.prevY=580;
+   mayoAct.spawnGrace=0.8;
+  }
+ }else if(key==='marie'){
+  if(typeof enterMarieBossArena==='function')enterMarieBossArena();
+ }
  if(typeof syncRenderCoords==='function')syncRenderCoords();
  state='playing';updateRegionHud();keys.clear();canvas.focus();
 }
