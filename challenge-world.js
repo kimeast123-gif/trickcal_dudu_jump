@@ -1,4 +1,5 @@
 'use strict';
+// TEST22.1 Stage-3 Difficulty Hotfix: preserves TEST22 1.5x elevation and 1st floor, raises 2nd/3rd-floor shelter perches into actual dart sweep.
 // TEST22 Challenge World (<추억의 인내의 숲> — Gates 1, 2, 3, 4, 5):
 // - 1.5x Vertical Climb Expansion across all 3 stages:
 //   * Stage 1 (<가지와 가지 사이>, 3,400px, y = 580 -> -3,530, total rise = 4,110px = 1.50x):
@@ -6,7 +7,7 @@
 //   * Stage 2 (<진압반의 징검다리>, 1,600px, y = 580 -> -2,900, total rise = 3,480px = 1.50x):
 //     Preserves existing 7 guards (CG-01..07), 3 barriers (KB-01..03), and 4 blinking relays, and extends upward with Tier 4 & Tier 5 composite guard + barrier + blink relay climbs (CG-08..10, KB-04..06).
 //   * Stage 3 (<마요의 바람총 숲>, 3,600px, y = 580 -> -2,030, total rise = 2,610px = 1.50x):
-//     Preserves praised 1st-floor course under MAYO-C1 (y=270, dartY=216, 910px/s), synchronizes MAYO-C2 (y=-660, dartY=-714, 950px/s) & MAYO-C3 (y=-1750, dartY=-1804, 990px/s), and places 4 mandatory exposed perches on Tier 2 and 4 mandatory exposed perches on Tier 3 inside the swept dart collision band interspersed with intentional safe shelters.
+//     Preserves praised 1st-floor course under MAYO-C1 (y=270, dartY=216, 910px/s), synchronizes MAYO-C2 (y=-660, dartY=-714, 950px/s) & MAYO-C3 (y=-1750, dartY=-1804, 990px/s), and exposes 6 perches in Tier 2 and 7 in Tier 3 to the real dart collision band while retaining limited safe platforms.
 // - Gate 5 (P0): Strictly 2 Checkpoints per stage (`sections.length === 2`: Start + 50% Midpoint).
 
 const challengeLevels = [];
@@ -276,13 +277,13 @@ challengeLevels.push(chStage2);
 // CHALLENGE STAGE 3: <마요의 바람총 숲> (Gates 1, 4, 5: y = 580 -> -2,030, Rise = 2,610px, 2 Checkpoints)
 // - Preserves 1st-floor course under MAYO-C1 (y=270, dartY=216, 910px/s).
 // - Synchronizes MAYO-C2 (y=-660, dartY=-714, 950px/s) and MAYO-C3 (y=-1750, dartY=-1804, 990px/s).
-// - Places 4 mandatory exposed perches on Tier 2 (`C3-A2-P2, P3, P5, P7` at y=-675..-690 where standing player center y-34 is within 4~15px of dartY=-714)
-//   and 4 mandatory exposed perches on Tier 3 (`C3-A3-P2, P3, P5, P7` at y=-1765..-1780 where standing player center y-34 is within 5~10px of dartY=-1804),
-//   interspersed with intentional safe shelters (`C3-A2-P1`, `C3-A2-P4` Checkpoint #2, `C3-A3-P1`, `C3-A3-P4`).
+// - Exposes 6 / 9 traversal perches on Tier 2 to MAYO-C2 dartY=-714; checkpoint P4 stays safe.
+// - Exposes 7 / 9 traversal perches on Tier 3 to MAYO-C3 dartY=-1804; P6 upper shelter stays safe.
+//   intentional respites retained at `C3-A2-P4` (mid checkpoint), `C3-A2-P6` (high lane), and `C3-A3-P6` (high lane); formerly safe low perches P1/P4/P8 now swept by darts.
 // ============================================================================
 const chStage3 = makeChallengeStage(
   'CH-S3', 3, '3단계 · 마요의 바람총 숲',
-  '1.5배 수직 확장(y=580→-2030) · 1층 탄막 원형 보존 + 2·3층 탄도 노출 필수 발판 & 안전 쉼터 교차',
+  'TEST21 대비 실제 상승고도 1.5배(1740→2610px) · 1층 보존 · 2·3층 탄도 노출 강화(체크포인트 2개)',
   3600, { killY: 820, cameraProfile: 'challenge_vertical', minCamY: -2350 }
 );
 
@@ -320,18 +321,18 @@ chSurface(chStage3, 2790, -355, 70, 'grass', { id: 'C3-A1-UP4', tier: 1, useSmal
 chSurface(chStage3, 3040, -460, 185, 'grass', { id: 'C3-CP1', tier: 2, checkpointSafe: true, previous: 'C3-A1-UP4', nextTarget: 'C3-A2-P1', role: '동쪽 회랑 반환 안전 쉼터 (Act 2 좌향 출발점 · 비세이브)' });
 
 // --- Act 2 (2nd Floor — Leftward Traverse under MAYO-C2 dartY=-714: 4 Mandatory Exposed Perches + Safe Shelters) ---
-chSurface(chStage3, 2810, -585, 68, 'grass', { id: 'C3-A2-P1', tier: 2, useSmallVisual: true, previous: 'C3-CP1', nextTarget: 'C3-A2-P2', role: '2층 도입 · C2 탄도(y=-714) 하방 안전 관찰 발판(좌향)' });
-chSurface(chStage3, 2520, -675, 66, 'grass', { id: 'C3-A2-P2', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P1', nextTarget: 'C3-A2-P3', role: '2층 탄도노출 #1 · 정지 시 C2 탄환(y=-714) 피격 필수 구간(y=-675)' });
-chSurface(chStage3, 2215, -690, 64, 'grass', { id: 'C3-A2-P3', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P2', nextTarget: 'C3-A2-P4', role: '2층 탄도노출 #2 · 정지 시 C2 탄환 피격 필수 구간(y=-690)' });
+chSurface(chStage3, 2810, -650, 68, 'grass', { id: 'C3-A2-P1', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-CP1', nextTarget: 'C3-A2-P2', role: '2층 첫 사선 진입 · 입구에서 190px 상승 후 탄도 내 착지' });
+chSurface(chStage3, 2520, -685, 66, 'grass', { id: 'C3-A2-P2', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P1', nextTarget: 'C3-A2-P3', role: '2층 탄도 정면 노출 #1 · 정지 대기 시 피격' });
+chSurface(chStage3, 2215, -695, 64, 'grass', { id: 'C3-A2-P3', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P2', nextTarget: 'C3-A2-P4', role: '2층 탄도 정면 노출 #2 · 정지 대기 시 피격' });
 
 // Checkpoint #2 at 2nd-Floor Midpoint Safe Shelter (y = -595, safely below dartY=-714!)
 chSurface(chStage3, 1850, -595, 150, 'grass', { id: 'C3-A2-P4', tier: 2, checkpointSafe: true, previous: 'C3-A2-P3', nextTarget: 'C3-A2-P5', role: '2층 중앙 안전 쉼터 · 중간 체크포인트 (#2/2, 탄도 하방 안전지대)' });
 chCheckpoint(chStage3, 1925, -595, '2층 중앙 안전 쉼터', '3단계 2층 중반 중간 체크포인트 (#2/2)');
 
-chSurface(chStage3, 1575, -680, 64, 'grass', { id: 'C3-A2-P5', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P4', nextTarget: 'C3-A2-P6', role: '2층 탄도노출 #3 · 정지 시 C2 탄환 정면 피격 필수 구간(y=-680)' });
+chSurface(chStage3, 1575, -692, 64, 'grass', { id: 'C3-A2-P5', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P4', nextTarget: 'C3-A2-P6', role: '2층 중반 사선 재진입 · 안전 쉼터 후 즉시 탄도 노출' });
 chSurface(chStage3, 1290, -775, 64, 'grass', { id: 'C3-A2-P6', tier: 2, useSmallVisual: true, previous: 'C3-A2-P5', nextTarget: 'C3-A2-P7', role: '2층 상방 도약 · 탄도 상부 통과 징검다리(y=-775)' });
-chSurface(chStage3, 1005, -675, 64, 'grass', { id: 'C3-A2-P7', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P6', nextTarget: 'C3-A2-P8', role: '2층 탄도노출 #4 · 정지 시 C2 탄환 피격 필수 구간(y=-675)' });
-chSurface(chStage3, 715, -780, 64, 'grass', { id: 'C3-A2-P8', tier: 2, useSmallVisual: true, previous: 'C3-A2-P7', nextTarget: 'C3-A2-P9', role: '2층 천장 좌측 끝(x=560) 접근 안전 발판(y=-780)' });
+chSurface(chStage3, 1005, -688, 64, 'grass', { id: 'C3-A2-P7', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P6', nextTarget: 'C3-A2-P8', role: '2층 후반 탄도 노출 · 고속 이동 요구' });
+chSurface(chStage3, 715, -700, 64, 'grass', { id: 'C3-A2-P8', tier: 2, useSmallVisual: true, exposedToTurret: 'MAYO-C2', previous: 'C3-A2-P7', nextTarget: 'C3-A2-P9', role: '2층 후반 연속 탄도 노출 · 이전 상공 무풍 대기발판 교정' });
 chSurface(chStage3, 430, -885, 68, 'grass', { id: 'C3-A2-P9', tier: 2, useSmallVisual: true, previous: 'C3-A2-P8', nextTarget: 'C3-A2-UP1', role: '상승 전환 · 좌측 개구부(x<560) 통과 발판(y=-885)' });
 
 // Left-Side Vertical Ascent Shaft (y = -885 -> -1,560, 4 vertical steps)
@@ -344,14 +345,14 @@ chSurface(chStage3, 380, -1440, 70, 'grass', { id: 'C3-A2-UP4', tier: 2, useSmal
 chSurface(chStage3, 165, -1560, 180, 'grass', { id: 'C3-CP2', tier: 3, checkpointSafe: true, previous: 'C3-A2-UP4', nextTarget: 'C3-A3-P1', role: '서쪽 수관 반환 안전 쉼터 (Act 3 우향 출발점 · 비세이브)' });
 
 // --- Act 3 (3rd Floor — Rightward Finale under MAYO-C3 dartY=-1804: 4 Mandatory Exposed Perches + Safe Shelters -> y=-2,030) ---
-chSurface(chStage3, 520, -1675, 68, 'grass', { id: 'C3-A3-P1', tier: 3, useSmallVisual: true, previous: 'C3-CP2', nextTarget: 'C3-A3-P2', role: '3층 도입 · C3 탄도(y=-1804) 하방 안전 관찰 발판' });
-chSurface(chStage3, 815, -1765, 66, 'grass', { id: 'C3-A3-P2', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P1', nextTarget: 'C3-A3-P3', role: '3층 탄도노출 #1 · 정지 시 C3 탄환(y=-1804) 피격 필수 구간(y=-1765)' });
-chSurface(chStage3, 1115, -1780, 64, 'grass', { id: 'C3-A3-P3', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P2', nextTarget: 'C3-A3-P4', role: '3층 탄도노출 #2 · 정지 시 C3 탄환 피격 필수 구간(y=-1780)' });
-chSurface(chStage3, 1420, -1675, 76, 'grass', { id: 'C3-A3-P4', tier: 3, useSmallVisual: true, checkpointSafe: true, previous: 'C3-A3-P3', nextTarget: 'C3-A3-P5', role: '3층 중간 안전 쉼터 · 탄도 하방 대기 안전 발판(y=-1675)' });
-chSurface(chStage3, 1730, -1770, 64, 'grass', { id: 'C3-A3-P5', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P4', nextTarget: 'C3-A3-P6', role: '3층 탄도노출 #3 · 정지 시 C3 탄환 정면 피격 필수 구간(y=-1770)' });
+chSurface(chStage3, 520, -1750, 68, 'grass', { id: 'C3-A3-P1', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-CP2', nextTarget: 'C3-A3-P2', role: '3층 첫 사선 진입 · 반환점에서 190px 상승 후 탄도 내 착지' });
+chSurface(chStage3, 815, -1772, 66, 'grass', { id: 'C3-A3-P2', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P1', nextTarget: 'C3-A3-P3', role: '3층 탄도 노출 #1 · 정지 대기 시 피격' });
+chSurface(chStage3, 1115, -1784, 64, 'grass', { id: 'C3-A3-P3', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P2', nextTarget: 'C3-A3-P4', role: '3층 탄도 노출 #2 · 정지 대기 시 피격' });
+chSurface(chStage3, 1420, -1776, 76, 'grass', { id: 'C3-A3-P4', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', checkpointSafe: true, previous: 'C3-A3-P3', nextTarget: 'C3-A3-P5', role: '3층 중반 탄도 노출 · 기존 하방 영구 안전 쉼터 제거' });
+chSurface(chStage3, 1730, -1781, 64, 'grass', { id: 'C3-A3-P5', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P4', nextTarget: 'C3-A3-P6', role: '3층 중반 탄도 노출 #3 · 신속한 점프·대시 필요' });
 chSurface(chStage3, 2035, -1875, 62, 'grass', { id: 'C3-A3-P6', tier: 3, useSmallVisual: true, previous: 'C3-A3-P5', nextTarget: 'C3-A3-P7', role: '3층 상방 도약 · 탄도 상부 통과 발판(y=-1875)' });
-chSurface(chStage3, 2340, -1765, 62, 'grass', { id: 'C3-A3-P7', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P6', nextTarget: 'C3-A3-P8', role: '3층 탄도노출 #4 · 정지 시 C3 탄환 피격 필수 구간(y=-1765)' });
-chSurface(chStage3, 2640, -1895, 60, 'grass', { id: 'C3-A3-P8', tier: 3, useSmallVisual: true, previous: 'C3-A3-P7', nextTarget: 'C3-A3-P9', role: '정상 등반 #1 · 탄도 상부 탈출 도약(y=-1895)' });
+chSurface(chStage3, 2340, -1772, 62, 'grass', { id: 'C3-A3-P7', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P6', nextTarget: 'C3-A3-P8', role: '3층 후반 탄도 노출 · 상방 회피 발판 이후 재진입' });
+chSurface(chStage3, 2640, -1786, 60, 'grass', { id: 'C3-A3-P8', tier: 3, useSmallVisual: true, exposedToTurret: 'MAYO-C3', previous: 'C3-A3-P7', nextTarget: 'C3-A3-P9', role: '3층 후반 탄도 노출 · 기존 상공 무풍 대기발판 교정' });
 chSurface(chStage3, 2925, -1995, 58, 'grass', { id: 'C3-A3-P9', tier: 3, useSmallVisual: true, previous: 'C3-A3-P8', nextTarget: 'C3-GOAL-DECK', role: '정상 등반 #2 · 최상단 출구 전방 정밀 착지판(y=-1995)' });
 
 // Summit Goal Deck at y = -2,030 (Total Vertical Rise = 580 - (-2030) = 2,610px = 1.50x!)
@@ -368,13 +369,13 @@ chStage3.turrets = [
   {
     id: 'MAYO-C2', lane: 'mid', platformId: 'C3-TURRET-P2',
     x: 3495, y: -660, face: -1, muzzleOffsetY: -54, // dartY = -714 (shoots LEFT at 950 px/s across Act 2)
-    minCooldown: 1.75, maxCooldown: 2.40, warnTime: 0.36, attackDur: 0.42,
+    minCooldown: 1.48, maxCooldown: 1.92, warnTime: 0.36, attackDur: 0.42,
     dartSpeed: 950, minX: 80, maxX: 3495, seedOffset: 307, initialDelay: 0.90
   },
   {
     id: 'MAYO-C3', lane: 'high', platformId: 'C3-TURRET-P3',
     x: 95, y: -1750, face: 1, muzzleOffsetY: -54, // dartY = -1804 (shoots RIGHT at 990 px/s across Act 3)
-    minCooldown: 1.85, maxCooldown: 2.55, warnTime: 0.36, attackDur: 0.42,
+    minCooldown: 1.40, maxCooldown: 1.88, warnTime: 0.36, attackDur: 0.42,
     dartSpeed: 990, minX: 95, maxX: 3520, seedOffset: 619, initialDelay: 1.35
   }
 ];

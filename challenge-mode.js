@@ -4,13 +4,13 @@
 // - Never invokes `beginEvent()` or shows `opening.png` / `popup.png` during any Challenge Mode completion, retry, pause, or restart!
 // - Section 7-3: Uses versioned storage key `dudu_challenge_records_test18_v1` while reading/preserving legacy `dudu_test17_challenge_records_v1` untouched.
 
-const CHALLENGE_STORAGE_KEY_V18 = 'dudu_challenge_records_test22_v1';
+const CHALLENGE_STORAGE_KEY_V18 = 'dudu_challenge_records_test22_stage3hotfix_v1';
 const CHALLENGE_LEGACY_KEY_V21 = 'dudu_challenge_records_test21_v1';
 const CHALLENGE_LEGACY_KEY_V17 = 'dudu_test17_challenge_records_v1';
 
 const challengeState = {
   active: false,
-  gameVersion: 'TEST22',
+  gameVersion: 'TEST22-S3H1',
   runSeed: 101,
   attemptIndex: 0,
   checkpoint: 0,
@@ -23,7 +23,7 @@ const challengeState = {
   stageHits: [0, 0, 0],
   unlockedStage: 3,
   records: {
-    gameVersion: 'TEST22',
+    gameVersion: 'TEST22-S3H1',
     bestStageTimes: [null, null, null],
     bestTotalTime: null,
     clears: 0,
@@ -53,7 +53,7 @@ function loadChallengeRecords() {
 
 function saveChallengeRecords() {
   try {
-    challengeState.records.gameVersion = 'TEST22';
+    challengeState.records.gameVersion = 'TEST22-S3H1';
     challengeState.records.lastSeed = challengeState.runSeed;
     localStorage.setItem(CHALLENGE_STORAGE_KEY_V18, JSON.stringify(challengeState.records));
   } catch {}
