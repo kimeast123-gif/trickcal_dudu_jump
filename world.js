@@ -1514,7 +1514,14 @@ function updateRegionHud(){
  }
 }
 function checkJourney() {
- if (state !== 'playing' || transition || journeyResult) return;
+ if (state !== 'playing') return;
+ // TEST24 FIX8.2: preserve TEST23 tournament challenge goal dispatch.
+ // Challenge mode has its own level goals and must not use story scene transitions.
+ if (typeof gameMode !== 'undefined' && gameMode === 'challenge') {
+  if (typeof checkChallengeJourney === 'function') checkChallengeJourney();
+  return;
+ }
+ if (transition || journeyResult) return;
  const lv = getActiveLevel();
  if (!lv) return;
 
