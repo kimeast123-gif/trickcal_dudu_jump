@@ -1,3 +1,31 @@
+
+const MONATIUM_B_FRIEND_DEFS = [
+ {
+  id: 'monatium_elena', kind: 'elena', levelId: 'monatium_b',
+  x: 7100, y: 580, face: -1,
+  idleClip: 'idle', happyClip: 'idle', disableHappy: true,
+  greetingText: '어 그래 두두인지 뭔지... 여론이 아직 않좋으니 빨리 가라구',
+  happyText: '',
+  greetRadius: 175, happyRadius: 0, happyDur: 0
+ },
+ {
+  id: 'monatium_amelia', kind: 'amelia', levelId: 'monatium_b',
+  x: 7380, y: 580, face: -1,
+  idleClip: 'idle', happyClip: 'idle', disableHappy: true,
+  greetingText: '저는 아망이 아니라 아멜리아 입니다! 아.멜.리.아',
+  happyText: '',
+  greetRadius: 175, happyRadius: 0, happyDur: 0
+ },
+ {
+  id: 'monatium_canna', kind: 'canna', levelId: 'monatium_b',
+  x: 7900, y: 580, face: -1,
+  idleClip: 'idle', happyClip: 'idle', disableHappy: true,
+  greetingText: '캬~ 볼케니카 휴가는 참 좋았는데! 별일 없었겠죠? 이 귀여운 꼬마용족 친구는 누구?',
+  happyText: '',
+  greetRadius: 175, happyRadius: 0, happyDur: 0
+ }
+];
+
 'use strict';
 // TEST12 Hazards & Encounters:
 // - Gate G3: Monatium Guards (`guard1`, `guard2`) have active collision (`a.danger = true`) across ALL states (`wait`, `warn`, `rush`, `rest`, `return`) with swept horizontal segment check + strict vertical separation (0 false hits underneath bridges).
@@ -7,7 +35,9 @@
 // - Gate G5-1: Non-essential encounter toast popups removed while preserving Mayo speech bubbles, Marie bomb telegraphs, Bukgyeong event, and Temple retreat (`x = 14300`).
 const npcImages={};
 let actors=[],bombs=[],windDarts=[],hazardClock=0,hitCount=0,arena=null,bukgyeongEvent=null;
-let erpienChaseCompleted=false,erpienRetreatEvent=null,mayoCatchCount=0;
+let erpienChaseCompleted=false,erpienRetreatEvent=null,mayoCatchCount=0,erpienMayoTriggeredInScene=false;
+const mayoTriggerLog=[];
+window.__mayoTriggerLog=mayoTriggerLog;
 const npcCanvas=document.createElement('canvas');npcCanvas.width=npcCanvas.height=256;const nx=npcCanvas.getContext('2d');
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
@@ -63,7 +93,9 @@ function resetVillageFriendRunState(){
 window.resetVillageFriendRunState=resetVillageFriendRunState;
 
 function initVillageFriends(){
- villageFriends=VILLAGE_FRIEND_DEFS.map(d=>({
+ const curId = levels[levelIndex]?.id;
+ const defs = (curId === 'monatium_b') ? MONATIUM_B_FRIEND_DEFS : VILLAGE_FRIEND_DEFS;
+ villageFriends = defs.map(d => ({
   ...d,
   near:false,
   greetingVisible:false,
@@ -78,17 +110,17 @@ function initVillageFriends(){
 
 function isNearUnplayedVillageFriend(){
  if(typeof gameMode!=='undefined'&&gameMode==='challenge')return false;
- if(levels[levelIndex]?.id!=='village')return false;
- return villageFriends.some(vf=>!vf.happyPlayedThisRun&&Math.abs(p.x-vf.x)<=vf.happyRadius);
+ if(levels[levelIndex]?.id!=='village'&&levels[levelIndex]?.id!=='monatium_b')return false;
+ return villageFriends.some(vf=>!vf.disableHappy&&!vf.happyPlayedThisRun&&Math.abs(p.x-vf.x)<=vf.happyRadius);
 }
 window.isNearUnplayedVillageFriend=isNearUnplayedVillageFriend;
 
 function onDuduCallPlayerVoice(clipName){
  if(typeof gameMode!=='undefined'&&gameMode==='challenge')return false;
- if(levels[levelIndex]?.id!=='village')return false;
+ if(levels[levelIndex]?.id!=='village'&&levels[levelIndex]?.id!=='monatium_b')return false;
  if(!p.ground||Math.abs(p.vx)>12)return false;
  for(const vf of villageFriends){
-  if(!vf.happyPlayedThisRun&&Math.abs(p.x-vf.x)<=vf.happyRadius){
+  if(!vf.disableHappy&&!vf.happyPlayedThisRun&&Math.abs(p.x-vf.x)<=vf.happyRadius){
    villageFriendHappyPlayed.add(vf.id);
    vf.happyPlayedThisRun=true;
    vf.state='happy';
@@ -107,7 +139,7 @@ window.onDuduCallPlayerVoice=onDuduCallPlayerVoice;
 
 function updateVillageFriends(dt){
  if(typeof gameMode!=='undefined'&&gameMode==='challenge')return;
- if(levels[levelIndex]?.id!=='village')return;
+ if(levels[levelIndex]?.id!=='village'&&levels[levelIndex]?.id!=='monatium_b')return;
  for(const vf of villageFriends){
   vf.anim+=dt;
   if(vf.reenterCooldown>0)vf.reenterCooldown=Math.max(0,vf.reenterCooldown-dt);
@@ -151,7 +183,7 @@ function updateVillageFriends(dt){
 
 function drawVillageFriends(){
  if(typeof gameMode!=='undefined'&&gameMode==='challenge')return;
- if(levels[levelIndex]?.id!=='village')return;
+ if(levels[levelIndex]?.id!=='village'&&levels[levelIndex]?.id!=='monatium_b')return;
  for(const vf of villageFriends){
   if(vf.x<rCam-200||vf.x>rCam+W+200)continue;
   ellipse(vf.x,vf.y+2,24,4,'#34463b28');
@@ -187,15 +219,21 @@ function drawVillageFriends(){
  }
 }
 
-const encounterPresets={
- tower:{levelId:'monatium',title:'상승 타워 입구',x:4180,y:580},
- skywalk:{levelId:'monatium',title:'모나티엄 옥상 입구',x:6160,y:-1785},
- descent:{levelId:'monatium',title:'옥상 하강 입구',x:12120,y:-1730},
- guards:{levelId:'monatium',title:'진압반 공중 교량',x:17120,y:580},
- bukgyeong:{levelId:'monatium',title:'북경성 앞 광장',x:25750,y:580},
- mayo:{levelId:'erpien',title:'에르피엔 도심 입구',x:5520,y:580},
- fairies:{levelId:'erpien',title:'빵집 처마 거리',x:8950,y:580},
- marie:{levelId:'erpien',title:'마리 광장 진입로',x:16370,y:540}
+const encounterPresets = {
+ forest: { levelId: 'forest', title: '수인숲 출발', x: 150, y: 580 },
+ village: { levelId: 'village', title: '수인마을 광장', x: 150, y: 580 },
+ tower: { levelId: 'monatium_a', title: '상승 타워 입구', x: 4180, y: 580 },
+ skywalk: { levelId: 'monatium_a', title: '모나티엄 옥상 입구', x: 6160, y: -1785 },
+ descent: { levelId: 'monatium_a', title: '옥상 하강 입구', x: 12120, y: -1730 },
+ guards: { levelId: 'monatium_a', title: '진압반 공중 교량', x: 17120, y: 580 },
+ bukgyeong: { levelId: 'monatium_a', title: '북경성 앞 광장', x: 25750, y: 580 },
+ monatiumb: { levelId: 'monatium_b', title: '모나티엄 B · 서측 타워', x: 150, y: 580 },
+ erpiena: { levelId: 'erpien_a', title: '에르피엔 A · 요정 입구', x: 6920, y: 580 },
+ erpienb: { levelId: 'erpien_b', title: '에르피엔 B · 도심 마요 추격', x: 150, y: 580 },
+ mayo: { levelId: 'erpien_b', title: '에르피엔 도심 입구', x: 150, y: 580 },
+ fairies: { levelId: 'erpien_b', title: '빵집 처마 거리', x: 3300, y: 580 },
+ marie: { levelId: 'erpien_b', title: '마리 광장 아레나', x: 11170, y: 540 },
+ temple: { levelId: 'erpien_b', title: '교단 회랑 및 엄마의 방', x: 12200, y: 580 }
 };
 
 const BUKGYEONG_LANDMARK={
@@ -255,9 +293,10 @@ function actor(kind,x,y=580,extra={}){
  const seed=Math.abs(((Math.round(x)*2654435761)^(kind.charCodeAt(0)*73856093))|0)||97;
  const anchorPlat=extra.platformId?platforms.find(pl=>pl.id===extra.platformId):null;
  const baseY=anchorPlat?anchorPlat.y:y;
- const minX=anchorPlat?(anchorPlat.x+32):(extra.minX??20);
- const maxX=anchorPlat?(anchorPlat.x+anchorPlat.w-32):(extra.maxX??(END-20));
- const clampedHome=clamp(x,minX,maxX);
+ const minX=(typeof extra.patrolX1==='number')?extra.patrolX1:(anchorPlat?(anchorPlat.x+28):(extra.minX??20));
+ const maxX=(typeof extra.patrolX2==='number')?extra.patrolX2:(anchorPlat?(anchorPlat.x+anchorPlat.w-28):(extra.maxX??(END-20)));
+ const pDir=extra.patrolDir||-1;
+ const clampedHome=extra.fullSpanPatrol?(pDir>0?minX:maxX):clamp(x,minX,maxX);
  const speedMult=extra.speedMult||1.0;
  const baseSpeed=extra.baseSpeed||extra.speed||(prof.speed||160);
  const baseReturnSpeed=extra.baseReturnSpeed||extra.returnSpeed||(prof.returnSpeed||112);
@@ -288,97 +327,114 @@ function initBukgyeongEvent(){
 }
 
 function resetHazards(){
- hazardClock=0;bombs=[];windDarts=[];arena=null;bukgyeongEvent=null;erpienRetreatEvent=null;
- p.invulnerable=0;p.knock=0;p.knockVX=0;p.guardStun=0;p.guardKnock=0;
- if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
-  actors=[];
-  if(typeof resetChallengeHazards==='function')resetChallengeHazards();
+ hazardClock = 0; bombs = []; windDarts = []; arena = null; bukgyeongEvent = null; erpienRetreatEvent = null;
+ p.invulnerable = 0; p.knock = 0; p.knockVX = 0; p.guardStun = 0; p.guardKnock = 0;
+ if (typeof gameMode !== 'undefined' && gameMode === 'challenge') {
+  actors = [];
+  if (typeof resetChallengeHazards === 'function') resetChallengeHazards();
   return;
  }
- const curId=levels[levelIndex]?.id;
- if(curId==='monatium'){
-  const doorX=BUKGYEONG_LANDMARK.doorCenterX;
-  bukgyeongEvent=initBukgyeongEvent();
-  actors=[
-   // M5-G1 (Gate 8 de-crowded: M-G1-LOW1 [14500..14790, y=420] & M-G1-LOW2 [15790..16100, y=480])
-   actor('guard1',14740,420,{id:'G-01',platformId:'M-G1-LOW1',patrol:195,baseSpeed:162,returnSpeed:132,speedMult:1.05,patrolDir:-1}),
-   actor('guard2',16040,480,{id:'G-02',platformId:'M-G1-LOW2',patrol:215,baseSpeed:176,returnSpeed:142,speedMult:1.08,patrolDir:-1,delay:0.30}),
-   // M5-G2 (Gate 8 de-crowded: M-GRD-BR1 [17650..17950, y=420], M-GRD-BR2 [19240..19530, y=460])
-   actor('guard1',17905,420,{id:'G-03',platformId:'M-GRD-BR1',patrol:215,baseSpeed:172,returnSpeed:138,speedMult:1.15,patrolDir:-1}),
-   actor('guard2',19285,460,{id:'G-04',platformId:'M-GRD-BR2',patrol:205,baseSpeed:182,returnSpeed:145,speedMult:1.15,patrolDir:1,delay:0.35}),
-   // M5-G3 (Gate 8 de-crowded: M-G3-MID1 [21090..21375, y=500], M-G3-UPPER [21560..21855, y=345], M-G3-MID2 [22765..23010, y=515])
-   actor('guard1',21330,500,{id:'G-05',platformId:'M-G3-MID1',patrol:195,baseSpeed:168,returnSpeed:138,speedMult:1.08,patrolDir:-1}),
-   actor('guard2',21605,345,{id:'G-06',platformId:'M-G3-UPPER',patrol:205,baseSpeed:184,returnSpeed:146,speedMult:1.10,patrolDir:1,delay:0.40}),
-   actor('guard1',22960,515,{id:'G-06B',platformId:'M-G3-MID2',patrol:165,baseSpeed:172,returnSpeed:140,speedMult:1.08,patrolDir:-1,delay:0.20}),
-   // M5-G4 (Gate 8 de-crowded: M-GRD-BR3A [23780..24060, y=485] & M-GRD-BR3B [24470..24755, y=400])
-   actor('guard1',24015,485,{id:'G-07-BR3',platformId:'M-GRD-BR3A',patrol:205,baseSpeed:168,returnSpeed:165,speedMult:1.5,specialGuard:true,patrolDir:-1,delay:0.0}),
-   actor('guard2',24515,400,{id:'G-08-BR3',platformId:'M-GRD-BR3B',patrol:210,baseSpeed:182,returnSpeed:174,speedMult:1.5,specialGuard:true,patrolDir:1,delay:0.55}),
-   // M6 (25060~26800): Beijing Castle Single-Door Easter Egg at doorCenterX = 26465
-   actor('president',doorX,580,{photo:true,cutout:'president_cutout',patrol:390,speed:230,hiddenInDoor:true}),
-   actor('vice',doorX,580,{photo:true,cutout:'vice_cutout',patrol:510,speed:305,hiddenInDoor:true})
-  ];
-  }else if(curId==='erpien'){
-   const e=STAGE_ANCHORS.erpien;
-   const exitWall=platforms.find(pl=>pl.id==='B-EXIT-WALL');
-   if(p.x<e.templeStart){
-    erpienChaseCompleted=false;
-    if(exitWall){exitWall.hidden=false;exitWall.nonCollidable=false;exitWall.collidable=true;}
-   }else{
-    erpienChaseCompleted=true;
-    if(exitWall){exitWall.hidden=true;exitWall.nonCollidable=true;exitWall.collidable=false;}
-   }
-   const inBossStart=(p.x>=e.marieStart&&p.x<e.templeStart&&!erpienChaseCompleted);
-   actors=[
-    actor('mayo',inBossStart?e.mayoBossX:5320,inBossStart?e.mayoBossY:580,{
-     chaser:true,active:inBossStart,retreating:false,
-     mode:inBossStart?'BOSS_SNIPER':'CHASE',currentSpeed:306,accel:520,
-     vy:0,inAir:false,spawnGrace:1.4,
-     fireCooldown:inBossStart?1.48:999,attackTime:0,
-     firedInCycle:false,firedSecondInCycle:false,firedThirdInCycle:false,
-     aimLocked:false,aimTargetX:e.centerSpawnX,aimTargetY:e.centerSpawnY-34,
-     groggyTimer:0,groggyBubble:'',
-     shotCount:0,burstCount:1,bossBurstCount:0,profileStage:'A',
-     speechTimer:1.2,speechDuration:0,speechText:'',lastSpeechIdx:-1
-    }),
-    actor('fairy1',8920,580,{id:'F-01',platformId:'E-CITY-GND3',patrol:190,baseSpeed:178,speedMult:1.20}),
-    actor('fairy2',10480,580,{id:'F-02',platformId:'E-CITY-GND4',patrol:190,baseSpeed:212,speedMult:1.20}),
-    actor('fairy1',12220,580,{id:'F-03',platformId:'E-CITY-GND5',patrol:185,baseSpeed:192,speedMult:1.20}),
-    actor('marie',e.mariePerchX,e.mariePerchY,{
-     id:'MARIE',platformId:'B-MARIE-PODIUM',retreating:false,
-     groggyTimer:0,invulnTimer:0,groggyBubble:''
-    })
-   ];
-   arena={
-    start:e.marieStart,end:e.marieEnd,
-    entered:inBossStart,
-    active:inBossStart,
-    phase:inBossStart?'combat':'waiting',
-    introTimer:0,
-    bannerTimer:inBossStart?2.2:0,
-    bannerText:'마요를 유도해 마리를 세 번 맞추세요!',
-    marieHits:0,
-    maxHits:3,
-    marieInvulnTimer:0,
-    groggyTimer:0,
-    finaleTimer:0,
-    finaleStep:0,
-    counterBomb:null,
-    stage:1,
-    cooldown:1.65,
-    casting:false,
-    castTime:0,
-    released:false,
-    volleys:0,
-    passed:false,
-    resetCount:(arena?.resetCount||0)+(inBossStart?1:0)
-   };
- }else if(curId==='village'){
-  actors=[];
+ const curId = levels[levelIndex]?.id;
+
+ if (curId === 'village') {
+  actors = [];
   initVillageFriends();
- }else{
-  actors=[];
+ } else if (curId === 'monatium_a') {
+  const doorX = BUKGYEONG_LANDMARK.doorCenterX;
+  bukgyeongEvent = initBukgyeongEvent();
+  actors = [
+   actor('guard1', 14740, 420, { id: 'G-01', platformId: 'M-G1-LOW1', patrol: 195, baseSpeed: 162, returnSpeed: 132, speedMult: 1.05, patrolDir: -1 }),
+   actor('guard2', 16040, 480, { id: 'G-02', platformId: 'M-G1-LOW2', patrol: 215, baseSpeed: 176, returnSpeed: 142, speedMult: 1.08, patrolDir: -1, delay: 0.30 }),
+   actor('guard1', 17905, 420, { id: 'G-03', platformId: 'M-GRD-BR1', patrol: 215, baseSpeed: 172, returnSpeed: 138, speedMult: 1.15, patrolDir: -1 }),
+   actor('guard2', 19285, 460, { id: 'G-04', platformId: 'M-GRD-BR2', patrol: 205, baseSpeed: 182, returnSpeed: 145, speedMult: 1.15, patrolDir: 1, delay: 0.35 }),
+   actor('guard1', 21330, 500, { id: 'G-05', platformId: 'M-G3-MID1', patrol: 195, baseSpeed: 168, returnSpeed: 138, speedMult: 1.08, patrolDir: -1 }),
+   actor('guard2', 21605, 345, { id: 'G-06', platformId: 'M-G3-UPPER', patrol: 205, baseSpeed: 184, returnSpeed: 146, speedMult: 1.10, patrolDir: 1, delay: 0.40 }),
+   actor('guard1', 22960, 515, { id: 'G-06B', platformId: 'M-G3-MID2', patrol: 165, baseSpeed: 172, returnSpeed: 140, speedMult: 1.08, patrolDir: -1, delay: 0.20 }),
+   actor('guard1', 24015, 485, { id: 'G-07-BR3', platformId: 'M-GRD-BR3A', patrol: 205, baseSpeed: 168, returnSpeed: 165, speedMult: 1.5, specialGuard: true, patrolDir: -1, delay: 0.0 }),
+   actor('guard2', 24515, 400, { id: 'G-08-BR3', platformId: 'M-GRD-BR3B', patrol: 210, baseSpeed: 182, returnSpeed: 174, speedMult: 1.5, specialGuard: true, patrolDir: 1, delay: 0.55 }),
+   actor('president', doorX, 580, { photo: true, cutout: 'president_cutout', patrol: 390, speed: 230, hiddenInDoor: true }),
+   actor('vice', doorX, 580, { photo: true, cutout: 'vice_cutout', patrol: 510, speed: 305, hiddenInDoor: true })
+  ];
+ } else if (curId === 'monatium_b') {
+  actors = [];
+  initVillageFriends();
+ } else if (curId === 'erpien_a') {
+  // P0-4 & P0-5: All Erpien A fairies patrol end-to-end across their assigned platform (fullSpanPatrol: true)
+  // and have active body contact collision across ALL states (wait, warn, rush, rest, return)!
+  // Right-side 4 descent fairies (EA-F07..F10) are accelerated (1.22x ~ 1.30x) to match the long S-curve shelves.
+  actors = [
+   // Left Ascent Fairies (EA-F01 ~ EA-F04): full platform end-to-end patrol (margin 28px)
+   actor('fairy1', 7268, 350, { id: 'EA-F01', platformId: 'EA-P01', fullSpanPatrol: true, patrolX1: 7268, patrolX2: 7622, patrolDir: 1, baseSpeed: 168, baseReturnSpeed: 132, speedMult: 1.0 }),
+   actor('fairy2', 8162, 70,  { id: 'EA-F02', platformId: 'EA-P02', fullSpanPatrol: true, patrolX1: 7948, patrolX2: 8162, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 }),
+   actor('fairy1', 7808, -280, { id: 'EA-F03', platformId: 'EA-P03', fullSpanPatrol: true, patrolX1: 7808, patrolX2: 8172, patrolDir: 1, baseSpeed: 170, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy2', 7702, -620, { id: 'EA-F04', platformId: 'EA-P04', fullSpanPatrol: true, patrolX1: 7408, patrolX2: 7702, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 }),
+   // Special Fairy (EA-FS01) on EA-P-SPEC (x=6820..7160, y=-640): guards EA-SPECIAL-01 (x=6865) across x=6910..7132 with 1.5x knockback
+   actor('fairy2', 7132, -640, { id: 'EA-FS01', platformId: 'EA-P-SPEC', fullSpanPatrol: true, patrolX1: 6910, patrolX2: 7132, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 140, speedMult: 1.05, isSpecialFairy: true, knockbackScale: 1.50 }),
+   // Central Long Bridge (EA-P-TOP-C: x=8330..9020, midpoint=8675): split cleanly into Left Half (EA-F05: 8358..8648) & Right Half (EA-F06: 8702..8992)
+   actor('fairy1', 8358, -680, { id: 'EA-F05', platformId: 'EA-P-TOP-C', fullSpanPatrol: true, patrolX1: 8358, patrolX2: 8648, patrolDir: 1, baseSpeed: 168, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy2', 8992, -680, { id: 'EA-F06', platformId: 'EA-P-TOP-C', fullSpanPatrol: true, patrolX1: 8702, patrolX2: 8992, patrolDir: -1, baseSpeed: 174, baseReturnSpeed: 138, speedMult: 1.0 }),
+   // [FIX8 Gate 4]: Right-side 4-Tier Forced ㄹ-Descent Fairies (1 · 1 · 1 · 2 = 5 fairies total):
+   // - Tier 1 (EA-P07: 9010..9820): EA-F07 (1 fairy, standard 1.0x speed: 170 / 134 px/s)
+   // - Tier 2 (EA-P08: 9010..10040): EA-F08 (1 fairy, 1.5x standard speed: baseSpeed 175 * 1.50 = 263 px/s rush, baseReturnSpeed 136 * 1.50 = 204 px/s return!)
+   // - Tier 3 (EA-P09: 8614..9820): EA-F09 (1 fairy, standard 1.0x speed: 172 / 134 px/s)
+   // - Tier 4 (EA-P10: 8920..10040): EA-F10 (left half 8948..9450, 1.0x) + EA-F11 (right half 9500..10012, 1.0x)
+   actor('fairy1', 9792, -620, { id: 'EA-F07', platformId: 'EA-P07', fullSpanPatrol: true, patrolX1: 9038, patrolX2: 9792, patrolDir: -1, baseSpeed: 170, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy2', 9038, -300, { id: 'EA-F08', platformId: 'EA-P08', fullSpanPatrol: true, patrolX1: 9038, patrolX2: 10012, patrolDir: 1,  baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.50 }),
+   actor('fairy1', 9792, 20,   { id: 'EA-F09', platformId: 'EA-P09', fullSpanPatrol: true, patrolX1: 8642, patrolX2: 9792, patrolDir: -1, baseSpeed: 172, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy1', 8948, 350,  { id: 'EA-F10', platformId: 'EA-P10', fullSpanPatrol: true, patrolX1: 8948, patrolX2: 9450, patrolDir: 1,  baseSpeed: 172, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy2', 10012, 350, { id: 'EA-F11', platformId: 'EA-P10', fullSpanPatrol: true, patrolX1: 9500, patrolX2: 10012, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 })
+  ];
+ } else if (curId === 'erpien_b') {
+  const e = STAGE_ANCHORS.erpien_b;
+  const exitWall = platforms.find(pl => pl.id === 'B-EXIT-WALL');
+  if (p.x < e.templeStart) {
+   erpienChaseCompleted = false;
+   if (exitWall) { exitWall.hidden = false; exitWall.nonCollidable = false; exitWall.collidable = true; }
+  } else {
+   erpienChaseCompleted = true;
+   if (exitWall) { exitWall.hidden = true; exitWall.nonCollidable = true; exitWall.collidable = false; }
+  }
+  const inBossStart = (p.x >= e.marieStart && p.x < e.templeStart && !erpienChaseCompleted);
+  const inMidChaseSpawn = (!inBossStart && p.x >= e.mayoActivateX && p.x < e.marieStart && !erpienChaseCompleted);
+  const minChaseX = e.mayoMinChaseX ?? 80;
+  const initialMayoX = inBossStart
+   ? e.mayoBossX
+   : (inMidChaseSpawn ? Math.max(minChaseX, p.x - 480) : (e.mayoSpawnX ?? 820));
+  erpienMayoTriggeredInScene = (inBossStart || inMidChaseSpawn);
+  actors = [
+   actor('mayo', initialMayoX, inBossStart ? e.mayoBossY : 580, {
+    chaser: true, active: (inBossStart || inMidChaseSpawn), retreating: false,
+    mode: inBossStart ? 'BOSS_SNIPER' : 'CHASE', currentSpeed: 279, accel: 550,
+    vy: 0, inAir: false, spawnGrace: 1.50,
+    fireCooldown: inBossStart ? 1.48 : 999, attackTime: 0,
+    firedInCycle: false, firedSecondInCycle: false, firedThirdInCycle: false,
+    aimLocked: false, aimTargetX: e.centerSpawnX, aimTargetY: e.centerSpawnY - 34,
+    groggyTimer: 0, groggyBubble: '',
+    shotCount: 0, burstCount: 1, bossBurstCount: 0, profileStage: 'A',
+    speechTimer: 1.2, speechDuration: 0, speechText: '', lastSpeechIdx: -1
+   }),
+   actor('fairy1', 3720, 580, { id: 'F-01', platformId: 'E-CITY-GND3', patrol: 190, baseSpeed: 178, speedMult: 1.20 }),
+   actor('fairy2', 5280, 580, { id: 'F-02', platformId: 'E-CITY-GND4', patrol: 190, baseSpeed: 212, speedMult: 1.20 }),
+   actor('fairy1', 7020, 580, { id: 'F-03', platformId: 'E-CITY-GND5', patrol: 185, baseSpeed: 192, speedMult: 1.20 }),
+   actor('marie', e.mariePerchX, e.mariePerchY, {
+    id: 'MARIE', platformId: 'B-MARIE-PODIUM', retreating: false,
+    groggyTimer: 0, invulnTimer: 0, groggyBubble: ''
+   })
+  ];
+  if (inBossStart) {
+   arena = {
+    originX: e.arenaOrigin, width: e.arenaWidth,
+    phase: 'intro', phaseTime: 0, hits: 0, maxHits: 3,
+    castTime: 0, released: false, volleys: 0, passed: false,
+    casting: false, cooldown: 1.65, groggyTimer: 0,
+    marieHits: 0, marieInvulnTimer: 0,
+    resetCount: (arena?.resetCount || 0) + 1
+   };
+  }
+ } else {
+  actors = [];
  }
- $('encounterStatus').textContent='';
+ $('encounterStatus').textContent = '';
 }
 
 function npcClip(a,name){if(a.clip===name)return;a.oldClip=a.clip;a.oldAnim=a.anim;a.clip=name;a.anim=0;a.blend=0;}
@@ -396,8 +452,8 @@ function applyStunHit(sourceX,sourceKind='generic',customMsg=null){
   return true;
  }
 
- let force=320;
- if(p.ground&&p.on){
+ let force = (sourceKind === 'special_fairy' || (typeof customMsg === 'object' && customMsg?.knockbackScale)) ? 480 : 320;
+ if(p.ground&&p.on&&sourceKind!=='special_fairy'){
   const margin=dir<0?p.x-p.on.x-26:p.on.x+p.on.w-p.x-26;
   if(margin>0)force=Math.min(force,Math.max(175,margin/0.26));
  }
@@ -524,20 +580,29 @@ function updateWalker(a,dt){
   const pl=platforms.find(x=>x.id===a.platformId);
   if(pl){
    a.y=pl.y;
-   a.minX=pl.x+32;
-   a.maxX=pl.x+pl.w-32;
+   if(typeof a.patrolX1==='number')a.minX=a.patrolX1;
+   else if(typeof a.customMinX==='number')a.minX=a.customMinX;
+   else a.minX=pl.x+28;
+   if(typeof a.patrolX2==='number')a.maxX=a.patrolX2;
+   else if(typeof a.customMaxX==='number')a.maxX=a.customMaxX;
+   else a.maxX=pl.x+pl.w-28;
    if(pl.dx)a.home=clamp(a.home+pl.dx,a.minX,a.maxX);
   }
  }
  const prof=a.profile||BEHAVIOR_PROFILES.guard1;
- const isGuard=a.kind.startsWith('guard');
+ const isErpienAFairy=(typeof currentLevelId==='function'&&currentLevelId()==='erpien_a'&&(a.kind==='fairy1'||a.kind==='fairy2'));
+ const isGuard=a.kind.startsWith('guard')||!!a.isSpecialFairy||isErpienAFairy;
  const dirSign=a.patrolDir||-1;
+ if(a.fullSpanPatrol){
+  a.home=dirSign>0?a.minX:a.maxX;
+  a.patrol=Math.max(40,a.maxX-a.minX);
+ }
  const vVar=0.94+0.12*npcSeedUnit(a.seed,a.cycle*7+1);
- const pVar=0.95+0.10*npcSeedUnit(a.seed,a.cycle*7+2);
+ const pVar=a.fullSpanPatrol?1.0:(0.95+0.10*npcSeedUnit(a.seed,a.cycle*7+2));
  const waitDur=prof.waitTime*vVar;
  const warnDur=Math.max(0.95,prof.warnTime);
  const rawPatrol=Math.round(a.patrol*pVar);
- const targetUnclamped=a.home+dirSign*rawPatrol;
+ const targetUnclamped=a.fullSpanPatrol?(dirSign>0?a.maxX:a.minX):(a.home+dirSign*rawPatrol);
  const clampedTo=clamp(targetUnclamped,a.minX,a.maxX);
  const patrolDist=Math.max(40,Math.abs(clampedTo-a.home));
  const effSpeed=a.speed||(prof.speed||160);
@@ -546,13 +611,14 @@ function updateWalker(a,dt){
  const restDur=prof.restTime*vVar;
  const returnDur=patrolDist/effReturnSpeed;
 
- if(!a.active&&Math.abs(p.x-a.home)<820){
+ const activateDist=a.fullSpanPatrol?1400:820;
+ if(!a.active&&Math.abs(p.x-a.home)<activateDist){
   a.active=true;a.phase='wait';a.phaseTime=-(a.delay||0);
  }
  if(!a.active)return;
 
  a.phaseTime+=dt;
- // Gate G3: Guards have active contact hitbox in ALL visible states (wait, warn, rush, rest, return)!
+ // Gate G3 & P0-4: Guards and Erpien A fairies have active contact hitbox in ALL visible states (wait, warn, rush, rest, return)!
  a.danger=isGuard?true:false;
 
  if(a.phase==='wait'){
@@ -593,7 +659,9 @@ function updateWalker(a,dt){
    a.x=a.home;a.face=dirSign;a.phase='wait';a.phaseTime=0;a.cycle++;npcClip(a,'idle');
   }
  }
- if(a.danger&&touchesActor(a))applyStunHit(a.x,a.kind);
+ a.reachedMinX=Math.min(a.reachedMinX??a.x,a.x);
+ a.reachedMaxX=Math.max(a.reachedMaxX??a.x,a.x);
+ if(a.danger&&touchesActor(a))applyStunHit(a.x,a.isSpecialFairy?'special_fairy':a.kind);
 }
 
 // Gate 5 (P0): Mayo True Catch-Reset Pursuit AI!
@@ -649,18 +717,28 @@ function triggerMayoCatchReset(a){
  tone(150,.22,'sawtooth',.055);
  if(typeof playDuduVoice==='function')playDuduVoice('hit_stun');
  reset(false);
+ const e = STAGE_ANCHORS.erpien_b || STAGE_ANCHORS.erpien;
+ const minChaseX = e.mayoMinChaseX ?? 80;
  const mayoAfter=actors.find(x=>x.kind==='mayo');
  if(mayoAfter){
   mayoAfter.spawnGrace=1.50;
-  if(p.x>=STAGE_ANCHORS.erpien.mayoActivateX&&p.x<STAGE_ANCHORS.erpien.marieStart){
+  if(p.x>=e.mayoActivateX&&p.x<e.marieStart){
+   erpienMayoTriggeredInScene=true;
    mayoAfter.active=true;
    mayoAfter.mode='CHASE';
-   mayoAfter.x=Math.max(STAGE_ANCHORS.erpien.gateEnd+40,p.x-360);
+   mayoAfter.x=Math.max(minChaseX,p.x-480);
    mayoAfter.prevX=mayoAfter.x;
-   mayoAfter.y=p.y;
-   mayoAfter.prevY=p.y;
+   mayoAfter.y=580;
+   mayoAfter.prevY=580;
    mayoAfter.phase='chase';
    mayoAfter.fireCooldown=2.2;
+  }else if(p.x<e.mayoActivateX){
+   erpienMayoTriggeredInScene=false;
+   mayoAfter.active=false;
+   mayoAfter.x=e.mayoSpawnX??820;
+   mayoAfter.prevX=mayoAfter.x;
+   mayoAfter.y=580;
+   mayoAfter.prevY=580;
   }
  }
  notify('마요에게 붙잡혔어요! 체크포인트에서 다시 출발합니다.');
@@ -668,91 +746,94 @@ function triggerMayoCatchReset(a){
 }
 
 function enterMarieBossArena(){
- const e=STAGE_ANCHORS.erpien;
- const spawnPlat=platforms.find(pl=>pl.id==='B-CENTER-SPAWN');
- const marieSecIdx=sections.findIndex(s=>Math.abs(s.x-e.centerSpawnX)<40);
- if(marieSecIdx>=0)checkpoint=marieSecIdx;
- p.x=e.centerSpawnX;
- p.y=e.centerSpawnY;
- p.prevX=p.x;
- p.prevY=p.y;
- p.vx=0;
- p.vy=0;
- p.ground=true;
- p.on=spawnPlat||p.on;
- p.jumps=0;
- p.airDashUsed=false;
- p.dash=0;
- p.guardStun=0;
- p.guardKnock=0;
- p.knock=0;
- p.invulnerable=1.2;
+ const e = STAGE_ANCHORS.erpien_b || STAGE_ANCHORS.erpien;
+ const spawnPlat = platforms.find(pl => pl.id === 'B-CENTER-SPAWN');
+ const marieSecIdx = sections.findIndex(s => Math.abs(s.x - e.centerSpawnX) < 40);
+ if (marieSecIdx >= 0) checkpoint = marieSecIdx;
+ p.x = e.centerSpawnX;
+ p.y = e.centerSpawnY;
+ p.prevX = p.x; p.prevY = p.y;
+ p.vx = 0; p.vy = 0;
+ p.ground = true;
+ p.on = spawnPlat || p.on;
+ p.jumps = 0; p.airDashUsed = false; p.dash = 0;
+ p.guardStun = 0; p.guardKnock = 0; p.knock = 0;
+ p.invulnerable = 1.2;
  keys.clear();
 
- windDarts=[];
- bombs=[];
- const exitWall=platforms.find(pl=>pl.id==='B-EXIT-WALL');
- if(exitWall){
-  exitWall.hidden=false;
-  exitWall.nonCollidable=false;
-  exitWall.collidable=true;
+ windDarts = [];
+ bombs = [];
+ const exitWall = platforms.find(pl => pl.id === 'B-EXIT-WALL');
+ if (exitWall) {
+  exitWall.hidden = false;
+  exitWall.nonCollidable = false;
+  exitWall.collidable = true;
  }
 
- const mayo=actors.find(a=>a.kind==='mayo');
- if(mayo){
-  mayo.active=true;
-  mayo.retreating=false;
-  mayo.hiddenInDoor=false;
-  mayo.mode='BOSS_SNIPER';
-  mayo.x=e.mayoBossX;
-  mayo.y=e.mayoBossY;
-  mayo.prevX=mayo.x;
-  mayo.prevY=mayo.y;
-  mayo.face=-1;
-  mayo.phase='idle';
-  mayo.attackTime=0;
-  mayo.fireCooldown=1.48;
-  mayo.aimLocked=false;
-  mayo.aimTargetX=e.centerSpawnX;
-  mayo.aimTargetY=e.centerSpawnY-34;
-  mayo.groggyTimer=0;
-  mayo.groggyBubble='';
-  npcClip(mayo,'idle');
+ const mayo = actors.find(a => a.kind === 'mayo');
+ if (mayo) {
+  mayo.active = true;
+  mayo.retreating = false;
+  mayo.hiddenInDoor = false;
+  mayo.mode = 'BOSS_SNIPER';
+  mayo.x = e.mayoBossX;
+  mayo.y = e.mayoBossY;
+  mayo.prevX = mayo.x;
+  mayo.prevY = mayo.y;
+  mayo.face = -1;
+  mayo.phase = 'idle';
+  mayo.attackTime = 0;
+  mayo.fireCooldown = 1.48;
+  mayo.aimLocked = false;
+  mayo.aimTargetX = e.centerSpawnX;
+  mayo.aimTargetY = e.centerSpawnY - 34;
+  mayo.groggyTimer = 0;
+  mayo.groggyBubble = '';
+  npcClip(mayo, 'idle');
  }
 
- const marie=actors.find(a=>a.kind==='marie');
- if(marie){
-  marie.active=true;
-  marie.retreating=false;
-  marie.hiddenInDoor=false;
-  marie.x=e.mariePerchX;
-  marie.y=e.mariePerchY;
-  marie.prevX=marie.x;
-  marie.prevY=marie.y;
-  marie.face=-1;
-  marie.groggyTimer=0;
-  marie.invulnTimer=0;
-  marie.groggyBubble='';
-  npcClip(marie,'idle');
+ const marie = actors.find(a => a.kind === 'marie');
+ if (marie) {
+  marie.active = true;
+  marie.retreating = false;
+  marie.hiddenInDoor = false;
+  marie.x = e.mariePerchX;
+  marie.y = e.mariePerchY;
+  marie.prevX = marie.x;
+  marie.prevY = marie.y;
+  marie.face = -1;
+  marie.groggyTimer = 0;
+  marie.invulnTimer = 0;
+  marie.groggyBubble = '';
+  npcClip(marie, 'idle');
  }
 
- arena.entered=true;
- arena.active=true;
- arena.phase='intro';
- arena.introTimer=1.35;
- arena.bannerTimer=2.8;
- arena.bannerText='마요를 유도해 마리를 세 번 맞추세요!';
- arena.marieHits=0;
- arena.marieInvulnTimer=0;
- arena.groggyTimer=0;
- arena.finaleTimer=0;
- arena.finaleStep=0;
- arena.counterBomb=null;
- arena.casting=false;
- arena.castTime=0;
- arena.cooldown=1.65;
- notify('마요를 유도해 마리를 세 번 맞추세요!');
- tone(660,0.12,'triangle',0.04);
+ if (!arena) {
+  arena = {
+   originX: e.arenaOrigin, width: e.arenaWidth,
+   phase: 'intro', phaseTime: 0, hits: 0, maxHits: 3,
+   castTime: 0, released: false, volleys: 0, passed: false,
+   resetCount: 1
+  };
+ }
+ arena.entered = true;
+ arena.active = true;
+ arena.phase = 'intro';
+ arena.introTimer = 1.35;
+ arena.bannerTimer = 2.8;
+ arena.bannerText = '마요를 유도해 마리를 세 번 맞추세요!';
+ arena.marieHits = 0;
+ arena.marieInvulnTimer = 0;
+ // FIX8.1: restore the boss's casting cycle on every arena entry/reset.
+ arena.groggyTimer = 0;
+ arena.finaleTimer = 0;
+ arena.finaleStep = 0;
+ arena.counterBomb = null;
+ arena.casting = false;
+ arena.castTime = 0;
+ arena.released = false;
+ arena.cooldown = 1.65;
+ arena.volleys = 0;
 }
 
 function startBoss3HitFinale(){
@@ -888,7 +969,7 @@ function updateBossFinale(dt){
 }
 
 function updateMayo(a,dt){
- if(!a||levels[levelIndex]?.id!=='erpien')return;
+ if(!a||(levels[levelIndex]?.id!=='erpien'&&levels[levelIndex]?.id!=='erpien_b'))return;
  if(erpienChaseCompleted||a.retreating)return;
  if(a.spawnGrace>0)a.spawnGrace=Math.max(0,a.spawnGrace-dt);
 
@@ -982,19 +1063,33 @@ function updateMayo(a,dt){
  a.currentChaseSpeed=prof.speedClose;
  a.currentDartSpeed=prof.dartSpeed;
 
+ const minChaseX = e.mayoMinChaseX ?? 80;
  if(!a.active){
-  if(p.x>=e.mayoActivateX&&p.x<e.marieStart){
+  if(!erpienMayoTriggeredInScene && p.x>=e.mayoActivateX && p.x<e.marieStart){
+   erpienMayoTriggeredInScene=true;
    a.active=true;
    a.mode='CHASE';
-   a.x=Math.max(e.gateEnd+60,p.x-340);
+   const safeSpawnX = Math.max(minChaseX, Math.min(e.mayoSpawnX ?? 820, p.x - 650));
+   a.x=safeSpawnX;
    a.prevX=a.x;
    a.y=580;a.prevY=580;a.vy=0;a.inAir=false;
    a.currentSpeed=prof.speedClose;
-   a.spawnGrace=1.20;
+   a.spawnGrace=1.40;
    a.phase='chase';
    a.fireCooldown=2.0;
    a.speechTimer=0.8;
    npcClip(a,'move');
+   const isFin = Number.isFinite(a.x) && Number.isFinite(a.y);
+   if(!isFin) console.error('[Mayo QA Error] Non-finite Mayo spawn coordinates:', a.x, a.y);
+   mayoTriggerLog.push({
+    sceneId: levels[levelIndex]?.id || 'erpien_b',
+    playerX: Math.round(p.x),
+    mayoX: Math.round(a.x),
+    separation: Math.round(p.x - a.x),
+    spawnGrace: a.spawnGrace,
+    finitePosition: isFin,
+    t: Number((typeof time==='number'?time:0).toFixed(2))
+   });
   }
   return;
  }
@@ -1049,7 +1144,7 @@ function updateMayo(a,dt){
  }
 
  if(p.x-a.x>760&&a.x<rCam-50){
-  const safeBehindX=Math.max(e.gateEnd+60,rCam-45);
+  const safeBehindX=Math.max(minChaseX,rCam-45);
   const groundAtBehind=platforms.find(pl=>!pl.wall&&!pl.ceiling&&safeBehindX>=pl.x&&safeBehindX<=pl.x+pl.w);
   a.x=safeBehindX;
   a.prevX=a.x;
@@ -1059,7 +1154,7 @@ function updateMayo(a,dt){
 
  if(a.phase==='attack'){
   a.attackTime+=dt;
-  a.x=clamp(a.x+a.face*(prof.speedClose*0.45)*dt,e.gateEnd+40,e.marieStart-60);
+  a.x=clamp(a.x+a.face*(prof.speedClose*0.45)*dt,minChaseX,e.marieStart-60);
   npcClip(a,'attack');
   const muzzleX=a.x+a.face*42;
   const muzzleY=a.y-62;
@@ -1106,7 +1201,7 @@ function updateMayo(a,dt){
   const targetSpeed=prof.chaseSpeed;
   a.currentSpeed=(a.currentSpeed||targetSpeed)+Math.sign(targetSpeed-(a.currentSpeed||targetSpeed))*Math.min(Math.abs(targetSpeed-(a.currentSpeed||targetSpeed)),prof.accel*dt);
   if(absDx>3){
-   a.x=clamp(a.x+Math.sign(dxToPlayer)*a.currentSpeed*dt,e.gateEnd+40,e.marieStart-60);
+   a.x=clamp(a.x+Math.sign(dxToPlayer)*a.currentSpeed*dt,minChaseX,e.marieStart-60);
    npcClip(a,'move');
   }else{
    a.x=p.x;
@@ -1144,10 +1239,11 @@ function releaseBombs(a){
  }
 
  // 1. Gate 11 (P0): Base 3 Bombs cover the ENTIRE combat arena (`15750..16940`: Left Ground/Pads, Center Pit/Spawn/Air Corridors, Right Pads/Exit Ground) across 0/3, 1/3, and 2/3!
+ const aOrigin = STAGE_ANCHORS.erpien_b.arenaOrigin || 10500;
  const arenaZones=[
-  {minX:15755,maxX:16155}, // Left sector: B-ENTRY-LEFT, B-LEFT-PAD-A/B/C, left pit gap
-  {minX:16175,maxX:16555}, // Center sector: Left/Right pit air corridors, B-CENTER-SPAWN, B-RIGHT-PAD-A
-  {minX:16575,maxX:16935}  // Right sector: B-RIGHT-PAD-B/C, right pit gap, B-EXIT-RIGHT
+  {minX: aOrigin + 55, maxX: aOrigin + 455},  // Left sector
+  {minX: aOrigin + 475, maxX: aOrigin + 855}, // Center sector
+  {minX: aOrigin + 875, maxX: aOrigin + 1235} // Right sector
  ];
  const chosenBaseX=[];
  for(let i=0;i<3;i++){
@@ -1173,7 +1269,7 @@ function releaseBombs(a){
  // 2. 4th Bomb (when `arena.marieHits >= 1`): Fast trajectory alternating Left (-1) and Right (+1)
  if(hits>=1){
   const altDir=(vIdx%2===0)?-1:1;
-  const tx4=altDir<0?16045:16555;
+  const tx4=altDir<0?(aOrigin+345):(aOrigin+855);
   const ty4=pickSurfaceY(tx4);
   bombs.push({
    bombIndex:4,
@@ -1254,6 +1350,8 @@ function updateMarie(a,dt){
    arena.cooldown=2.45;
   }
  }else{
+  // Recover from an invalid cooldown without changing the established attack cadence.
+  if(!Number.isFinite(arena.cooldown)) arena.cooldown=1.65;
   arena.cooldown-=dt;
   if(arena.cooldown<=0){arena.casting=true;arena.castTime=0;arena.released=false;npcClip(a,'throw');}
  }
@@ -1288,14 +1386,16 @@ function updateHazards(dt){
  if(p.invulnerable>0)p.invulnerable=Math.max(0,p.invulnerable-dt);
  for(const a of actors){a.prevX=a.x;a.prevY=a.y;}
  const curId=levels[levelIndex]?.id;
- if(curId==='monatium')updateBukgyeong(dt);
- if(curId==='village')updateVillageFriends(dt);
+ if(curId==='monatium_a'||curId==='monatium')updateBukgyeong(dt);
+ if(curId==='village'||curId==='monatium_b')updateVillageFriends(dt);
 
- if(curId==='erpien'&&arena){
-  const e=STAGE_ANCHORS.erpien;
-  if(!erpienChaseCompleted&&!arena.entered&&p.x>=e.marieStart+15&&p.x<e.templeStart){
+ if(curId==='erpien'||curId==='erpien_b'){
+  const e=STAGE_ANCHORS.erpien_b||STAGE_ANCHORS.erpien;
+  if(!erpienChaseCompleted&&(!arena||!arena.entered)&&p.x>=e.marieStart+15&&p.x<e.templeStart){
    enterMarieBossArena();
   }
+ }
+ if((curId==='erpien'||curId==='erpien_b')&&arena){
   if(arena.bannerTimer>0){
    arena.bannerTimer=Math.max(0,arena.bannerTimer-dt);
   }
@@ -1437,7 +1537,7 @@ function bubble(text,x,y,color='#fff8e7'){
 }
 
 function drawBukgyeongLandmark(){
- if(levels[levelIndex]?.id!=='monatium'||!bukgyeongEvent)return;
+ if((levels[levelIndex]?.id!=='monatium_a'&&levels[levelIndex]?.id!=='monatium')||!bukgyeongEvent)return;
  const bIm=npcImages['bukgyeong_building'],dlIm=npcImages['bukgyeong_door_l'],drIm=npcImages['bukgyeong_door_r'];
  if(!bIm)return;
  const lm=BUKGYEONG_LANDMARK,ev=bukgyeongEvent;
@@ -1482,7 +1582,7 @@ function drawBukgyeongLandmark(){
 
 // Section 5.2: Draw 3 Mayo Wind-Dart Silhouette Icons above Marie (`0/3 -> 3/3`) + Intro Banner + Counter-Bomb!
 function drawMarieBossOverlay(marieX,marieY){
- if(!arena||levels[levelIndex]?.id!=='erpien'||!arena.entered||arena.phase==='cleared')return;
+ if(!arena||(levels[levelIndex]?.id!=='erpien'&&levels[levelIndex]?.id!=='erpien_b')||!arena.entered||arena.phase==='cleared')return;
  const hits=arena.marieHits||0;
  const baseY=marieY-138;
 
@@ -1603,7 +1703,7 @@ function drawActors(){
     }
    }
   }else{
-   const isGuard=a.kind.startsWith('guard');
+   const isGuard=a.kind.startsWith('guard')||!!a.isSpecialFairy;
    ellipse(ax,ay+2,24,4,'#34463b28');
    if(a.danger){
     ellipse(ax,ay-2,a.specialGuard?40:34,6,a.specialGuard?'#ff3b28cc':(isGuard?'#d9433099':'#ef876a99'));
@@ -1812,16 +1912,31 @@ function practiceEncounter(key){
  const initCam=typeof computeInitialCameraForPoint==='function'?computeInitialCameraForPoint(p.x,p.y):{cam:Math.max(0,Math.min(END-W,p.x-W*.42)),camY:0};
  cam=initCam.cam;
  camY=initCam.camY;
- if(key==='mayo'||key==='fairies'){
+ if(key==='mayo'||key==='erpienb'){
+  const e=STAGE_ANCHORS.erpien_b||STAGE_ANCHORS.erpien;
   const mayoAct=actors.find(a=>a.kind==='mayo');
   if(mayoAct){
-   mayoAct.active=true;
+   erpienMayoTriggeredInScene=false;
+   mayoAct.active=false;
    mayoAct.mode='CHASE';
-   mayoAct.x=Math.max(5420,p.x-380);
+   mayoAct.x=e.mayoSpawnX??820;
    mayoAct.prevX=mayoAct.x;
    mayoAct.y=580;
    mayoAct.prevY=580;
-   mayoAct.spawnGrace=0.8;
+   mayoAct.spawnGrace=1.40;
+  }
+ }else if(key==='fairies'){
+  const e=STAGE_ANCHORS.erpien_b||STAGE_ANCHORS.erpien;
+  const mayoAct=actors.find(a=>a.kind==='mayo');
+  if(mayoAct){
+   erpienMayoTriggeredInScene=true;
+   mayoAct.active=true;
+   mayoAct.mode='CHASE';
+   mayoAct.x=Math.max(e.mayoMinChaseX??80,p.x-480);
+   mayoAct.prevX=mayoAct.x;
+   mayoAct.y=580;
+   mayoAct.prevY=580;
+   mayoAct.spawnGrace=1.40;
   }
  }else if(key==='marie'){
   if(typeof enterMarieBossArena==='function')enterMarieBossArena();

@@ -32,24 +32,173 @@
 .backStoryModalBtn{background:#fff4e6 !important;border-color:#ebcfa8 !important;color:#7c5228 !important;font-weight:700}
 .backStoryModalBtn[hidden]{display:none !important}
 
-/* 배포 전용: 연습/개발 인터페이스는 게임 내부 참조를 위해 DOM에 두되 항상 숨긴다. */
-.releaseMode .practiceHUD,
-.releaseMode .practiceNav,
-.releaseMode .encounterNav,
-.releaseMode .debugHud,
-.releaseMode #openChallengeBarBtn,
-.releaseMode #chStage1Btn,
-.releaseMode #chStage2Btn,
-.releaseMode #chStage3Btn { display:none !important; }
-.releaseMode .edition {display:none !important;}
-.releaseMode [hidden] {display:none !important;}
-.releaseMode .challengeNav {margin-top:10px;justify-content:space-between;}
-.releaseMode .challengeNav > span {font-size:12px;}
-.releaseMode .challengeNav button {font-size:12px;}
-.releaseMode header {height:60px;}
-.releaseMode main {padding-top:23px;}
-.releaseMode .below {padding-top:12px;}
-.releaseMode #toast {font-family:'ONE Mobile POP','Malgun Gothic',sans-serif;}
-.releaseMode .intro, .releaseMode #modalTitle {font-family:'ONE Mobile POP','Malgun Gothic',sans-serif;}
-.releaseMode footer {padding-bottom:12px;}
-@media(max-width:700px) {.releaseMode .heading p {font-size:11px;} .releaseMode header {height:49px;} .releaseMode .hudRight {gap:3px;}}
+
+/* TEST24 Mobile Responsive 16:9 Viewport & Touch Controls */
+:root{
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+.gameViewport{
+  position:relative;
+  width:100%;
+  height:100%;
+  aspect-ratio:16/9;
+  max-width:100%;
+  max-height:100%;
+  margin:auto;
+  overflow:hidden;
+}
+
+.game:fullscreen{
+  border:0;
+  border-radius:0;
+  width:100vw;
+  height:100dvh;
+  background:#14171c;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  aspect-ratio:auto;
+}
+
+.game:fullscreen .gameViewport{
+  width:min(100vw, calc(100dvh * 16 / 9));
+  height:min(100dvh, calc(100vw * 9 / 16));
+  aspect-ratio:16/9;
+}
+
+/* Virtual Touch Controls */
+.mobileControls{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:9;
+  display:none;
+}
+
+@media(pointer:coarse), (hover:none), (max-width:1024px){
+  .mobileControls{
+    display:block;
+  }
+  .below .keys{
+    display:none;
+  }
+}
+
+.vpad-left{
+  position:absolute;
+  left:calc(16px + var(--safe-left));
+  bottom:calc(14px + var(--safe-bottom));
+  display:flex;
+  gap:10px;
+  align-items:flex-end;
+  pointer-events:none;
+}
+
+.vpad-right{
+  position:absolute;
+  right:calc(18px + var(--safe-right));
+  bottom:calc(14px + var(--safe-bottom));
+  display:flex;
+  gap:14px;
+  align-items:flex-end;
+  pointer-events:none;
+}
+
+.vbtn{
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  background:rgba(255, 253, 240, 0.78);
+  border:2px solid rgba(255, 255, 255, 0.85);
+  box-shadow:0 4px 12px rgba(35, 45, 30, 0.22);
+  color:#3b4737;
+  font-family:'ONE Mobile POP', Arial, sans-serif;
+  font-size:20px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:auto;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  transition:transform 0.06s ease, background 0.06s ease;
+}
+
+.vbtn:active, .vbtn.active{
+  transform:scale(0.90);
+  background:rgba(240, 195, 105, 0.95);
+  color:#232b20;
+}
+
+.vbtn-action{
+  width:68px;
+  height:68px;
+  font-size:16px;
+  letter-spacing:0.5px;
+}
+
+.vbtn-jump{
+  background:rgba(146, 195, 128, 0.85);
+  color:#ffffff;
+  border-color:rgba(255, 255, 255, 0.95);
+}
+
+.vbtn-jump:active, .vbtn-jump.active{
+  background:rgba(98, 163, 76, 0.98);
+}
+
+.vbtn-dash{
+  background:rgba(235, 172, 92, 0.85);
+  color:#ffffff;
+  border-color:rgba(255, 255, 255, 0.95);
+}
+
+.vbtn-dash:active, .vbtn-dash.active{
+  background:rgba(214, 137, 44, 0.98);
+}
+
+.vbtn-down{
+  width:50px;
+  height:50px;
+  font-size:18px;
+  background:rgba(255, 253, 240, 0.68);
+}
+
+/* Portrait Warning */
+.portraitWarning{
+  position:fixed;
+  inset:0;
+  z-index:999;
+  background:rgba(20, 24, 30, 0.96);
+  color:#fffdf6;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  text-align:center;
+  padding:24px;
+}
+
+.portraitWarning[hidden]{
+  display:none !important;
+}
+
+.rotatePhoneIcon{
+  font-size:54px;
+  animation:phoneRotate 2.4s ease-in-out infinite;
+}
+
+@keyframes phoneRotate{
+  0%, 10%{ transform:rotate(0deg); }
+  50%, 60%{ transform:rotate(-90deg); }
+  90%, 100%{ transform:rotate(0deg); }
+}
+
+/* TEST24_FIX8 production UI: keep the developer DOM nodes for engine compatibility but hide them. */
+.practiceNav,.encounterNav,.practiceHUD,.debugHud { display:none !important; }

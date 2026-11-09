@@ -168,9 +168,16 @@ function getTerrainImg(folder, prefix, part) {
 }
 
 // Gate 4 (P0): Single Source of Truth (SSOT) panorama rendering from `l.backgroundRanges[bgKey]`
+const _warnedMissingBgKeys = new Set();
 function drawPanoramaByBgKey(bgKey, alpha = 1) {
   const im = worldImages[bgKey];
-  if (!im) return;
+  if (!im) {
+    if (!_warnedMissingBgKeys.has(bgKey)) {
+      _warnedMissingBgKeys.add(bgKey);
+      console.warn(`[Renderer] Missing background image for bgKey="${bgKey}" (expected assets/world/${bgKey}.webp)`);
+    }
+    return;
+  }
   const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
   const [bgStart, bgEnd] = (l.backgroundRanges && l.backgroundRanges[bgKey]) || [0, l.worldWidth];
   const travel = Math.max(1, bgEnd - bgStart - W);
@@ -252,7 +259,7 @@ function renderBackground() {
 
 function drawTowerStructures() {
   const curId = (typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex])?.id;
-  if (curId !== 'monatium') return;
+  if (curId !== 'monatium' && curId !== 'monatium_a') return;
   const m = STAGE_ANCHORS.monatium;
   const backdrop = structureImages['tower_backdrop'];
   const portalArch = structureImages['tower_portal_arch'];
@@ -383,7 +390,101 @@ function drawTowerStructures() {
 // - `steel`: Original Monatium `tower_wall_*` structure preserved 100% pixel-identically.
 function drawStructuralWall(a, drawX, drawY) {
   const mat = a.visual?.material || a.skin || 'steel';
-  if (mat === 'stone') {
+  if (mat === 'stone' || mat === 'gate') {
+    const prefix = mat === 'gate' ? 'gate_' : 'stone_';
+    const bodyA = getTerrainImg('erpien', prefix, 'ground_body_a') || getTerrainImg('erpien', 'stone_', 'ground_body_a');
+    const bodyB = getTerrainImg('erpien', prefix, 'ground_body_b') || bodyA;
+    const cliffL = getTerrainImg('erpien', prefix, 'ground_cliff_left') || getTerrainImg('erpien', 'stone_', 'ground_cliff_left');
+    const cliffR = getTerrainImg('erpien', prefix, 'ground_cliff_right') || getTerrainImg('erpien', 'stone_', 'ground_cliff_right');
+
+    // [P0-3 해결]: 1) 발판 하부 통과 차단 보(underPlatformBeam)는 상부 석조 발판의 오목한 아치 코벨(양끝 34px 테이퍼) 안쪽으로만 깔끔하게 마감하여 양옆 돌출 조각을 원천 제거!
+    if (a.underPlatformBeam) {
+      const inset = Math.min(34, Math.floor(a.w * 0.14));
+      const rx = drawX + inset;
+      const rw = Math.max(16, a.w - inset * 2);
+      const ry = drawY + 2;
+      const rh = Math.max(10, a.h - 4);
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(rx, ry, rw, rh, 5);
+      ctx.clip();
+      ctx.fillStyle = '#5e5668';
+      ctx.fillRect(rx, ry, rw, rh);
+      if (bodyA) {
+        const s = 0.42;
+        const bw = Math.max(36, Math.round(bodyA.width * s));
+        const bh = Math.max(36, Math.round(bodyA.height * s));
+        for (let gx = rx; gx < rx + rw; gx += bw) {
+          ctx.drawImage(bodyA, gx, ry - 8, bw + 1, bh);
+        }
+      }
+      ctx.strokeStyle = 'rgba(52, 45, 62, 0.72)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rx + 1, ry + 1, rw - 2, rh - 2);
+      ctx.restore();
+      return;
+    }
+
+    // [P0-3 해결]: 2) 독립 수평 석조 보(horizontalBeam / 얇은 ceiling 보)는 클리핑 박스 [drawX, drawY, a.w, a.h] 내부에서만 석재 타일과 상하 몰딩을 그려 외부 돌출 0px 보장!
+    if (a.horizontalBeam || (a.ceiling && a.h <= 40)) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(drawX, drawY, a.w, a.h, 5);
+      ctx.clip();
+      ctx.fillStyle = '#6c6574';
+      ctx.fillRect(drawX, drawY, a.w, a.h);
+      if (bodyA) {
+        const s = 0.44;
+        const bw = Math.max(36, Math.round(bodyA.width * s));
+        const bh = Math.max(36, Math.round(bodyA.height * s));
+        for (let gx = drawX; gx < drawX + a.w; gx += bw) {
+          ctx.drawImage(bodyA, gx, drawY - 6, bw + 1, bh);
+        }
+      }
+      ctx.fillStyle = 'rgba(235, 226, 242, 0.28)';
+      ctx.fillRect(drawX + 2, drawY + 2, a.w - 4, 4);
+      ctx.strokeStyle = '#3f3947';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
+      ctx.restore();
+      return;
+    }
+
+    // [P0-3 해결]: 3) 수직 석조 기둥/장벽(EA-WALL-COL-C, EA-WALL-BARRIER-R 등)은 모든 타일과 테두리를 ctx.clip() 내부에서만 그리고, 클립 바깥(drawX-2, drawY-6)으로 삐져나오던 topLeft/topRight 장식을 제거!
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(drawX, drawY, a.w, a.h, 6);
+    ctx.clip();
+    ctx.fillStyle = mat === 'gate' ? '#586249' : '#6c6574';
+    ctx.fillRect(drawX, drawY, a.w, a.h);
+    if (bodyA) {
+      const s = 0.45;
+      const bw = Math.max(36, Math.round(bodyA.width * s));
+      const bh = Math.max(36, Math.round(bodyA.height * s));
+      let rIdx = 0;
+      for (let gy = drawY; gy < drawY + a.h; gy += bh, rIdx++) {
+        let cIdx = 0;
+        for (let gx = drawX; gx < drawX + a.w; gx += bw, cIdx++) {
+          const pick = (rIdx + cIdx) % 2 === 0 ? bodyA : bodyB;
+          ctx.drawImage(pick, gx, gy, bw + 1, bh + 1);
+        }
+      }
+    }
+    if (cliffL && cliffR && a.h >= 60) {
+      const edgeW = Math.min(Math.round(a.w * 0.38), 22);
+      const edgeH = Math.max(64, Math.round(cliffL.height * 0.42));
+      for (let gy = drawY; gy < drawY + a.h; gy += edgeH - 8) {
+        ctx.drawImage(cliffL, drawX, gy, edgeW, edgeH);
+        ctx.drawImage(cliffR, drawX + a.w - edgeW, gy, edgeW, edgeH);
+      }
+    }
+    ctx.strokeStyle = mat === 'gate' ? '#36402a' : '#3f3947';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
+    ctx.restore();
+    return;
+  }
+  if (false && mat === 'stone') {
     const bodyA = getTerrainImg('erpien', 'stone_', 'ground_body_a');
     const bodyB = getTerrainImg('erpien', 'stone_', 'ground_body_b') || bodyA;
     const cliffL = getTerrainImg('erpien', 'stone_', 'ground_cliff_left');
@@ -524,6 +625,11 @@ function drawStructuralWall(a, drawX, drawY) {
   ctx.strokeStyle = '#242b37';
   ctx.lineWidth = 3;
   ctx.strokeRect(drawX + 1.5, drawY + 1.5, a.w - 3, a.h - 3);
+  if (a.hazardExteriorRight) {
+    // Visual warning energy trim along the outer right face of the tower wall
+    ctx.fillStyle = 'rgba(255, 107, 82, 0.72)';
+    ctx.fillRect(drawX + a.w - 7, drawY + 4, 5, a.h - 8);
+  }
   ctx.restore();
 }
 
@@ -709,32 +815,36 @@ function drawThinPlatformVisual(a, drawX, drawY) {
     return;
   }
 
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(drawX, topY - 4, a.w, drawH + 8);
+  ctx.clip();
+
   const midX1 = drawX + lw;
   const midX2 = drawX + a.w - rw;
   const midSpan = midX2 - midX1;
   const nomW = midA.width * s;
   const mids = [midA, midB, midC];
 
-  if (midSpan >= nomW * 0.90) {
-    const count = Math.max(1, Math.round(midSpan / nomW));
-    const stepW = midSpan / count;
-    for (let i = 0; i < count; i++) {
-      const tx = Math.round(midX1 + i * stepW);
-      const tw = Math.round(midX1 + (i + 1) * stepW) - tx;
-      const mImg = mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3];
-      ctx.drawImage(mImg, tx - 1, topY, tw + 2, drawH);
-    }
-  } else {
+  if (midSpan > 0) {
     ctx.save();
     ctx.beginPath();
-    ctx.rect(midX1 - 2, topY - 8, midSpan + 4, drawH + 16);
+    ctx.rect(midX1, topY - 4, midSpan, drawH + 8);
     ctx.clip();
-    ctx.drawImage(midA, midX1 - 4, topY, Math.round(nomW), drawH);
+    const count = Math.max(1, Math.ceil(midSpan / nomW));
+    const stepW = midSpan / count;
+    for (let i = 0; i < count; i++) {
+      const tx = Math.floor(midX1 + i * stepW);
+      const tw = Math.ceil(midX1 + (i + 1) * stepW) - tx;
+      const mImg = mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3];
+      ctx.drawImage(mImg, tx, topY, tw + 1, drawH);
+    }
     ctx.restore();
   }
 
   ctx.drawImage(leftImg, drawX, topY, lw, drawH);
   ctx.drawImage(rightImg, drawX + a.w - rw, topY, rw, drawH);
+  ctx.restore();
 }
 
 // Gate 1 (P0): Render separated stage props (`BACKGROUND_PROP` & `DECORATION`) with grounded anchorBottom
@@ -816,7 +926,7 @@ function drawPlatformDecorations(a, drawX, drawY) {
 
     if (flags.some(f => Math.abs(f.x - dx) < 90)) continue;
     if (l.decorFootprints && l.decorFootprints.some(fp => dx >= fp.x1 - 40 && dx <= fp.x2 + 40)) continue;
-    if (l.id === 'monatium' && dx > (STAGE_ANCHORS.monatium.bukgyeongBldgX - 100) && dx < (STAGE_ANCHORS.monatium.bukgyeongBldgX + 540)) continue;
+    if ((l.id === 'monatium' || l.id === 'monatium_a') && dx > (STAGE_ANCHORS.monatium.bukgyeongBldgX - 100) && dx < (STAGE_ANCHORS.monatium.bukgyeongBldgX + 540)) continue;
     const g = l.goal;
     if (g && dx > g.x - 120 && dx < g.x + g.w + 120) continue;
 
@@ -833,6 +943,34 @@ function drawPlatform(a) {
   const drawY = Math.round((a.prevY ?? a.y) + (a.y - (a.prevY ?? a.y)) * renderAlpha);
 
   if (a.motion) {
+    // Draw authentic track rail matching the exact movement bounds on the user sketch!
+    ctx.save();
+    ctx.strokeStyle = 'rgba(210, 225, 245, 0.45)';
+    ctx.lineWidth = 3.5;
+    if (a.motion.axis === 'x') {
+      const tx1 = a.trackX1 !== undefined ? a.trackX1 : (a.baseX - a.motion.range);
+      const tx2 = a.trackX2 !== undefined ? a.trackX2 : (a.baseX + a.motion.range + a.w);
+      const railY = a.baseY + Math.round(a.h * 0.5);
+      ctx.beginPath();
+      ctx.moveTo(tx1, railY);
+      ctx.lineTo(tx2, railY);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(226, 197, 106, 0.75)';
+      ctx.fillRect(tx1 - 3, railY - 5, 6, 10);
+      ctx.fillRect(tx2 - 3, railY - 5, 6, 10);
+    } else if (a.motion.axis === 'y') {
+      const ty1 = a.trackY1 !== undefined ? a.trackY1 : (a.baseY - a.motion.range);
+      const ty2 = a.trackY2 !== undefined ? a.trackY2 : (a.baseY + a.motion.range);
+      const railX = a.baseX + Math.round(a.w * 0.5);
+      ctx.beginPath();
+      ctx.moveTo(railX, ty1);
+      ctx.lineTo(railX, ty2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(226, 197, 106, 0.75)';
+      ctx.fillRect(railX - 6, ty1 - 3, 12, 6);
+      ctx.fillRect(railX - 6, ty2 - 3, 12, 6);
+    }
+    ctx.restore();
     ctx.save();
     ctx.setLineDash([5, 6]);
     if (a.motion.axis === 'x') {
@@ -1023,6 +1161,7 @@ function draw() {
   ctx.translate(-Math.round(rCam), -Math.round(rCamY));
 
   drawTowerStructures();
+  drawMonatiumBArchitecture();
 
   for (const a of platforms) {
     if (!a.groundTile) continue;
@@ -1137,5 +1276,143 @@ function draw() {
     ctx.fillStyle = '#101b39';
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
+  }
+}
+
+
+function drawMonatiumBArchitecture() {
+  const curId = (typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex])?.id;
+  if (curId !== 'monatium_b') return;
+  const mb = STAGE_ANCHORS.monatium_b;
+  const backdrop = structureImages['tower_backdrop'];
+  const portalArch = structureImages['tower_portal_arch'];
+  const pier = structureImages['rooftop_pier'];
+  const truss = structureImages['rooftop_truss'];
+
+  // 1. Connecting Skybridges & Substructure Piers (Arch 1: x=1700..2500, Expanded Summit Arch: x=3600..5500)
+  const trussSpans = [
+    { x1: mb.arch1Start - 20, x2: mb.arch1End + 20, y: -600 },
+    { x1: mb.arch1Start - 20, x2: mb.arch1End + 20, y: -940 },
+    { x1: mb.summitStart - 20, x2: mb.summitEnd + 20, y: -1520 },
+    { x1: mb.summitStart - 20, x2: mb.summitEnd + 20, y: -2120 }
+  ];
+  if (truss) {
+    for (const sp of trussSpans) {
+      if (sp.x2 < rCam - 120 || sp.x1 > rCam + W + 120) continue;
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.rect(sp.x1, sp.y, sp.x2 - sp.x1, 128);
+      ctx.clip();
+      for (let gx = sp.x1; gx < sp.x2; gx += 260) {
+        ctx.drawImage(truss, gx, sp.y, 262, 128);
+      }
+      ctx.restore();
+    }
+  }
+
+  const pierColumns = [
+    { x: mb.arch1Start + 20, topY: -560, w: 180 },
+    { x: mb.arch1End - 200, topY: -560, w: 180 },
+    { x: mb.summitStart + 20, topY: -1520, w: 210 },
+    { x: mb.summitEnd - 230, topY: -1520, w: 210 }
+  ];
+  if (pier) {
+    for (const pc of pierColumns) {
+      if (pc.x + pc.w < rCam - 120 || pc.x > rCam + W + 120) continue;
+      const bottomY = 580;
+      const tileH = 440;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pc.x, pc.topY, pc.w, bottomY - pc.topY);
+      ctx.clip();
+      for (let gy = pc.topY; gy < bottomY; gy += tileH) {
+        ctx.drawImage(pier, pc.x, gy, pc.w, tileH + 2);
+      }
+      ctx.restore();
+    }
+  }
+
+  // 2. Three Enclosed Tower Shafts (using STAGE_ANCHORS.monatium_b)
+  const shafts = [
+    {
+      // Tower 1 (West): x=664..1636, y=-980..580
+      x1: mb.tower1Start + 64, x2: mb.tower1End - 64, y1: -1120, y2: 580,
+      rails: [805, 1045, 1260],
+      portals: [
+        { x: mb.tower1Start - 8, y: 356, w: 84, h: 224 },
+        { x: mb.tower1End - 76, y: -945, w: 84, h: 224 }
+      ]
+    },
+    {
+      // Tower 2 (Central High): x=2564..3536, y=-2220..580
+      x1: mb.tower2Start + 64, x2: mb.tower2End - 64, y1: -2180, y2: 580,
+      rails: [3240, 3530, 3810],
+      portals: [
+        { x: mb.tower2Start - 8, y: -945, w: 84, h: 224 },
+        { x: mb.tower2End - 76, y: -1940, w: 84, h: 224 }
+      ]
+    },
+    {
+      // Tower 3 (East Descent): x=5564..6536, y=-2500..580
+      x1: mb.tower3Start + 64, x2: mb.tower3End - 64, y1: -2420, y2: 580,
+      rails: [5680, 5995, 6310],
+      portals: [
+        { x: mb.tower3Start - 8, y: -1940, w: 84, h: 224 },
+        { x: mb.tower3End - 76, y: 356, w: 84, h: 224 }
+      ],
+      hasBottomPit: true, pitX1: mb.tower3Start + 64, pitX2: mb.tower3End - 64
+    }
+  ];
+
+  for (const sh of shafts) {
+    if (sh.x2 < rCam - 180 || sh.x1 > rCam + W + 180) continue;
+    const spanW = sh.x2 - sh.x1;
+    const spanH = sh.y2 - sh.y1;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(sh.x1, sh.y1, spanW, spanH);
+    ctx.clip();
+
+    const grad = ctx.createLinearGradient(0, sh.y1, 0, sh.y2);
+    grad.addColorStop(0, 'rgba(34, 45, 64, 0.80)');
+    grad.addColorStop(0.5, 'rgba(28, 38, 55, 0.84)');
+    grad.addColorStop(1, 'rgba(22, 30, 44, 0.88)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(sh.x1, sh.y1, spanW, spanH);
+
+    if (backdrop) {
+      const tileW = 480, tileH = 480;
+      for (let gy = sh.y1; gy < sh.y2; gy += tileH) {
+        for (let gx = sh.x1; gx < sh.x2; gx += tileW) {
+          ctx.drawImage(backdrop, gx, gy, tileW + 1, tileH + 1);
+        }
+      }
+    }
+
+    ctx.strokeStyle = 'rgba(145, 185, 220, 0.22)';
+    ctx.lineWidth = 4;
+    for (const rx of sh.rails) {
+      ctx.beginPath();
+      ctx.moveTo(rx, sh.y1 + 40);
+      ctx.lineTo(rx, sh.y2 - 20);
+      ctx.stroke();
+    }
+
+    if (sh.hasBottomPit) {
+      const pGrad = ctx.createLinearGradient(0, 515, 0, 580);
+      pGrad.addColorStop(0, 'rgba(235, 88, 64, 0.0)');
+      pGrad.addColorStop(1, 'rgba(235, 88, 64, 0.48)');
+      ctx.fillStyle = pGrad;
+      ctx.fillRect(sh.pitX1, 515, sh.pitX2 - sh.pitX1, 65);
+    }
+    ctx.restore();
+
+    if (portalArch) {
+      for (const pt of sh.portals) {
+        ctx.drawImage(portalArch, pt.x, pt.y, pt.w, pt.h);
+      }
+    }
   }
 }

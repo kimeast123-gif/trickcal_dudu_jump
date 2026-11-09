@@ -4,7 +4,7 @@
 // - Gate G6-2: Eliminates 1.6~2.2s trailing silence gaps in BGM MP3 loops using measured `BGM_LOOP_BOUNDS` (`loopStartSec` / `loopEndSec` verified via ffmpeg silencedetect).
 let eventMode=false,eventElapsed=0,eventLast=0,sceneElapsed=0,typed=0,storyLine='',scenePaused=false,musicStage=-1;
 let storySessionId=0,activeStoryKind=null;
-const LIMIT=900,EVENT_ROOT='assets/event/';
+const LIMIT=1500,EVENT_ROOT='assets/event/';
 const eventImages={};
 const musicNames=['day','afternoon','sunset','opening','ending'];
 const BGM_LOOP_BOUNDS={
@@ -153,7 +153,7 @@ function storyAdvance(){
   modal(
    wasSpecial?'황금 크레파스 올 컬렉션 달성!':'산책 이야기 끝',
    wasLate?'조금 늦어버렸어요':wasSpecial?'두두, 모든 황금 크레파스와 함께 집에 도착!':'두두, 무사히 집에 도착!',
-   `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wasSpecial?'<small>(전용 특수 엔딩 일러스트 미제공 단계로, 임시 리워드 안내 후 기본 성공 엔딩과 연결되었습니다.)</small><br>':''}다시 시작하면 새로운 15분 산책이 시작됩니다.`,
+   `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wasSpecial?'<small>(전용 특수 엔딩 일러스트 미제공 단계로, 임시 리워드 안내 후 기본 성공 엔딩과 연결되었습니다.)</small><br>':''}다시 시작하면 새로운 25분 산책이 시작됩니다.`,
    '다시 산책하기 →'
   );
  }
@@ -267,7 +267,7 @@ function eventTick(now){
    if(eventElapsed>=LIMIT){
     finishEvent(false);
    }else{
-    const stage=Math.floor(eventElapsed/300);
+    const stage=Math.floor(eventElapsed/500);
     if(stage!==musicStage){musicStage=stage;playTrack(stage,true);}
    }
   }else if(state==='night'){
@@ -279,8 +279,8 @@ function eventTick(now){
   }
  }
  musicTick(Math.min(dt,.1));
- $('eventClock').textContent=eventMode?clockText(LIMIT-eventElapsed):(state==='ready'||state==='loading'?'15:00':'연습');
- $('eventClock').classList.toggle('urgent',eventMode&&eventElapsed>=810);
+ $('eventClock').textContent=eventMode?clockText(LIMIT-eventElapsed):(state==='ready'||state==='loading'?'25:00':'연습');
+ $('eventClock').classList.toggle('urgent',eventMode&&eventElapsed>=1350);
 }
 window.addEventListener('blur',()=>{if(['opening','popup','night','ending','regionTransition'].includes(state)){scenePaused=true;$('storyHint').textContent='클릭 · 계속 보기';}tracks.forEach(a=>a.pause());});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&['opening','popup','night','ending','regionTransition'].includes(state)){scenePaused=true;tracks.forEach(a=>a.pause());}});
@@ -288,9 +288,9 @@ $('launchScene').onclick=()=>{scenePaused=false;eventLast=performance.now();};
 window.addEventListener('focus',()=>{if(state==='night'||state==='regionTransition'){scenePaused=false;eventLast=performance.now();}});
 function mixColor(a,b,t){const c=a.map((v,i)=>Math.round(v+(b[i]-v)*t));return `rgb(${c.join(',')})`;}
 const timeStops=[
- {t:0,c:[180,220,255],opacity:.02},{t:180,c:[255,244,210],opacity:.025},
- {t:420,c:[255,219,166],opacity:.12},{t:660,c:[237,164,108],opacity:.23},
- {t:810,c:[151,99,155],opacity:.36},{t:900,c:[20,35,80],opacity:.67}
+ {t:0,c:[180,220,255],opacity:.02},{t:300,c:[255,244,210],opacity:.025},
+ {t:700,c:[255,219,166],opacity:.12},{t:1100,c:[237,164,108],opacity:.23},
+ {t:1350,c:[151,99,155],opacity:.36},{t:1500,c:[20,35,80],opacity:.67}
 ];
-function dayPhase(){const t=eventMode?eventElapsed:0;let i=0;while(i<timeStops.length-2&&t>timeStops[i+1].t)i++;const a=timeStops[i],b=timeStops[i+1],u=Math.max(0,Math.min(1,(t-a.t)/(b.t-a.t)));return {tint:mixColor(a.c,b.c,u),opacity:a.opacity+(b.opacity-a.opacity)*u,night:Math.max(0,(t-660)/240)};}
+function dayPhase(){const t=eventMode?eventElapsed:0;let i=0;while(i<timeStops.length-2&&t>timeStops[i+1].t)i++;const a=timeStops[i],b=timeStops[i+1],u=Math.max(0,Math.min(1,(t-a.t)/(b.t-a.t)));return {tint:mixColor(a.c,b.c,u),opacity:a.opacity+(b.opacity-a.opacity)*u,night:Math.max(0,(t-1100)/400)};}
 load();requestAnimationFrame(frame);

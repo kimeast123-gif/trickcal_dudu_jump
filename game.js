@@ -2,7 +2,11 @@
 const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),$=s=>document.getElementById(s);const W=1280,H=720,STEP=1/120;let END=7400,gameMode='story';
 let state='loading',time=0,cam=0,look=.42,acc=0,last=0,animTime=0,spin=0,land=0,toastTime=0,muted=false,audio,checkpoint=0,deaths=0,camY=0;
 let prevCam=0,prevCamY=0,camZoom=1,prevCamZoom=1,renderAlpha=1,rCam=0,rCamY=0,rCamZoom=1,rPx=150,rPy=580;
-let lookDownHold=0,lookDownOffset=0;
+let lookDownHold=0,lookDownOffset=0,monatiumBTower3ExitAuthorized=false,monatiumBTower3Cleared=false,monatiumBTower3LastResetWallId=null;
+const MB_T3_DANGER_WALLS=new Set(['MB-T3-WALL-L-TOP','MB-T3-WALL-L-BOT','MB-T3-WALL-R-TOP']);
+const tower3WallResetLog=[];
+window.__tower3WallResetLog=tower3WallResetLog;
+window.__getTower3WallState=()=>({exitAuth:monatiumBTower3ExitAuthorized,cleared:monatiumBTower3Cleared,lastWallId:monatiumBTower3LastResetWallId,log:tower3WallResetLog});
 const keys=new Set(),images={},meta={};let particles=[],coins=[],saved=new Set();
 const rest={clip:null,elapsed:0,wait:3.5,bag:[],previous:null};
 const shadow={y:583,alpha:.13,width:25};
@@ -242,14 +246,21 @@ function getCameraProfile(px=p.x,py=p.y){
   const clv=challengeLevels[challengeStageIndex];
   return (clv&&clv.cameraProfile)||'challenge_vertical';
  }
- if(levels[levelIndex]?.id==='monatium'&&typeof STAGE_ANCHORS!=='undefined'){
-  const m=STAGE_ANCHORS.monatium;
+ const curLevelId = levels[levelIndex]?.id;
+ if(curLevelId==='monatium_a'&&typeof STAGE_ANCHORS!=='undefined'){
+  const m=STAGE_ANCHORS.monatium_a;
   if(px>=m.ascentStart-20&&px<=m.ascentEnd+10&&(py<576||(px>=m.ascentStart+40&&px<=m.ascentEnd-40)))return 'ascent_shaft';
   if(px>=m.descentStart-40&&px<=m.descentEnd+20&&(py<576||px<=m.descentEnd-60))return 'descent_shaft';
   if(px>m.ascentEnd&&px<m.descentStart&&py<=-1100)return 'rooftop';
  }
- if(levels[levelIndex]?.id==='erpien'&&typeof STAGE_ANCHORS!=='undefined'){
-  const e=STAGE_ANCHORS.erpien;
+ if(curLevelId==='monatium_b'){
+  return 'monatium_b_tall';
+ }
+ if(curLevelId==='erpien_a'&&px>=6600){
+  return 'erpien_a_vertical';
+ }
+ if(curLevelId==='erpien_b'&&typeof STAGE_ANCHORS!=='undefined'){
+  const e=STAGE_ANCHORS.erpien_b;
   if(px>=e.marieStart-120&&px<e.templeStart)return 'erpien_boss_zoom';
  }
  return 'general';
@@ -281,9 +292,17 @@ function computeInitialCameraForPoint(px,py){
  }else if(prof==='challenge_horizontal'){
   targetX=Math.max(0,Math.min(END-W,px-W*0.36));
   targetY=Math.min(100,Math.max(-450,py-440));
+ }else if(prof==='monatium_b_tall'){
+  targetX=Math.max(0,Math.min(END-W,px-W*0.42));
+  targetY=Math.min(140,Math.max(-2950,py-430));
+  return {cam:targetX,camY:targetY,zoom:1.0,profile:prof};
+ }else if(prof==='erpien_a_vertical'){
+  targetX=Math.max(0,Math.min(END-W,px-W*0.42));
+  targetY=Math.min(140,Math.max(-1250,py-380));
+  return {cam:targetX,camY:targetY,zoom:1.0,profile:prof};
  }else if(prof==='erpien_boss_zoom'){
   const z=0.88;
-  targetX=STAGE_ANCHORS.erpien.arenaOrigin||15700;
+  targetX=STAGE_ANCHORS.erpien_b.arenaOrigin||10500;
   targetY=-98;
   return {cam:targetX,camY:targetY,zoom:z,profile:prof};
  }else{
@@ -368,6 +387,9 @@ function reset(full=false){
  if(full){resetJourney();checkpoint=0;saved.clear();deaths=0;completed.fill(false);}
  resetPlatforms();
  if(typeof resetPendingSpecialCoins==='function')resetPendingSpecialCoins();
+ const isPlazaSpawn = !!(levels[levelIndex]?.id==='monatium_b' && sections[checkpoint] && sections[checkpoint].x >= STAGE_ANCHORS.monatium_b.plazaStart);
+ monatiumBTower3ExitAuthorized = isPlazaSpawn;
+ monatiumBTower3Cleared = isPlazaSpawn;
  const dest=sections[checkpoint]||sections[0]||{x:150,y:580};
  Object.assign(p,{
   x:dest.x,y:dest.y,prevX:dest.x,prevY:dest.y,vx:0,vy:0,ground:true,
@@ -384,7 +406,7 @@ function reset(full=false){
  camY=initCam.camY;
  syncRenderCoords();
  coins.forEach(c=>{c.got=saved.has(c.id);});
- spin=0;particles=[];trail=[];keys.clear();dashRequest=false;cancelRest();shadow.y=p.y+3;shadow.alpha=.13;shadow.width=25;visual.reset=true;resetHazards();updateHud();
+ spin=0;particles=[];trail=[];if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();dashRequest=false;cancelRest();shadow.y=p.y+3;shadow.alpha=.13;shadow.width=25;visual.reset=true;resetHazards();updateHud();
 }
 function updateHud(){
  const totalC=typeof totalRegularCandyCount==='function'?totalRegularCandyCount():coins.length;
@@ -401,12 +423,22 @@ function updateHud(){
  }
 }
 function modal(tag,title,text,button){$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;$('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';}
-function pause(){if(state==='playing'){state='paused';keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}else if(state==='paused')start();}
-function start(){if(state==='loading')return;if(state==='won')reset(true);state='playing';$('overlay').hidden=true;canvas.focus();keys.clear();last=performance.now();acc=0;}
+function pause(){if(state==='playing'){state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}else if(state==='paused')start();}
+function start(){if(state==='loading')return;if(state==='won')reset(true);state='playing';$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();last=performance.now();acc=0;}
 $('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'효과음 켜기':'효과음 끄기');if(!muted)tone(660);};$('full').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
 window.addEventListener('keydown',e=>{
  if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code))e.preventDefault();
- if(e.code==='F3'){e.preventDefault();return;} // RELEASE: debug HUD disabled
+ if(e.code==='F3'&&!e.repeat){debugMetrics.enabled=!debugMetrics.enabled;$('debugHud').hidden=!debugMetrics.enabled;return;}
+ if(typeof pressInput==='function'){
+  // Map WASD to Arrow keys as alternative controls
+  let logicalCode=e.code;
+  if(logicalCode==='KeyA')logicalCode='ArrowLeft';
+  else if(logicalCode==='KeyD')logicalCode='ArrowRight';
+  else if(logicalCode==='KeyS')logicalCode='ArrowDown';
+  else if(logicalCode==='KeyW')logicalCode='Space';
+  pressInput(logicalCode,'keyboard');
+  return;
+ }
  if(e.code==='Escape'&&!e.repeat){pause();return;}if(state!=='playing')return;
  if(e.code==='KeyR'&&!e.repeat){chooseSection(checkpoint);return;}
  keys.add(e.code);
@@ -419,7 +451,19 @@ window.addEventListener('keydown',e=>{
  }
  if(e.code==='ShiftLeft'&&!e.repeat)dashRequest=true;
 });
-window.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='Space'){if(p.hold<(p.jumps===2?.22:.24))p.jumpCut=true;p.jumpHeld=false;}});
+window.addEventListener('keyup',e=>{
+ if(typeof releaseInput==='function'){
+  let logicalCode=e.code;
+  if(logicalCode==='KeyA')logicalCode='ArrowLeft';
+  else if(logicalCode==='KeyD')logicalCode='ArrowRight';
+  else if(logicalCode==='KeyS')logicalCode='ArrowDown';
+  else if(logicalCode==='KeyW')logicalCode='Space';
+  releaseInput(logicalCode,'keyboard');
+  return;
+ }
+ keys.delete(e.code);
+ if(e.code==='Space'){if(p.hold<(p.jumps===2?.22:.24))p.jumpCut=true;p.jumpHeld=false;}
+});
 window.addEventListener('blur',()=>{if(state==='playing')pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='playing')pause();});canvas.addEventListener('pointerdown',()=>canvas.focus());
 function beginJump(second){
  if(p.guardStun>0)return;
@@ -493,10 +537,72 @@ function update(dt){
  const attachedPlatform=(p.ground&&p.on&&p.on.collidable!==false)?p.on:null,oldX=p.x,oldY=p.y;
  p.x=Math.max(20,Math.min(END-20,p.x+p.vx*dt));
 
+ let wallHazardReset = false;
+ let hitDangerWallId = null;
+ const isMonatiumB = (typeof levels!=='undefined' && levels[levelIndex]?.id==='monatium_b' && typeof STAGE_ANCHORS!=='undefined');
+ if(isMonatiumB){
+  const mb = STAGE_ANCHORS.monatium_b;
+  const wallX = mb.tower3End - 64; // 6486
+  if(p.x >= mb.tower3Start + 64 && p.x <= wallX){
+   if(p.y >= 150 && p.y <= 585){
+    monatiumBTower3ExitAuthorized = true;
+   }else if(p.y < 0){
+    monatiumBTower3ExitAuthorized = false;
+    monatiumBTower3Cleared = false;
+   }
+  }
+  if(monatiumBTower3ExitAuthorized && p.x >= mb.plazaStart && p.y >= 340){
+   monatiumBTower3Cleared = true;
+  }
+ }
  for(const a of platforms){
-  if(a.collidable===false||a.thin||oldY<=a.y+2||oldY-60>=a.y+a.h)continue;
-  if(oldX+19<=a.x&&p.x+19>a.x){p.x=a.x-19;p.vx=0;p.dash=0;p.knockVX=0;}
-  else if(oldX-19>=a.x+a.w&&p.x-19<a.x+a.w){p.x=a.x+a.w+19;p.vx=0;p.dash=0;p.knockVX=0;}
+  if(a.collidable===false||a.thin)continue;
+  // [FIX8 Gate 2]: Swept + AABB immediate 1-frame contact detection on MB_T3_DANGER_WALLS (before and during horizontal resolution)
+  if(isMonatiumB && !monatiumBTower3Cleared && MB_T3_DANGER_WALLS.has(a.id)){
+   const pMinX = Math.min(oldX, p.x) - 19.5;
+   const pMaxX = Math.max(oldX, p.x) + 19.5;
+   const pMinY = Math.min(oldY, p.y + p.vy * dt) - 60;
+   const pMaxY = Math.max(oldY, p.y + p.vy * dt) - 2;
+   // Exclude the upper-left entry portal landing on MB-T3-ENTRY (x <= 5575, y in [-1935, -1705])
+   const inLeftEntryPortal = (a.id !== 'MB-T3-WALL-R-TOP') && (p.y <= -1705 && p.y >= -1935 && p.x <= 5575);
+   if(!inLeftEntryPortal && pMaxX >= a.x && pMinX <= a.x + a.w && pMaxY > a.y + 2 && pMinY < a.y + a.h - 2){
+    wallHazardReset = true;
+    hitDangerWallId = a.id;
+   }
+  }
+  if(oldY<=a.y+2||oldY-60>=a.y+a.h)continue;
+  if(oldX+19<=a.x&&p.x+19>a.x){
+   p.x=a.x-19;p.vx=0;p.dash=0;p.knockVX=0;
+   if(isMonatiumB && !monatiumBTower3Cleared && MB_T3_DANGER_WALLS.has(a.id)){
+    wallHazardReset = true;
+    hitDangerWallId = a.id;
+   }
+  }else if(oldX-19>=a.x+a.w&&p.x-19<a.x+a.w){
+   p.x=a.x+a.w+19;p.vx=0;p.dash=0;p.knockVX=0;
+   if(a.hazardExteriorRight || (isMonatiumB && !monatiumBTower3Cleared && MB_T3_DANGER_WALLS.has(a.id))){
+    wallHazardReset = true;
+    hitDangerWallId = a.id;
+   }
+  }
+ }
+ if(isMonatiumB && !monatiumBTower3Cleared){
+  const mb = STAGE_ANCHORS.monatium_b;
+  const wallX = mb.tower3End - 64; // 6486
+  // Any exterior bypass beyond the right wall line without bottom-gate authorization resets immediately!
+  if(p.x >= wallX + 20 && (p.y < 220 || !monatiumBTower3ExitAuthorized)){
+   wallHazardReset = true;
+   hitDangerWallId = hitDangerWallId || 'MB-T3-EXTERIOR-BYPASS';
+  }
+ }
+ if(wallHazardReset){
+  deaths++;
+  monatiumBTower3LastResetWallId = hitDangerWallId;
+  tower3WallResetLog.push({wallId: hitDangerWallId, px: Math.round(p.x), py: Math.round(p.y), deaths, t: Number(time.toFixed(3))});
+  monatiumBTower3ExitAuthorized = false;
+  monatiumBTower3Cleared = false;
+  notify('제3타워 벽면에 접촉하여 체크포인트로 즉시 돌아갑니다!');
+  reset(false);
+  return;
  }
 
  p.y+=p.vy*dt;p.ground=false;p.on=null;let landing=null;
@@ -594,6 +700,64 @@ function update(dt){
   cam+=dzX*(1-Math.exp(-dt*7.2));
   const roofTargetY=Math.min(0,Math.max(-2180,p.y-430+lookDownOffset));
   camY+=(roofTargetY-camY)*(1-Math.exp(-dt*6.0));
+ }else if(camProfile==='erpien_a_vertical'){
+  // [P0-E 해결]: 수직 데드존(화면 중앙 210~510px 구간 = 300px 폭) 기반 카메라!
+  // 점프/낙하 속도(p.vy)에 따라 목표가 105px씩 급변하던 로직을 전면 제거하고,
+  // 플레이어가 화면 중앙 데드존 안에 있을 때는 카메라 Y를 고정하여 상하 흔들림(멀미)을 원천 차단!
+  if(keys.has('ArrowDown')&&!stunned&&p.dash<=0&&Math.abs(p.vx)<200){
+   lookDownHold=Math.min(0.6,lookDownHold+dt);
+  }else{
+   lookDownHold=Math.max(0,lookDownHold-dt*3.2);
+  }
+  const lookDownTarget=lookDownHold>0.10?185:0;
+  lookDownOffset+=(lookDownTarget-lookDownOffset)*(1-Math.exp(-dt*6.0));
+  camZoom+=(1.0-camZoom)*(1-Math.exp(-dt*4.5));
+  const viewW=W/camZoom;
+  const desiredLook=dir<0?.54:dir>0?.40:look;
+  look+=(desiredLook-look)*(1-Math.exp(-dt*4.0));
+  const desired=Math.max(0,Math.min(END-viewW,p.x-viewW*look));
+  const diffX=desired-cam;
+  const dzX=Math.abs(diffX)<=3?0:diffX-Math.sign(diffX)*3;
+  cam+=dzX*(1-Math.exp(-dt*7.2));
+  const actLv=(typeof getActiveLevel==='function')?getActiveLevel():levels[levelIndex];
+  const minCY=(actLv&&typeof actLv.minCamY==='number')?actLv.minCamY:-1250;
+  const maxCY=(actLv&&typeof actLv.maxCamY==='number')?actLv.maxCamY:140;
+  // Vertical Deadzone: keep camBaseY still while player screen Y is within [210, 510] (42% central window of 720px height)
+  const baseCamY = camY - lookDownOffset;
+  const screenY = p.y - baseCamY;
+  let desiredBaseY = baseCamY;
+  if(screenY < 210){
+   desiredBaseY = p.y - 210;
+  }else if(screenY > 510){
+   desiredBaseY = p.y - 510;
+  }
+  const targetCamY = Math.min(maxCY, Math.max(minCY, desiredBaseY + lookDownOffset));
+  camY += (targetCamY - camY) * (1 - Math.exp(-dt * 5.8));
+ }else if(camProfile==='monatium_b_tall'){
+  // [P0-C.1 해결]: 중복된 3개 분기를 1개로 통합하고, 제3타워 하강 구간 및 상층에서 ↓(ArrowDown) 아래보기 완벽 작동!
+  const mb = STAGE_ANCHORS.monatium_b;
+  const inTower3Descent = (p.x >= mb.tower3Start - 120 && p.x <= mb.tower3End + 80);
+  if(keys.has('ArrowDown')&&!stunned&&p.dash<=0&&Math.abs(p.vx)<200&&(inTower3Descent||p.y<-300)){
+   lookDownHold=Math.min(0.6,lookDownHold+dt);
+  }else{
+   lookDownHold=Math.max(0,lookDownHold-dt*3.2);
+  }
+  const lookDownTarget=lookDownHold>0.10?220:0;
+  lookDownOffset+=(lookDownTarget-lookDownOffset)*(1-Math.exp(-dt*6.5));
+  camZoom += (1.0 - camZoom) * (1 - Math.exp(-dt * 4.5));
+  const viewW = W / camZoom;
+  const desiredLook = dir < 0 ? .56 : dir > 0 ? .42 : look;
+  look += (desiredLook - look) * (1 - Math.exp(-dt * 3.8));
+  const desired = Math.max(0, Math.min(END - viewW, p.x - viewW * look));
+  const diffX = desired - cam;
+  const dzX = Math.abs(diffX) <= 3 ? 0 : diffX - Math.sign(diffX) * 3;
+  cam += dzX * (1 - Math.exp(-dt * 7.2));
+  const actLv = (typeof getActiveLevel === 'function') ? getActiveLevel() : levels[levelIndex];
+  const minCY = (actLv && typeof actLv.minCamY === 'number') ? actLv.minCamY : -2650;
+  const maxCY = (actLv && typeof actLv.maxCamY === 'number') ? actLv.maxCamY : 160;
+  const vertAnchor = inTower3Descent ? 285 : 420;
+  const targetCamY = Math.min(maxCY, Math.max(minCY, p.y - vertAnchor + lookDownOffset));
+  camY += (targetCamY - camY) * (1 - Math.exp(-dt * 6.5));
  }else if(camProfile==='challenge_vertical'){
   lookDownHold=0;lookDownOffset=0;
   camZoom=1.0;prevCamZoom=1.0;
