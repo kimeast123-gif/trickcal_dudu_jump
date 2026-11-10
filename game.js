@@ -423,9 +423,9 @@ function updateHud(){
  }
 }
 function modal(tag,title,text,button){$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;$('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';}
-function pause(){if(state==='playing'){state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}else if(state==='paused')start();}
-function start(){if(state==='loading')return;if(state==='won')reset(true);state='playing';$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();last=performance.now();acc=0;}
-$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'효과음 켜기':'효과음 끄기');if(!muted)tone(660);};$('full').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
+function pause(){if(state==='playing'){if(typeof ensurePaused==='function')ensurePaused('manual');else{state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}}else if(state==='paused'){if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;start();}}
+function start(){if(state==='loading')return;if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;if(state==='won')reset(true);state='playing';if(window.__mobileUIState){window.__mobileUIState.pausedByPortrait=false;window.__mobileUIState.lastPauseReason=null;}$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();if(typeof syncMobileViewMode==='function')syncMobileViewMode();last=performance.now();acc=0;}
+$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'효과음 켜기':'효과음 끄기');if(!muted)tone(660);};$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
 window.addEventListener('keydown',e=>{
  if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code))e.preventDefault();
  if(e.code==='F3'&&!e.repeat){debugMetrics.enabled=!debugMetrics.enabled;$('debugHud').hidden=!debugMetrics.enabled;return;}
@@ -464,7 +464,7 @@ window.addEventListener('keyup',e=>{
  keys.delete(e.code);
  if(e.code==='Space'){if(p.hold<(p.jumps===2?.22:.24))p.jumpCut=true;p.jumpHeld=false;}
 });
-window.addEventListener('blur',()=>{if(state==='playing')pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='playing')pause();});canvas.addEventListener('pointerdown',()=>canvas.focus());
+window.addEventListener('blur',()=>{if(typeof ensurePaused==='function')ensurePaused('blur');else if(state==='playing')pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(typeof ensurePaused==='function')ensurePaused('visibility');else if(state==='playing')pause();}});canvas.addEventListener('pointerdown',()=>canvas.focus());
 function beginJump(second){
  if(p.guardStun>0)return;
  p.vy=second?-510:-540;p.jumps=second?2:1;p.ground=false;p.on=null;p.coyote=0;p.buffer=0;p.hold=0;p.jumpHeld=keys.has('Space');p.jumpCut=!p.jumpHeld;p.jumpOrigin=p.y;p.jumpHeight=0;
