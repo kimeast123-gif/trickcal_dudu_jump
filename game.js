@@ -84,7 +84,7 @@ const SPRITE_ANCHORS={
 };
 
 const debugMetrics={
- enabled:new URLSearchParams(location.search).get('debug')==='1',
+ enabled:false /* TEST29.2 RELEASE: debug overlay disabled */,
  physicsUpdates:0,renderFrames:0,fps:60,fpsAccum:0,fpsCount:0,
  camDelta:0,maxCamDelta:0,playerDrawDelta:0,maxPlayerDrawDelta:0,
  lastDrawPx:150,lastDrawCam:0,cameraProfile:'general'
@@ -532,7 +532,7 @@ function start(){if(state==='loading')return;if(window.__mobileUIState&&window._
 $('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=toggleSound;setupSoundVolumeSlider();$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
 window.addEventListener('keydown',e=>{
  if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code))e.preventDefault();
- if(e.code==='F3'&&!e.repeat){debugMetrics.enabled=!debugMetrics.enabled;$('debugHud').hidden=!debugMetrics.enabled;return;}
+ if(e.code==='F3'&&!e.repeat){return;} // TEST29.2 RELEASE: debug shortcut disabled
  if(typeof pressInput==='function'){
   // Map WASD to Arrow keys as alternative controls
   let logicalCode=e.code;

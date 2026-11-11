@@ -615,3 +615,16 @@ body.mobile-game-landscape .encounterNav {
 .soundVolumeHint{font-size:10.5px;color:#788672;line-height:1.45}
 .soundSettingDivider{height:1px;width:100%;background:#e9ecdf}
 .mobileControlSectionTitle{font-size:12px;color:#596f58}
+
+/* TEST29.2 RELEASE: no developer / direct-entry / practice UI in production.
+   Must outrank landscape mobile rules that previously set display:flex!important. */
+html body .practiceNav,
+html body .encounterNav,
+html body .practiceHUD,
+html body.mobile-game-landscape .practiceNav,
+html body.mobile-game-landscape .encounterNav,
+html body.mobile-game-landscape .practiceHUD,
+html body.is-mobile-device .practiceNav,
+html body.is-mobile-device .encounterNav,
+html body.is-mobile-device .practiceHUD,
+html body #debugHud { display:none !important; visibility:hidden !important; pointer-events:none !important; }
