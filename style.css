@@ -602,3 +602,16 @@ body.mobile-game-landscape .encounterNav {
 #playerHealthCount{font:800 14px/1 Arial,'Malgun Gothic',sans-serif;color:#607e55;font-variant-numeric:tabular-nums}
 @media(max-width:960px),(max-height:520px){.playerHealthHud{top:43px;right:10px;padding:3px 8px;gap:5px;border-radius:10px}.playerHealthIcons img{width:23px;height:23px}#playerHealthCount{font-size:11px}}
 @media(max-width:580px){.playerHealthHud{top:42px;right:8px;gap:4px;padding:2px 6px}.playerHealthIcons img{width:18px;height:18px}.playerHealthIcons{gap:0}#playerHealthCount{font-size:10px}}
+
+
+/* TEST29.2: The game options button is available to PC and mobile users. */
+.mobileOptBtn,.mobileOptModalBtn{display:inline-flex;align-items:center;justify-content:center}
+/* Sound is a universal option; mobile-controller settings remain available below it. */
+.soundVolumeGroup{gap:9px;padding:7px 1px 5px}
+.soundVolumeGroup .mobileSettingLabel{display:flex;align-items:center;justify-content:space-between;font-size:13px}
+.soundVolumeGroup #soundVolumeValue{font-variant-numeric:tabular-nums;color:#3e7952;font-size:14px}
+.soundVolumeSlider{display:block;width:100%;height:25px;margin:0;accent-color:#538b64;cursor:pointer;touch-action:pan-x}
+.soundVolumeSlider:focus-visible{outline:2px solid #457c55;outline-offset:3px;border-radius:8px}
+.soundVolumeHint{font-size:10.5px;color:#788672;line-height:1.45}
+.soundSettingDivider{height:1px;width:100%;background:#e9ecdf}
+.mobileControlSectionTitle{font-size:12px;color:#596f58}

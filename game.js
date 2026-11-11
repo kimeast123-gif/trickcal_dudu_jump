@@ -1,6 +1,72 @@
 'use strict';
 const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),$=s=>document.getElementById(s);const W=1280,H=720,STEP=1/120;let END=7400,gameMode='story';
 let state='loading',time=0,cam=0,look=.42,acc=0,last=0,animTime=0,spin=0,land=0,toastTime=0,muted=false,audio,checkpoint=0,deaths=0,camY=0;
+
+// TEST29.2: Saved, global volume for BGM / speech / synthesized effects.
+// The sound button remains a separate mute switch. 70% is the new default.
+const SOUND_VOLUME_STORAGE_KEY='dudu_master_volume_v1';
+const DEFAULT_MASTER_SOUND_VOLUME=0.70;
+function loadMasterSoundVolume(){
+ try{
+  const raw=localStorage.getItem(SOUND_VOLUME_STORAGE_KEY);
+  if(raw!==null){const v=Number(raw);if(Number.isFinite(v)&&v>=0&&v<=1)return v;}
+ }catch(e){} // Browsers with storage disabled still work at the default volume.
+ return DEFAULT_MASTER_SOUND_VOLUME;
+}
+let masterSoundVolume=loadMasterSoundVolume();
+let lastAudibleSoundVolume=masterSoundVolume>0?masterSoundVolume:DEFAULT_MASTER_SOUND_VOLUME;
+function getEffectiveSoundVolume(){return muted?0:masterSoundVolume;}
+function syncSoundVolumeUi(){
+ const slider=$('soundVolumeSlider'),label=$('soundVolumeValue'),button=$('sound');
+ const pct=Math.round(masterSoundVolume*100);
+ if(slider){slider.value=String(pct);slider.setAttribute('aria-valuetext',pct+'퍼센트');}
+ if(label)label.textContent=pct+'%';
+ const audible=!muted&&pct>0;
+ if(button){button.textContent=audible?'♪ ON':'♪ OFF';button.setAttribute('aria-label',audible?'음악과 효과음 끄기':'음악과 효과음 켜기');}
+}
+function refreshLiveSoundVolumes(){
+ if(typeof duduVoiceState!=='undefined'&&duduVoiceState.activeAudio){
+  const a=duduVoiceState.activeAudio;
+  a.volume=Math.max(0,Math.min(1,duduVoiceState.masterVolume*getEffectiveSoundVolume()));
+  if(getEffectiveSoundVolume()<=0&&!a.paused)a.pause();
+ }
+ if(typeof refreshMusicMasterVolume==='function')refreshMusicMasterVolume();
+}
+function setMasterSoundVolume(percent){
+ const n=Number(percent);
+ if(!Number.isFinite(n))return;
+ masterSoundVolume=Math.min(1,Math.max(0,n/100));
+ if(masterSoundVolume>0){lastAudibleSoundVolume=masterSoundVolume;muted=false;}
+ try{localStorage.setItem(SOUND_VOLUME_STORAGE_KEY,String(masterSoundVolume));}catch(e){}
+ syncSoundVolumeUi();refreshLiveSoundVolumes();
+}
+function toggleSound(){
+ if(muted||masterSoundVolume<=0){
+  muted=false;
+  if(masterSoundVolume<=0){
+   masterSoundVolume=lastAudibleSoundVolume||DEFAULT_MASTER_SOUND_VOLUME;
+   try{localStorage.setItem(SOUND_VOLUME_STORAGE_KEY,String(masterSoundVolume));}catch(e){}
+  }
+ }else{muted=true;}
+ syncSoundVolumeUi();refreshLiveSoundVolumes();
+}
+let lastSoundPreviewAt=-1000;
+function setupSoundVolumeSlider(){
+ const slider=$('soundVolumeSlider');
+ if(slider){
+  slider.addEventListener('input',()=>{
+   setMasterSoundVolume(slider.value);
+   // Short audible preview while the game is paused behind the options dialog.
+   const now=typeof performance!=='undefined'?performance.now():Date.now();
+   if(getEffectiveSoundVolume()>0&&now-lastSoundPreviewAt>220){
+    lastSoundPreviewAt=now;
+    tone(520,.055,'sine',.018);
+   }
+  });
+ }
+ syncSoundVolumeUi();
+}
+
 let prevCam=0,prevCamY=0,camZoom=1,prevCamZoom=1,renderAlpha=1,rCam=0,rCamY=0,rCamZoom=1,rPx=150,rPy=580;
 let lookDownHold=0,lookDownOffset=0,monatiumBTower3ExitAuthorized=false,monatiumBTower3Cleared=false,monatiumBTower3LastResetWallId=null;
 const MB_T3_DANGER_WALLS=new Set(['MB-T3-WALL-L-TOP','MB-T3-WALL-L-BOT','MB-T3-WALL-R-TOP']);
@@ -94,11 +160,11 @@ function playDuduVoice(category,opts={}){
  const pick=candidates[Math.floor(Math.random()*candidates.length)];
  duduVoiceState.lastPick[category]=pick;
  duduVoiceState.lastPlayTime[category]=nowSec;
- const ev={category,clip:pick,t:Number(nowSec.toFixed(3)),volume:duduVoiceState.masterVolume,muted:Boolean(muted)};
+ const ev={category,clip:pick,t:Number(nowSec.toFixed(3)),volume:duduVoiceState.masterVolume*getEffectiveSoundVolume(),muted:Boolean(muted||masterSoundVolume===0)};
  duduVoiceState.history.push(ev);
  if(duduVoiceState.history.length>120)duduVoiceState.history.shift();
 
- if(!muted){
+ if(getEffectiveSoundVolume()>0){
   try{
    if(duduVoiceState.activeAudio){
     duduVoiceState.activeAudio.pause();
@@ -110,7 +176,7 @@ function playDuduVoice(category,opts={}){
     clipAudio.preload='none';
     voiceClips[pick]=clipAudio;
    }
-   clipAudio.volume=duduVoiceState.masterVolume;
+   clipAudio.volume=duduVoiceState.masterVolume*getEffectiveSoundVolume();
    clipAudio.currentTime=0;
    duduVoiceState.activeAudio=clipAudio;
    duduVoiceState.activeCategory=category;
@@ -402,7 +468,7 @@ function chooseSection(n){
  if(state!=='loading'){state='playing';$('overlay').hidden=true;canvas.focus();}
  if(sections[n]&&sections[n].hint)notify(sections[n].hint);
 }
-function tone(freq,dur=.1,type='sine',gain=.04){if(muted)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);o.frequency.exponentialRampToValueAtTime(freq*.7,audio.currentTime+dur);g.gain.setValueAtTime(gain,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur);}catch{}}
+function tone(freq,dur=.1,type='sine',gain=.04){if(getEffectiveSoundVolume()<=0)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);o.frequency.exponentialRampToValueAtTime(freq*.7,audio.currentTime+dur);g.gain.setValueAtTime(gain*getEffectiveSoundVolume(),audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur);}catch{}}
 function notify(s){if(!s)return;$('toast').textContent=s;toastTime=2.2;}
 function burst(x,y,color,n=10){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*160,vy:-Math.random()*130,life:.5+Math.random()*.3,color,r:2+Math.random()*4});}
 function syncRenderCoords(){
@@ -463,7 +529,7 @@ function updateHud(){
 function modal(tag,title,text,button){$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;$('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';}
 function pause(){if(state==='playing'){if(typeof ensurePaused==='function')ensurePaused('manual');else{state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}}else if(state==='paused'){if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;start();}}
 function start(){if(state==='loading')return;if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;if(state==='won')reset(true);state='playing';if(window.__mobileUIState){window.__mobileUIState.pausedByPortrait=false;window.__mobileUIState.lastPauseReason=null;}$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();if(typeof syncMobileViewMode==='function')syncMobileViewMode();last=performance.now();acc=0;}
-$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'효과음 켜기':'효과음 끄기');if(!muted)tone(660);};$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
+$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=toggleSound;setupSoundVolumeSlider();$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
 window.addEventListener('keydown',e=>{
  if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code))e.preventDefault();
  if(e.code==='F3'&&!e.repeat){debugMetrics.enabled=!debugMetrics.enabled;$('debugHud').hidden=!debugMetrics.enabled;return;}

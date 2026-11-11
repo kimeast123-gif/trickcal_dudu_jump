@@ -1,6 +1,6 @@
 'use strict';
 // TEST12 Event & BGM Loop Controller:
-// - Gate G1-3: Updates special ending text from `별동전/특수코인` to `황금 크레파스` while preserving official dynamic `TOTAL_SPECIAL_COINS` and all ending conditions.
+// - Gate G1-3: Updates special ending text from `별동전/특수코인` to `황금 크레파스` while preserving `TOTAL_SPECIAL_COINS = 9` and all ending conditions.
 // - Gate G6-2: Eliminates 1.6~2.2s trailing silence gaps in BGM MP3 loops using measured `BGM_LOOP_BOUNDS` (`loopStartSec` / `loopEndSec` verified via ffmpeg silencedetect).
 let eventMode=false,eventElapsed=0,eventLast=0,sceneElapsed=0,typed=0,storyLine='',scenePaused=false,musicStage=-1;
 let storySessionId=0,activeStoryKind=null;
@@ -52,18 +52,26 @@ function musicTick(dt){
   }
   const target=i===musicSelected&&!muted&&!halted?.38:0;
   gains[i]+=Math.sign(target-gains[i])*Math.min(Math.abs(target-gains[i]),dt*.22);
-  a.volume=gains[i];
+  a.volume=Math.max(0,Math.min(1,gains[i]*getEffectiveSoundVolume()));
   if((muted||halted||i!==musicSelected)&&gains[i]<.001)a.pause();
   else if(i===musicSelected&&!muted&&!halted&&a.paused)a.play().catch(()=>{});
  });
 }
-function setSound(){muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'음악과 효과음 켜기':'음악과 효과음 끄기');if(!muted&&musicSelected>=0)tracks[musicSelected].play().catch(()=>{});}
-$('sound').onclick=setSound;
+// Keep the slider and mute button synchronized even while an audio track is active.
+function refreshMusicMasterVolume(){
+ tracks.forEach((a,i)=>{a.volume=Math.max(0,Math.min(1,gains[i]*getEffectiveSoundVolume()));});
+ if(getEffectiveSoundVolume()<=0){tracks.forEach(a=>a.pause());}
+ else if(musicSelected>=0&&state!=='paused'&&!scenePaused){
+  const a=tracks[musicSelected];if(a.paused)a.play().catch(()=>{});
+ }
+}
+$('sound').onclick=toggleSound;
+syncSoundVolumeUi();
 
 const lines={
  opening:'두두~ 오늘 저녁 맛있는 거 해 줄 테니 너무 늦게까지 놀지 말고 일찍 돌아오렴',
  success:'신나게 놀고 왔니 두두? 이제 코~ 잘 시간이로구나.',
- special:'신나게 놀고 왔니 두두? 반짝이는 황금 크레파스 12개를 전부 모아왔구나! 이제 코~ 잘 시간이로구나.',
+ special:'신나게 놀고 왔니 두두? 모나티엄의 반짝이는 황금 크레파스 9개를 전부 모아왔구나! 이제 코~ 잘 시간이로구나.',
  late:'두두~ 요 개구쟁이 녀석. 늦은 시간까지 그렇게 돌아다니면 못써요. 얼른 씻고 자야지.'
 };
 
@@ -72,6 +80,12 @@ const lines={
 const storyCinemaRoot='assets/cinematics/';
 const storyCinemaByKind={opening:'opening.mp4',success:'normal.mp4',candy:'candy.mp4',special:'gold.mp4'};
 const storyMultiLine={
+ opening:[
+  {speaker:'amelia',text:lines.opening}
+ ],
+ success:[
+  {speaker:'amelia',text:lines.success}
+ ],
  candy:[
   {speaker:'amelia',text:'두두, 오면서 사탕을 많이도 먹었구나'},
   {speaker:'dudu',text:'응! 하나도 않노치고 다~ 머겄두!'},
@@ -259,9 +273,8 @@ function beginEvent(){
  scenePaused=false;
  musicStage=-1;
  keys.clear();
- muted=false;
- $('sound').textContent='♪ ON';
- $('sound').setAttribute('aria-label','음악과 효과음 끄기');
+ // Preserve the player's audio preference when starting or restarting a story.
+ syncSoundVolumeUi();
  stopMusic();
  playTrack(3,true);
  showStory('opening');
