@@ -834,6 +834,8 @@ function enterMarieBossArena(){
  arena.released = false;
  arena.cooldown = 1.65;
  arena.volleys = 0;
+ arena.desperationCount = 0;
+ arena.finalBurstTimer = 0;
 }
 
 function startBoss3HitFinale(){
@@ -1214,97 +1216,72 @@ function updateMayo(a,dt){
  }
 }
 
-// Gate G6 (Section 8.3): Progressive 3 -> 4 -> 5 Marie Bomb Volleys based on `arena.marieHits`!
-// - `arena.marieHits === 0`: 3 standard dispersed bombs (`bombKind: 'base'`)
-// - `arena.marieHits === 1`: 3 base bombs + 4th fast alternating left/right flank bomb (`bombKind: 'fast_alt'`)
-// - `arena.marieHits === 2`: 3 base bombs + 4th fast alternating bomb + 5th fast slightly-offset predictive sniper bomb (`bombKind: 'sniper_offset'`)
-// - `arena.marieHits >= 3`: 0 bombs (finale)
+// TEST28 Marie boss rebalance: 5 -> 6 -> 7 ordinary bombs, accelerating at 2 hits.
+// Every incoming Mayo hit also generates an independently targeted eight-bomb desperation barrage.
+// Deliberately keep boss arena/physics/challenge hazards unchanged.
+function resolveMarieBombTarget(tx){
+ const surfaces=platforms.filter(pl=>!pl.wall&&!pl.ceiling&&pl.id!=='B-MARIE-PODIUM'&&pl.collidable!==false&&tx>=pl.x&&tx<=pl.x+pl.w);
+ surfaces.sort((u,v)=>u.y-v.y);
+ return surfaces.length?{ty:surfaces[0].y,overPit:false,surfaceId:surfaces[0].id}:{ty:615,overPit:true,surfaceId:'PIT-AIR-CORRIDOR'};
+}
+function makeMarieBomb(a,tx,kind,order,age,flight,arcHeight=200){
+ const e=STAGE_ANCHORS.erpien_b;
+ const bx=clamp(Math.round(tx),e.arenaOrigin+28,e.exitWallX-22);
+ const tgt=resolveMarieBombTarget(bx);
+ return {
+  bombIndex:order,bombKind:kind,x0:a.x+a.face*24,y0:a.y-82,
+  tx:bx,ty:tgt.ty,overPit:tgt.overPit,surfaceId:tgt.surfaceId,
+  arcHeight,bx:a.x+a.face*24,by:a.y-82,prevBx:a.x+a.face*24,prevBy:a.y-82,
+  age,flight,radius:46,bodyRadius:13,hitPlayerDone:false,sounded:false,finale:false
+ };
+}
 function releaseBombs(a){
- if(!arena||arena.phase!=='combat')return;
+ if(!arena||arena.phase!=='combat'||arena.marieHits>=3)return;
+ const e=STAGE_ANCHORS.erpien_b;
  const hits=arena.marieHits||0;
- if(hits>=3)return;
- const e=STAGE_ANCHORS.erpien;
- const vIdx=arena.volleys||0;
- const handX=a.x+a.face*24,handY=a.y-82;
-
- // Gate 11 (P0): Arena-aware surface & pit/air corridor target resolver
- function pickArenaTarget(tx){
-  const surf=platforms.filter(pl=>!pl.wall&&!pl.ceiling&&pl.id!=='B-MARIE-PODIUM'&&tx>=pl.x&&tx<=pl.x+pl.w).sort((u,v)=>u.y-v.y)[0];
-  if(surf)return {ty:surf.y,overPit:false,surfaceId:surf.id};
-  // Open chasm between platforms (x = 16010..16750): bomb arcs through mid-air combat corridor and falls into the chasm (ty=615) without a fake mid-air ground explosion at y=520!
-  return {ty:615,overPit:true,surfaceId:'PIT-AIR-CORRIDOR'};
+ const volley=arena.volleys||0;
+ const count=hits===0?5:(hits===1?6:7);
+ const boosted=hits>=2;
+ const minX=e.arenaOrigin+60,maxX=e.exitWallX-55;
+ const span=maxX-minX;
+ for(let i=0;i<count;i++){
+  const u=npcSeedUnit(411+hits*113,volley*83+i*17);
+  // Two bombs specifically threaten stationary lure platforms / the player's current perch.
+  const tx=i===0?p.x-44+u*88:
+   i===1?p.x-115+u*230:
+   minX+span*((i-2+u*0.65)/Math.max(1,count-2));
+  const flight=boosted?(1.08+u*0.16):(hits===1?1.42+u*0.18:1.65+u*0.14);
+  bombs.push(makeMarieBomb(a,tx,'base',i+1,-i*0.14,flight,195+u*36));
  }
- function pickSurfaceY(tx){
-  return pickArenaTarget(tx).ty;
- }
-
- // 1. Gate 11 (P0): Base 3 Bombs cover the ENTIRE combat arena (`15750..16940`: Left Ground/Pads, Center Pit/Spawn/Air Corridors, Right Pads/Exit Ground) across 0/3, 1/3, and 2/3!
- const aOrigin = STAGE_ANCHORS.erpien_b.arenaOrigin || 10500;
- const arenaZones=[
-  {minX: aOrigin + 55, maxX: aOrigin + 455},  // Left sector
-  {minX: aOrigin + 475, maxX: aOrigin + 855}, // Center sector
-  {minX: aOrigin + 875, maxX: aOrigin + 1235} // Right sector
- ];
- const chosenBaseX=[];
- for(let i=0;i<3;i++){
-  const z=arenaZones[i];
-  const u=npcSeedUnit(911+hits*53,vIdx*19+i*11);
-  let tx=Math.round(z.minX+u*(z.maxX-z.minX));
-  if(chosenBaseX.length>0&&Math.abs(tx-chosenBaseX[chosenBaseX.length-1])<180){
-   tx=clamp(chosenBaseX[chosenBaseX.length-1]+195,z.minX,z.maxX);
-  }
-  chosenBaseX.push(tx);
-  const tgt=pickArenaTarget(tx);
-  bombs.push({
-   bombIndex:i+1,
-   bombKind:'base',
-   x0:handX,y0:handY,
-   tx,ty:tgt.ty,overPit:tgt.overPit,surfaceId:tgt.surfaceId,
-   arcHeight:210,
-   bx:handX,by:handY,prevBx:handX,prevBy:handY,
-   age:-i*0.20,flight:1.72,radius:46,bodyRadius:13,hitPlayerDone:false,sounded:false,finale:false
-  });
- }
-
- // 2. 4th Bomb (when `arena.marieHits >= 1`): Fast trajectory alternating Left (-1) and Right (+1)
- if(hits>=1){
-  const altDir=(vIdx%2===0)?-1:1;
-  const tx4=altDir<0?(aOrigin+345):(aOrigin+855);
-  const ty4=pickSurfaceY(tx4);
-  bombs.push({
-   bombIndex:4,
-   bombKind:'fast_alt',
-   altDir,
-   x0:handX,y0:handY,
-   tx:tx4,ty:ty4,
-   arcHeight:145,
-   bx:handX,by:handY,prevBx:handX,prevBy:handY,
-   age:-0.48,flight:1.26,radius:46,bodyRadius:13,hitPlayerDone:false,sounded:false,finale:false
-  });
- }
-
- // 3. 5th Bomb (when `arena.marieHits >= 2`): Fast non-homing predictive sniper with slight horizontal offset from Dudu's position at launch
- if(hits>=2){
-  const offsetSign=(vIdx%2===0)?1:-1;
-  const sniperOffset=offsetSign*68;
-  const tx5=clamp(Math.round(p.x+sniperOffset),e.marieStart+90,e.exitWallX-130);
-  const ty5=pickSurfaceY(tx5);
-  bombs.push({
-   bombIndex:5,
-   bombKind:'sniper_offset',
-   lockedPlayerX:Math.round(p.x),
-   sniperOffset,
-   x0:handX,y0:handY,
-   tx:tx5,ty:ty5,
-   arcHeight:155,
-   bx:handX,by:handY,prevBx:handX,prevBy:handY,
-   age:-0.62,flight:1.30,radius:46,bodyRadius:13,hitPlayerDone:false,sounded:false,finale:false
-  });
- }
-
- arena.volleys++;
- arena.lastVolleyBombCount=hits===0?3:(hits===1?4:5);
+ arena.volleys=volley+1;
+ arena.lastVolleyBombCount=count;
  tone(440,.09,'triangle',.03);
+}
+// 8 separate bombs per Mayo hit; coverage includes the player's last known position and both sides of the arena.
+// The later delayed bombs can land after Marie's temporary immunity expires, so staying on B-LEFT-PAD-B is no longer a safe strategy.
+function releaseMarieDesperationBombs(a,hitNo){
+ if(!arena||arena.phase!=='combat')return;
+ const e=STAGE_ANCHORS.erpien_b;
+ const seed=7103+hitNo*107+(arena.volleys||0)*19+Math.floor(hazardClock*13);
+ const minX=e.arenaOrigin+55,maxX=e.exitWallX-55;
+ const span=maxX-minX;
+ const targetAtHit=clamp(p.x,minX,maxX);
+ for(let i=0;i<8;i++){
+  const u=npcSeedUnit(seed,i*29+13);
+  let tx;
+  if(i===0||i===4||i===7){
+   // Repeated pressure near the player's position with deterministic but different offsets.
+   tx=targetAtHit+(u-0.5)*(i===7?165:120);
+  }else{
+   const sector=(i===1||i===5)?0:(i===2||i===6)?1:2;
+   tx=minX+span*((sector+0.13+u*0.74)/3);
+  }
+  const flight=Math.max(0.98,1.41-0.075*(hitNo-1)+u*0.22);
+  bombs.push(makeMarieBomb(a,tx,'desperation',i+1,-0.16*i,flight,160+u*70));
+ }
+ arena.desperationCount=(arena.desperationCount||0)+1;
+ arena.lastDesperationBombCount=8;
+ tone(240,0.16,'sawtooth',0.046);
 }
 
 function updateMarie(a,dt){
@@ -1331,6 +1308,8 @@ function updateMarie(a,dt){
   return;
  }
  a.groggyTimer=0;
+ // The third hit queues the final counterattack only after the final 8-bomb desperation wave.
+ if(arena.marieHits>=3)return;
 
  if(p.invulnerable<=0&&touchesActor(a)){
   applyStunHit(a.x,'marie_body');
@@ -1347,7 +1326,7 @@ function updateMarie(a,dt){
   }
   if(arena.castTime>=dur){
    arena.casting=false;arena.castTime=0;npcClip(a,'idle');
-   arena.cooldown=2.45;
+   arena.cooldown=(arena.marieHits>=2?1.95:2.30);
   }
  }else{
   // Recover from an invalid cooldown without changing the established attack cadence.
@@ -1407,6 +1386,10 @@ function updateHazards(dt){
    }
    return;
   }
+  if(arena.phase==='combat'&&arena.finalBurstTimer>0){
+   arena.finalBurstTimer=Math.max(0,arena.finalBurstTimer-dt);
+   if(arena.finalBurstTimer===0)startBoss3HitFinale();
+  }
   if(arena.phase==='finale'){
    updateBossFinale(dt);
   }
@@ -1448,18 +1431,23 @@ function updateHazards(dt){
     burst(mBox.x,mBox.y,'#63e6be',18);
     burst(e.mariePerchX,e.mariePerchY-54,'#ffd43b',14);
     tone(820,0.14,'triangle',0.05);
+    // Immediate immunity and rage. Do not erase in-flight bombs when Marie is hit.
+    arena.marieInvulnTimer=2.15;
+    arena.groggyTimer=1.12;
+    arena.casting=false;
+    arena.castTime=0;
+    arena.released=false;
+    arena.cooldown=1.40;
+    marie.invulnTimer=2.15;
+    marie.groggyTimer=1.12;
+    releaseMarieDesperationBombs(marie,arena.marieHits);
     if(arena.marieHits>=3){
-     arena.marieInvulnTimer=0;
-     marie.invulnTimer=0;
-     startBoss3HitFinale();
+     arena.finalBurstTimer=2.95;
+     marie.groggyBubble='마지막 발악이다! 이 폭탄도 피해 보라고!';
+     notify('마리 최후의 발악! 8발을 피하면 반격 연출이 시작됩니다.');
     }else{
-     arena.marieInvulnTimer=2.00;
-     arena.groggyTimer=2.00;
-     marie.invulnTimer=2.00;
-     marie.groggyTimer=2.00;
-     bombs=[];
      marie.groggyBubble=arena.marieHits===1?'으앗! 마요야 어딜 쏘는 거야?! (1/3)':'아야야! 마요 눈 똑바로 안 떠?! (2/3)';
-     notify(`마리에게 마요 바람총 명중! (${arena.marieHits}/3)`);
+     notify(`마리에게 마요 바람총 명중! (${arena.marieHits}/3) · 발악 폭탄 8발!`);
     }
     continue;
    }

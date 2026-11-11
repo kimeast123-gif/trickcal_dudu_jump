@@ -113,12 +113,10 @@ const worldImages = {}, worldFiles = ['forest-bg', 'village-bg', 'city-bg', 'erp
 const collectibleImages = {};
 const transitionFrames = []; const TRANSITION_FRAME_COUNT = 20; let transitionSessionId = 0;
 
-const TOTAL_SPECIAL_COINS = 9; // Official 9 Golden Crayons
+let TOTAL_SPECIAL_COINS = 0; // Computed from all six scenes after level construction (TEST28).
 const securedSpecialEvent = new Set();
 const securedSpecialPractice = new Set();
-// 3 Trial Special Coins (MB-SPEC-01, MB-SPEC-02, EA-SPECIAL-01) stored strictly separately!
-const trialBonusEvent = new Set();
-const trialBonusPractice = new Set();
+// All 12 golden crayons, including MB-SPEC-01/02 and EA-SPECIAL-01, are official collectibles.
 let specialCoins = [];
 
 function getActiveLevel() {
@@ -129,8 +127,7 @@ function getActiveLevel() {
 }
 function currentLevelId() { const lv = getActiveLevel(); return lv ? lv.id : ''; }
 function activeSpecialSet() { return eventMode ? securedSpecialEvent : securedSpecialPractice; }
-function activeTrialSet() { return eventMode ? trialBonusEvent : trialBonusPractice; }
-function setForCoin(sc) { return (sc && sc.trialResource) ? activeTrialSet() : activeSpecialSet(); }
+function setForCoin(sc) { return activeSpecialSet(); } // Unified official collection; no uncounted trial coins.
 function totalRegularCandyCount() { return levels.reduce((acc, lv) => acc + (lv.regularDefs ? lv.regularDefs.length : 0), 0); }
 function collectedRegularCandyCount() {
  return levels.reduce((acc, lv, idx) => {
@@ -857,20 +854,19 @@ surface(monatium_b, 6020, 450, 220, 'steel', {
 // --- 6. CITIZEN PLAZA (Starts at doorway threshold x = 6480 .. 8850; shaft 5514..6480 is bottomless pit!) ---
 floor(monatium_b, 6480, 2370, 'pavement', 580, { id: 'MB-GND-PLAZA', routeOrder: 42, checkpointSafe: true });
 
-// --- 7. MONATIUM B TRIAL SPECIAL RESOURCES (MB-SPEC-01 & MB-SPEC-02) ---
+// --- 7. MONATIUM B OFFICIAL GOLDEN CRAYONS (MB-SPEC-01 & MB-SPEC-02) ---
 addSpecialCoinDef(
  monatium_b,
  'MB-SPEC-01',
  840,
  -941,
- '모나티엄 B 시범 크레파스 1 · 제1타워 좌상단 대시 포켓',
+ '모나티엄 B 황금 크레파스 1 · 제1타워 좌상단 대시 포켓',
  { x1: 730, x2: 1640, maxY: 585, requireGround: true },
  {
   parentPlatformId: 'MB-T1-SPEC-PAD',
   localOffsetX: 45,
   localOffsetY: -36,
   requireLanding: true,
-  trialResource: true,
   allowedReturnPlatformIds: ['MB-T1-P05', 'MB-T1-STEP-R1', 'MB-T1-EXIT', 'MB-T1-GND']
  }
 );
@@ -880,14 +876,13 @@ addSpecialCoinDef(
  'MB-SPEC-02',
  6301,
  -2266,
- '모나티엄 B 시범 크레파스 2 · 제3타워 최상단 3연속 점멸 포켓',
+ '모나티엄 B 황금 크레파스 2 · 제3타워 최상단 3연속 점멸 포켓',
  { x1: 5375, x2: 6350, maxY: -1580, requireGround: true },
  {
   parentPlatformId: 'MB-T3-B-SPEC3',
   localOffsetX: 41,
   localOffsetY: -36,
   requireLanding: true,
-  trialResource: true,
   allowedReturnPlatformIds: ['MB-T3-ENTRY', 'MB-T3-TOP-BAR']
  }
 );
@@ -974,7 +969,7 @@ addSpecialCoinDef(
  erpien_a, 'EA-SPECIAL-01', 6865, -676, '에르피엔 A · 특수요정 머리 위 이단점프 돌파 특수자원',
  { x1: 6800, x2: 8250, yMin: -730, yMax: 590 },
  {
-  parentPlatformId: 'EA-P-SPEC', localOffsetX: 45, localOffsetY: -36, requireLanding: true, trialResource: true,
+  parentPlatformId: 'EA-P-SPEC', localOffsetX: 45, localOffsetY: -36, requireLanding: true,
   allowedReturnPlatforms: ['EA-P04', 'EA-P03', 'EA-P-CP', 'EA-P01', 'EA-GND-ENTRY']
  }
 );
@@ -1210,7 +1205,7 @@ erpien_b.goal={x:STAGE_ANCHORS.erpien_b.goalX,y:580,w:150,h:190};
 // Erpien 36 Manual Forward-Path King Candies (E-C01 ~ E-C36)
 for(const [idx,[cx,cy]] of [
  // E1 Gate (7)
- [560,542],[1180,465],[1720,542],[2360,427],[2840,362],[3650,542],[4565,317],
+ [560,542],[1180,465],[1720,542],[2360,427],[2840,362],[3650,542],[4667,398],
  // E2 Mayo City (15)
  [635,442],[1280,452],[1975,432],[2690,437],[2980,367],[3575,417],[4370,442],[5145,422],
  [5900,452],[6275,412],[6870,422],[7665,432],[8565,427],[9260,437],[9940,427],
@@ -1222,6 +1217,13 @@ for(const [idx,[cx,cy]] of [
  addCandy(erpien_b,`E-C${String(idx+1).padStart(2,'0')}`,cx,cy,'main');
 }
 levels.push(erpien_b);
+// TEST28: Single source of truth for official gold crayon HUD and the priority ending.
+const _allSpecialDefs = levels.flatMap(lv => lv.specialDefs);
+const _specialIdSet = new Set(_allSpecialDefs.map(d => d.id));
+if (_specialIdSet.size !== _allSpecialDefs.length) {
+ throw new Error('[TEST28] Duplicate golden-crayon ID detected across scenes.');
+}
+TOTAL_SPECIAL_COINS = _specialIdSet.size; // 7 (Monatium A) + 2 (Monatium B) + 1 (Erpien A) + 2 (Erpien B) = 12
 
 function currentSegment(){const lv=getActiveLevel();return lv.segments.find(s=>p.x>=s.start&&p.x<s.end)||lv.segments.at(-1);}
 
@@ -1566,7 +1568,7 @@ function practiceRegion(n){
 }
 async function loadWorldImages(){
  const bgLoads=worldFiles.map(n=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{worldImages[n]=im;ok();};im.onerror=no;im.src='assets/world/'+n+'.webp?v=16';}));
- const terrainLoads=TERRAIN_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{terrainImages[k]=im;ok();};im.onerror=no;im.src='assets/terrain/'+k+'.webp?v=16';}));
+ const terrainLoads=TERRAIN_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{terrainImages[k]=im;ok();};im.onerror=no;im.src='assets/terrain/'+k+'.webp?v='+(k==='erpien/gate_inner_strip'?'28_gate_seam':'16');}));
  const structureLoads=STRUCTURE_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{structureImages[k]=im;ok();};im.onerror=no;im.src='assets/structure/'+k+'.webp?v=16';}));
  const colLoads=['king_candy','golden_crayon'].map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{collectibleImages[k]=im;ok();};im.onerror=no;im.src='assets/collectibles/'+k+'.png?v=16';}));
  const cloudLoads=Array.from({length:TRANSITION_FRAME_COUNT},(_,i)=>new Promise(ok=>{

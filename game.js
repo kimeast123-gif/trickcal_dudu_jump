@@ -482,7 +482,7 @@ function beginDash(){
 }
 function update(dt){
  debugMetrics.physicsUpdates++;
- p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;
+ p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom;
  time+=dt;levelClock+=dt;animTime+=dt;spin=Math.max(0,spin-dt);land=Math.max(0,land-dt);toastTime=Math.max(0,toastTime-dt);$('toast').style.opacity=toastTime>0?1:0;
  const wasGround=p.ground;
  platformStep();
