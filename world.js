@@ -740,7 +740,8 @@ surface(monatium_b, 2235, -780, 165, 'steel', {
 surface(monatium_b, 2630, -745, 175, 'steel', { id: 'MB-ARCH1-P02', routeOrder: 14, prevId: 'MB-ARCH1-B01', nextId: 'MB-T2-BASE' });
 
 // --- 3. TOWER 2 (x = 3000 .. 4100, y = 580 .. -2180) ---
-floor(monatium_b, 3000, 1100, 'pavement', 580, { id: 'MB-T2-GND' });
+// FIX28.2: No MB-T2-GND. Tower 2 shaft must be a bottomless pit, not a walled floor trap.
+// Falling below the moving/blinking platforms is handled by getKillY() and resets to checkpoint.
 wall(monatium_b, 3000, -2180, 64, 1240, 'steel', { id: 'MB-T2-WALL-L-TOP', wallSide: 'left', noTopLand: true, portalBottom: true });
 wall(monatium_b, 3000, -660, 64, 1240, 'steel', { id: 'MB-T2-WALL-L-BOT', wallSide: 'left', noTopLand: true });
 wall(monatium_b, 3000, -2180, 1100, 36, 'steel', { id: 'MB-T2-ROOF', ceiling: true, noTopLand: true });
@@ -1236,6 +1237,9 @@ function getKillY(x){
  if (curId === 'monatium_b') {
   const mb = STAGE_ANCHORS.monatium_b;
   if (x >= mb.summitStart && x < mb.summitEnd) return -1350;
+  // FIX28.2: Local falling reset below Tower 2, before the character can get stranded.
+  // This applies only to the shaft x=3000..4100; other stages/areas retain their bounds.
+  if (x >= mb.tower2Start && x < mb.tower2End) return 650;
   return 780;
  }
  if (curId === 'erpien_b' || curId === 'erpien') {

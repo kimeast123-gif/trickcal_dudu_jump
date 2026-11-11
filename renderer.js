@@ -1,8 +1,20 @@
 'use strict';
-// TEST16 Renderer:
-// - Gate 1 (P0): Renders Suin Village BACKGROUND_PROP and DECORATION layers separately from COLLIDABLE_PLATFORM with optional developer QA overlay (`window.__showArtQaOverlay`).
-// - Gate 4 (P0): Single Source of Truth (SSOT) panorama rendering from `levels[levelIndex].backgroundRanges` with smooth symmetric cross-fade and ZERO artificial white fog or boundary gradient boxes.
-// - Gate 6 (P0): Zero non-tutorial text labels on blinking platforms, moving platforms, golden crayons, or tower sectors; communicates blink/motion states purely through visual alpha, color rim, and vibration.
+// ============================================================================
+// TEST26 Graphic 2nd Polish Renderer (Gates A ~ E Complete Implementation)
+// - P0-ART26-01: Eliminates all 1~51px clipped end slivers on Erpien A/B (`stone`, `gate`, `home`)
+//   and all other thin platforms via `makePlatformModulePlan()` + derived ornament-free neutral strips
+//   (`erpien/stone_inner_strip.webp`, `erpien/gate_inner_strip.webp`) and 1:1 source cropping (`dw/sw === dh/sh`).
+//   Every complete arch motif (`stone_middle_a/b/c`) is drawn 100% unclipped (`lastClippedWidth === 0`).
+// - P0-ART26-02: Eliminates white/sky gaps at Suin Forest tutorial wall junctions (`F-OBS-01` `wallFootOnGround`,
+//   `F-CLIFF-02` `wallSideAgainstGround`, `F-DROP-BARRIER` `wallOnThinPlatform`) via square bottom foot anchoring,
+//   pure earthen shaft tiling (no mid-shaft grass tufts), `wall_butt_join` ground classification, and post-pass
+//   `drawTerrainJunctionOverlays()`.
+// - P1-ART26-03: Replaces asymmetric `joinLeft/Right` flag reliance in `drawGroundVisual()` with coordinate- and
+//   material-driven `classifyGroundJoint(a, side)` (`same_material_join`, `material_transition`, `wall_butt_join`,
+//   `open_edge`), fixing `x=17000` (`road`->`pavement` Monatium curb), `x=20600` (`same_material_join`),
+//   `x=23400` (`same_material_join`), and Monatium B open ground edges (`MB-T1-GND`, `MB-T2-GND`, `MB-GND-PLAZA`).
+// - ZERO changes to `world.js`, `game.js`, `hazards.js`, `mobile-controls.js`, or `challenge-*` (100% SHA-256 frozen).
+// ============================================================================
 
 const terrainImages = {};
 const structureImages = {};
@@ -54,11 +66,13 @@ const TERRAIN_ASSET_LIST = [
   'monatium/decoration_banner_lamp', 'monatium/decoration_bollard', 'monatium/decoration_guardrail',
   'monatium/decoration_cone', 'monatium/decoration_ac', 'monatium/decoration_elecbox',
   'erpien/gate_left', 'erpien/gate_middle_a', 'erpien/gate_middle_b', 'erpien/gate_middle_c', 'erpien/gate_right',
+  'erpien/gate_inner_strip',
   'erpien/gate_single_small', 'erpien/gate_single_medium',
   'erpien/gate_ground_top', 'erpien/gate_ground_top_a', 'erpien/gate_ground_top_b', 'erpien/gate_ground_top_c',
   'erpien/gate_ground_body_a', 'erpien/gate_ground_body_b',
   'erpien/gate_ground_cliff_left', 'erpien/gate_ground_cliff_right',
   'erpien/stone_left', 'erpien/stone_middle_a', 'erpien/stone_middle_b', 'erpien/stone_middle_c', 'erpien/stone_right',
+  'erpien/stone_inner_strip',
   'erpien/stone_single_small', 'erpien/stone_single_medium',
   'erpien/stone_ground_top', 'erpien/stone_ground_top_a', 'erpien/stone_ground_top_b', 'erpien/stone_ground_top_c',
   'erpien/stone_ground_body_a', 'erpien/stone_ground_body_b',
@@ -140,7 +154,7 @@ const TERRAIN_SPECS = {
   stone: {
     folder: 'erpien', prefix: 'stone_',
     thinWalk: 95, thinScale: 0.48,
-    smallWalk: 46, medWalk: 12,
+    smallWalk: 46, medWalk: 42,
     groundWalk: 60, groundScale: 0.54, bodyTopOffset: 118,
     decorations: [
       { key: 'erpien/decoration_stone_planter_a', walkOffset: 94, scale: 0.52 },
@@ -165,6 +179,55 @@ function seededUnit(seed, step) {
 
 function getTerrainImg(folder, prefix, part) {
   return terrainImages[`${folder}/${prefix}${part}`] || terrainImages[`${folder}/${part}`];
+}
+
+// ============================================================================
+// P0-ART26-01: Pure Visual Module Planner (`makePlatformModulePlan`)
+// - Computes exact integer count of full, unclipped middle motif tiles (`fullCount`),
+//   optional complete half-bay arch (`halfCount`, for 2-arch symmetric stone tiles),
+//   and ornament-free neutral connector widths (`neutralLeft`, `neutralRight`).
+// - Guarantees `lastClippedWidth === 0` (zero 1~20px cut-off ornament slivers!).
+// ============================================================================
+function makePlatformModulePlan(platformWidth, leftCapWidth, rightCapWidth, moduleWidth, halfBayWidth = 0) {
+  const inner = Math.max(0, platformWidth - leftCapWidth - rightCapWidth);
+  if (inner <= 0 || moduleWidth <= 0) {
+    return {
+      lw: leftCapWidth, rw: rightCapWidth,
+      inner: 0, innerW: 0, count: 0, fullCount: 0,
+      halfCount: 0, remainder: 0, neutralLeft: 0, neutralRight: 0, lastClippedWidth: 0
+    };
+  }
+  const count = Math.floor(inner / moduleWidth);
+  const remAfterFull = inner - count * moduleWidth;
+  const halfCount = (halfBayWidth > 0 && remAfterFull >= halfBayWidth) ? 1 : 0;
+  const remainder = remAfterFull - halfCount * halfBayWidth;
+  const neutralLeft = Math.floor(remainder / 2);
+  const neutralRight = remainder - neutralLeft;
+  return {
+    lw: leftCapWidth,
+    rw: rightCapWidth,
+    inner,
+    innerW: inner,
+    count,
+    fullCount: count,
+    halfCount,
+    remainder,
+    neutralLeft,
+    neutralRight,
+    lastClippedWidth: 0
+  };
+}
+window.makePlatformModulePlan = makePlatformModulePlan;
+
+// Helper: Draw a 1:1 aspect-ratio horizontal source crop from an ornament-free neutral strip
+function drawNeutralStripCrop(stripImg, s, dx, dy, dw, dh, srcCenterRatio = 0.5) {
+  if (!stripImg || dw <= 0 || dh <= 0) return;
+  const sh = stripImg.height;
+  const exactScale = dh / sh;
+  const sw = Math.max(0.5, Math.min(stripImg.width, dw / exactScale));
+  const maxSx = Math.max(0, stripImg.width - sw);
+  const sx = Math.max(0, Math.min(maxSx, Math.round(maxSx * srcCenterRatio)));
+  ctx.drawImage(stripImg, sx, 0, sw, sh, dx, dy, dw, dh);
 }
 
 // Gate 4 (P0): Single Source of Truth (SSOT) panorama rendering from `l.backgroundRanges[bgKey]`
@@ -204,7 +267,6 @@ function renderBackground() {
   if (activeIdx < 0) activeIdx = segments.length - 1;
   const active = segments[activeIdx];
 
-  // Unified symmetric cross-fade (halfWindow = 320px) across any segment boundary where bg changes, with ZERO artificial white fog!
   const halfWin = 320;
   const prev = activeIdx > 0 ? segments[activeIdx - 1] : null;
   const next = activeIdx < segments.length - 1 ? segments[activeIdx + 1] : null;
@@ -257,6 +319,64 @@ function renderBackground() {
   ctx.restore();
 }
 
+// ============================================================================
+// P0-ART-01: Dedicated Horizontal Steel Girder / Ceiling Tiling Renderer
+// ============================================================================
+function drawSteelHorizontalGirder(a, drawX, drawY) {
+  const cl = getTerrainImg('monatium', 'steel_ceiling_', 'left');
+  const cm = getTerrainImg('monatium', 'steel_ceiling_', 'middle');
+  const cr = getTerrainImg('monatium', 'steel_ceiling_', 'right');
+
+  const drawH = Math.max(24, a.h);
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(drawX, drawY, a.w, drawH, 5);
+  ctx.clip();
+
+  const bgGrad = ctx.createLinearGradient(0, drawY, 0, drawY + drawH);
+  bgGrad.addColorStop(0, '#5a687c');
+  bgGrad.addColorStop(0.5, '#3e4a5c');
+  bgGrad.addColorStop(1, '#28313f');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(drawX, drawY, a.w, drawH);
+
+  if (cl && cm && cr) {
+    const s = drawH / cl.height;
+    const lw = Math.round(cl.width * s);
+    const rw = Math.round(cr.width * s);
+    const midW = Math.max(24, Math.round(cm.width * s));
+
+    if (a.w <= lw + rw) {
+      const halfW = Math.round(a.w * 0.5);
+      drawNeutralStripCrop(cl, s, drawX, drawY, halfW, drawH, 0.0);
+      drawNeutralStripCrop(cr, s, drawX + halfW, drawY, a.w - halfW, drawH, 1.0);
+    } else {
+      const plan = makePlatformModulePlan(a.w, lw, rw, midW, 0);
+      let curX = drawX + lw;
+      if (plan.neutralLeft > 0) {
+        drawNeutralStripCrop(cm, s, curX, drawY, plan.neutralLeft, drawH, 0.5);
+        curX += plan.neutralLeft;
+      }
+      for (let i = 0; i < plan.count; i++) {
+        ctx.drawImage(cm, curX, drawY, midW, drawH);
+        curX += midW;
+      }
+      if (plan.neutralRight > 0) {
+        drawNeutralStripCrop(cm, s, curX, drawY, plan.neutralRight, drawH, 0.5);
+      }
+      ctx.drawImage(cl, drawX, drawY, lw, drawH);
+      ctx.drawImage(cr, drawX + a.w - rw, drawY, rw, drawH);
+    }
+  }
+
+  ctx.fillStyle = 'rgba(220, 236, 255, 0.28)';
+  ctx.fillRect(drawX + 2, drawY + 1, a.w - 4, 3);
+  ctx.strokeStyle = '#1f2631';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, drawH - 2);
+  ctx.restore();
+}
+
 function drawTowerStructures() {
   const curId = (typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex])?.id;
   if (curId !== 'monatium' && curId !== 'monatium_a') return;
@@ -266,7 +386,6 @@ function drawTowerStructures() {
   const pier = structureImages['rooftop_pier'];
   const truss = structureImages['rooftop_truss'];
 
-  // Rooftop Skybridge & Building Substructure (Gate 6: clean architectural sprites only, zero English sector boards!)
   if (rCam + W > m.ascentEnd - 640 && rCam < m.skywalkEnd + 100) {
     const trussSpans = [
       { x1: m.ascentEnd - 464, x2: m.skywalkStart + 456, y: -1720 },
@@ -282,8 +401,8 @@ function drawTowerStructures() {
         ctx.beginPath();
         ctx.rect(sp.x1, sp.y, sp.x2 - sp.x1, 130);
         ctx.clip();
-        for (let gx = sp.x1; gx < sp.x2; gx += 260) {
-          ctx.drawImage(truss, gx, sp.y, 262, 128);
+        for (let gx = sp.x1; gx < sp.x2; gx += 256) {
+          ctx.drawImage(truss, gx, sp.y, 256, 128);
         }
         ctx.restore();
       }
@@ -298,36 +417,35 @@ function drawTowerStructures() {
     if (pier) {
       for (const pc of pierColumns) {
         if (pc.x + pc.w < rCam - 120 || pc.x > rCam + W + 120) continue;
-        const bottomY = 580;
-        const tileH = 440;
+        const bottomY = 740;
+        const tileH = Math.round(pc.w * (pier.height / pier.width));
         ctx.save();
         ctx.beginPath();
         ctx.rect(pc.x, pc.topY, pc.w, bottomY - pc.topY);
         ctx.clip();
         for (let gy = pc.topY; gy < bottomY; gy += tileH) {
-          ctx.drawImage(pier, pc.x, gy, pc.w, tileH + 2);
+          ctx.drawImage(pier, pc.x, gy, pc.w, tileH);
         }
         ctx.restore();
       }
     }
   }
 
-  // West Ascent Tower & East Descent Tower shafts (Gate 6: clean architectural portals & rails without floating text boxes)
   const shafts = [
     {
       x1: m.ascentStart + 64, x2: m.ascentEnd - 64, y1: -1945, y2: 580,
       rails: [m.ascentStart + 240, m.ascentStart + 580, m.ascentStart + 1100, m.ascentStart + 1440],
       portals: [
-        { x: m.ascentStart - 8, y: 356, w: 84, h: 224 },
-        { x: m.ascentEnd - 72, y: -1919, w: 84, h: 204 }
+        { x: m.ascentStart - 8, y: 356, w: 84, h: 126 },
+        { x: m.ascentEnd - 72, y: -1919, w: 84, h: 126 }
       ]
     },
     {
       x1: m.descentStart + 64, x2: m.descentEnd - 64, y1: -1937, y2: 580,
       rails: [m.descentStart + 214, m.descentStart + 559, m.descentStart + 904],
       portals: [
-        { x: m.descentStart - 8, y: -1909, w: 84, h: 204 },
-        { x: m.descentEnd - 72, y: 356, w: 84, h: 224 }
+        { x: m.descentStart - 8, y: -1909, w: 84, h: 126 },
+        { x: m.descentEnd - 72, y: 356, w: 84, h: 126 }
       ],
       hasBottomPit: true, pitX1: m.descentStart + 64, pitX2: m.descentEnd - 64
     }
@@ -344,9 +462,9 @@ function drawTowerStructures() {
     ctx.clip();
 
     const grad = ctx.createLinearGradient(0, sh.y1, 0, sh.y2);
-    grad.addColorStop(0, 'rgba(34, 45, 64, 0.78)');
-    grad.addColorStop(0.5, 'rgba(28, 38, 55, 0.82)');
-    grad.addColorStop(1, 'rgba(22, 30, 44, 0.86)');
+    grad.addColorStop(0, 'rgba(42, 56, 78, 0.72)');
+    grad.addColorStop(0.5, 'rgba(34, 46, 66, 0.76)');
+    grad.addColorStop(1, 'rgba(26, 36, 52, 0.82)');
     ctx.fillStyle = grad;
     ctx.fillRect(sh.x1, sh.y1, spanW, spanH);
 
@@ -354,12 +472,17 @@ function drawTowerStructures() {
       const tileW = 480, tileH = 480;
       for (let gy = sh.y1; gy < sh.y2; gy += tileH) {
         for (let gx = sh.x1; gx < sh.x2; gx += tileW) {
-          ctx.drawImage(backdrop, gx, gy, tileW + 1, tileH + 1);
+          ctx.drawImage(backdrop, gx, gy, tileW, tileH);
         }
       }
     }
 
-    ctx.strokeStyle = 'rgba(145, 185, 220, 0.20)';
+    ctx.fillStyle = 'rgba(186, 224, 255, 0.10)';
+    for (const rx of (sh.rails || [])) {
+      ctx.fillRect(rx - 28, sh.y1 + 24, 56, spanH - 48);
+    }
+
+    ctx.strokeStyle = 'rgba(160, 200, 235, 0.24)';
     ctx.lineWidth = 4;
     for (const rx of (sh.rails || [sh.x1 + 150, sh.x1 + 495])) {
       ctx.beginPath();
@@ -379,222 +502,253 @@ function drawTowerStructures() {
 
     if (portalArch) {
       for (const pt of sh.portals) {
-        ctx.drawImage(portalArch, pt.x, pt.y, pt.w, pt.h);
+        const pH = Math.round(pt.w * (portalArch.height / portalArch.width));
+        ctx.drawImage(portalArch, pt.x, pt.y, pt.w, pH);
       }
     }
   }
 }
 
-// Gate G1 (P0): Material-specific wall rendering!
-// - `grass` / `village`: Natural earthen cliff / mossy root barrier / grass-topped mound using forest terrain textures (ZERO steel bolts or grey metal plates!).
-// - `steel`: Original Monatium `tower_wall_*` structure preserved 100% pixel-identically.
+// ============================================================================
+// Erpien A Grounded Architectural Accents (Zero floating vector triangles or translucent bars!)
+// ============================================================================
+function drawErpienAArchitecture() {
+  const curId = (typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex])?.id;
+  if (curId !== 'erpien_a') return;
+
+  const balustrade = getTerrainImg('erpien', '', 'decoration_stone_balustrade');
+  const planterA = getTerrainImg('erpien', '', 'decoration_stone_planter_a');
+
+  if (rCam + W > 8250 && rCam < 10650) {
+    if (balustrade) {
+      const s = 0.46;
+      const bw = Math.round(balustrade.width * s);
+      const bh = Math.round(balustrade.height * s);
+      ctx.save();
+      ctx.globalAlpha = 0.88;
+      ctx.drawImage(balustrade, 10320, 580 - bh + 6, bw, bh);
+      ctx.restore();
+    }
+    if (planterA) {
+      const s = 0.44;
+      const pw = Math.round(planterA.width * s);
+      const ph = Math.round(planterA.height * s);
+      ctx.drawImage(planterA, 8550 - pw + 4, 580 - ph + 4, pw, ph);
+    }
+  }
+}
+
+// ============================================================================
+// P0-ART-01, P1-ART-03, P0-ART26-02: Material-Specific Structural Wall & Beam Renderer
+// ============================================================================
 function drawStructuralWall(a, drawX, drawY) {
   const mat = a.visual?.material || a.skin || 'steel';
+
+  if (mat === 'steel' && (a.ceiling || a.horizontalBeam || a.w >= a.h * 2.0)) {
+    drawSteelHorizontalGirder(a, drawX, drawY);
+    return;
+  }
+
   if (mat === 'stone' || mat === 'gate') {
     const prefix = mat === 'gate' ? 'gate_' : 'stone_';
     const bodyA = getTerrainImg('erpien', prefix, 'ground_body_a') || getTerrainImg('erpien', 'stone_', 'ground_body_a');
     const bodyB = getTerrainImg('erpien', prefix, 'ground_body_b') || bodyA;
-    const cliffL = getTerrainImg('erpien', prefix, 'ground_cliff_left') || getTerrainImg('erpien', 'stone_', 'ground_cliff_left');
-    const cliffR = getTerrainImg('erpien', prefix, 'ground_cliff_right') || getTerrainImg('erpien', 'stone_', 'ground_cliff_right');
 
-    // [P0-3 해결]: 1) 발판 하부 통과 차단 보(underPlatformBeam)는 상부 석조 발판의 오목한 아치 코벨(양끝 34px 테이퍼) 안쪽으로만 깔끔하게 마감하여 양옆 돌출 조각을 원천 제거!
+    // 1) Under-platform collision beam (`underPlatformBeam`):
+    // The upper stone platform (`stone_left/middle/right`, drawH=104px) already covers `y - 46 .. y + 58`
+    // with complete stone arches. Do NOT draw protruding ribs or boxes that stick out beyond the caps!
     if (a.underPlatformBeam) {
-      const inset = Math.min(34, Math.floor(a.w * 0.14));
-      const rx = drawX + inset;
-      const rw = Math.max(16, a.w - inset * 2);
-      const ry = drawY + 2;
-      const rh = Math.max(10, a.h - 4);
-      ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(rx, ry, rw, rh, 5);
-      ctx.clip();
-      ctx.fillStyle = '#5e5668';
-      ctx.fillRect(rx, ry, rw, rh);
-      if (bodyA) {
-        const s = 0.42;
-        const bw = Math.max(36, Math.round(bodyA.width * s));
-        const bh = Math.max(36, Math.round(bodyA.height * s));
-        for (let gx = rx; gx < rx + rw; gx += bw) {
-          ctx.drawImage(bodyA, gx, ry - 8, bw + 1, bh);
-        }
-      }
-      ctx.strokeStyle = 'rgba(52, 45, 62, 0.72)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(rx + 1, ry + 1, rw - 2, rh - 2);
-      ctx.restore();
       return;
     }
 
-    // [P0-3 해결]: 2) 독립 수평 석조 보(horizontalBeam / 얇은 ceiling 보)는 클리핑 박스 [drawX, drawY, a.w, a.h] 내부에서만 석재 타일과 상하 몰딩을 그려 외부 돌출 0px 보장!
-    if (a.horizontalBeam || (a.ceiling && a.h <= 40)) {
+    // 2) Standalone horizontal stone beam / ceiling (`horizontalBeam` / `EA-WALL-TOP-C` / `E-CITY-C01-EAVES`)
+    if (a.horizontalBeam || (a.ceiling && a.h <= 42)) {
       ctx.save();
       ctx.beginPath();
-      ctx.roundRect(drawX, drawY, a.w, a.h, 5);
+      ctx.roundRect(drawX, drawY, a.w, a.h, 6);
       ctx.clip();
-      ctx.fillStyle = '#6c6574';
+      ctx.fillStyle = '#746c7e';
       ctx.fillRect(drawX, drawY, a.w, a.h);
       if (bodyA) {
-        const s = 0.44;
-        const bw = Math.max(36, Math.round(bodyA.width * s));
-        const bh = Math.max(36, Math.round(bodyA.height * s));
-        for (let gx = drawX; gx < drawX + a.w; gx += bw) {
-          ctx.drawImage(bodyA, gx, drawY - 6, bw + 1, bh);
+        const s = 0.38;
+        const bw = Math.round(bodyA.width * s);
+        const bh = Math.round(bodyA.height * s);
+        for (let gx = drawX; gx < drawX + a.w; gx += bw - 1) {
+          ctx.drawImage(bodyA, gx, drawY - 12, bw, bh);
         }
       }
-      ctx.fillStyle = 'rgba(235, 226, 242, 0.28)';
+      ctx.fillStyle = 'rgba(248, 240, 228, 0.34)';
       ctx.fillRect(drawX + 2, drawY + 2, a.w - 4, 4);
-      ctx.strokeStyle = '#3f3947';
+      ctx.strokeStyle = '#3f3847';
       ctx.lineWidth = 2.5;
       ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
       ctx.restore();
       return;
     }
 
-    // [P0-3 해결]: 3) 수직 석조 기둥/장벽(EA-WALL-COL-C, EA-WALL-BARRIER-R 등)은 모든 타일과 테두리를 ctx.clip() 내부에서만 그리고, 클립 바깥(drawX-2, drawY-6)으로 삐져나오던 topLeft/topRight 장식을 제거!
+    // 3) Vertical Stone Columns & Barrier Walls (`EA-WALL-COL-C`, `EA-WALL-BARRIER-R`, `E-CITY-C01-WALL`, `B-EXIT-WALL`)
     ctx.save();
     ctx.beginPath();
     ctx.roundRect(drawX, drawY, a.w, a.h, 6);
     ctx.clip();
-    ctx.fillStyle = mat === 'gate' ? '#586249' : '#6c6574';
+    ctx.fillStyle = mat === 'gate' ? '#586249' : '#766e80';
     ctx.fillRect(drawX, drawY, a.w, a.h);
     if (bodyA) {
-      const s = 0.45;
-      const bw = Math.max(36, Math.round(bodyA.width * s));
-      const bh = Math.max(36, Math.round(bodyA.height * s));
+      const s = 0.36;
+      const bw = Math.round(bodyA.width * s);
+      const bh = Math.round(bodyA.height * s);
       let rIdx = 0;
-      for (let gy = drawY; gy < drawY + a.h; gy += bh, rIdx++) {
+      for (let gy = drawY; gy < drawY + a.h; gy += bh - 1, rIdx++) {
         let cIdx = 0;
-        for (let gx = drawX; gx < drawX + a.w; gx += bw, cIdx++) {
+        for (let gx = drawX; gx < drawX + a.w; gx += bw - 1, cIdx++) {
           const pick = (rIdx + cIdx) % 2 === 0 ? bodyA : bodyB;
-          ctx.drawImage(pick, gx, gy, bw + 1, bh + 1);
+          ctx.drawImage(pick, gx, gy, bw, bh);
         }
       }
     }
-    if (cliffL && cliffR && a.h >= 60) {
-      const edgeW = Math.min(Math.round(a.w * 0.38), 22);
-      const edgeH = Math.max(64, Math.round(cliffL.height * 0.42));
-      for (let gy = drawY; gy < drawY + a.h; gy += edgeH - 8) {
-        ctx.drawImage(cliffL, drawX, gy, edgeW, edgeH);
-        ctx.drawImage(cliffR, drawX + a.w - edgeW, gy, edgeW, edgeH);
-      }
+    ctx.fillStyle = 'rgba(252, 244, 232, 0.28)';
+    ctx.fillRect(drawX + 3, drawY + 4, 7, a.h - 8);
+    ctx.fillStyle = 'rgba(46, 38, 56, 0.28)';
+    ctx.fillRect(drawX + a.w - 10, drawY + 4, 7, a.h - 8);
+    ctx.strokeStyle = 'rgba(58, 50, 68, 0.32)';
+    ctx.lineWidth = 1.5;
+    for (let gy = drawY + 86; gy < drawY + a.h - 20; gy += 86) {
+      ctx.beginPath();
+      ctx.moveTo(drawX + 4, gy);
+      ctx.lineTo(drawX + a.w - 4, gy);
+      ctx.stroke();
     }
-    ctx.strokeStyle = mat === 'gate' ? '#36402a' : '#3f3947';
+
+    // Clean Ashlar Capital Molding & Base Plinth (no clipped ivy leaves inside column!)
+    if (a.h >= 120) {
+      ctx.fillStyle = 'rgba(84, 76, 96, 0.62)';
+      ctx.fillRect(drawX, drawY, a.w, 22);
+      ctx.fillStyle = 'rgba(248, 240, 228, 0.42)';
+      ctx.fillRect(drawX + 2, drawY + 18, a.w - 4, 4);
+
+      const baseH = 26;
+      const by = drawY + a.h - baseH;
+      ctx.fillStyle = 'rgba(62, 54, 74, 0.55)';
+      ctx.fillRect(drawX, by, a.w, baseH);
+      ctx.fillStyle = 'rgba(244, 234, 220, 0.35)';
+      ctx.fillRect(drawX + 2, by, a.w - 4, 4);
+    }
+
+    ctx.strokeStyle = mat === 'gate' ? '#36402a' : '#3d3646';
     ctx.lineWidth = 2.5;
     ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
     ctx.restore();
     return;
   }
-  if (false && mat === 'stone') {
-    const bodyA = getTerrainImg('erpien', 'stone_', 'ground_body_a');
-    const bodyB = getTerrainImg('erpien', 'stone_', 'ground_body_b') || bodyA;
-    const cliffL = getTerrainImg('erpien', 'stone_', 'ground_cliff_left');
-    const cliffR = getTerrainImg('erpien', 'stone_', 'ground_cliff_right');
-    const topLeft = getTerrainImg('erpien', 'stone_', 'left');
-    const topRight = getTerrainImg('erpien', 'stone_', 'right');
-    ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(drawX, drawY, a.w, a.h, 8);
-    ctx.clip();
-    ctx.fillStyle = '#6c6574';
-    ctx.fillRect(drawX, drawY, a.w, a.h);
-    if (bodyA) {
-      const s = 0.45;
-      const bw = Math.max(36, Math.round(bodyA.width * s));
-      const bh = Math.max(36, Math.round(bodyA.height * s));
-      for (let gy = drawY; gy < drawY + a.h; gy += bh) {
-        for (let gx = drawX; gx < drawX + a.w; gx += bw) {
-          ctx.drawImage(bodyA, gx, gy, bw + 2, bh + 2);
-        }
-      }
-    }
-    if (cliffL && cliffR) {
-      const edgeW = Math.min(Math.round(a.w * 0.45), 26);
-      const edgeH = Math.max(64, Math.round(cliffL.height * 0.42));
-      for (let gy = drawY; gy < drawY + a.h; gy += edgeH - 8) {
-        ctx.drawImage(cliffL, drawX - 2, gy, edgeW + 4, edgeH);
-        ctx.drawImage(cliffR, drawX + a.w - edgeW - 2, gy, edgeW + 4, edgeH);
-      }
-    }
-    ctx.strokeStyle = '#3f3947';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
-    ctx.restore();
-    if (topLeft && topRight) {
-      const crownH = 26;
-      const halfW = Math.round(a.w * 0.52);
-      ctx.drawImage(topLeft, drawX - 2, drawY - 6, halfW + 2, crownH);
-      ctx.drawImage(topRight, drawX + a.w - halfW, drawY - 6, halfW + 2, crownH);
-    }
-    return;
-  }
+
+  // ==========================================================================
+  // P0-ART26-02: Suin Forest / Village Vertical Earthen Walls
+  // (`F-OBS-01` wallFootOnGround, `F-CLIFF-02` wallSideAgainstGround, `F-DROP-BARRIER` wallOnThinPlatform)
+  // - Removes mid-shaft grass tuft repetition (`ground_cliff_left/right` is NOT tiled down the shaft).
+  // - Extends bottom corners squarely into supporting ground/platform so zero white corner gap appears.
+  // - Renders full-height grass crown (`lh = 58px`) at the top without harsh 36px vertical clipping.
+  // ==========================================================================
   if (mat === 'grass' || mat === 'village') {
     const folder = mat === 'village' ? 'village' : 'forest';
     const bodyA = getTerrainImg(folder, '', 'ground_body_a');
     const bodyB = getTerrainImg(folder, '', 'ground_body_b') || bodyA;
-    const cliffL = getTerrainImg(folder, '', 'ground_cliff_left');
-    const cliffR = getTerrainImg(folder, '', 'ground_cliff_right');
     const topLeft = getTerrainImg(folder, '', 'left');
     const topRight = getTerrainImg(folder, '', 'right');
     const topMid = getTerrainImg(folder, '', 'middle_a');
-    const bushImg = getTerrainImg('forest', '', 'decoration_bush');
+    const singleSmall = getTerrainImg(folder, '', 'single_small');
+
+    // Classify junction type for bottom corner anchoring
+    const isFootOnGround = (a.y + a.h >= 575 && a.y < 580);
+    const isOnThinPlatform = (typeof platforms !== 'undefined' && platforms.some(pl =>
+      pl !== a && pl.thin && !pl.wall && a.x < pl.x + pl.w + 8 && a.x + a.w > pl.x - 8 && Math.abs((a.y + a.h) - pl.y) <= 22
+    ));
+    const extendBottom = isFootOnGround ? 14 : 0;
+    const bodyH = isOnThinPlatform ? Math.max(24, 372 - drawY) : (a.h + extendBottom);
+    const bottomRadii = (isFootOnGround || isOnThinPlatform || a.y + a.h >= 850) ? 0 : 10;
 
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(drawX, drawY, a.w, a.h, 12);
+    ctx.roundRect(drawX, drawY, a.w, bodyH, [10, 10, bottomRadii, bottomRadii]);
     ctx.clip();
 
-    // Rich earthen base fill + tiled forest soil body
     ctx.fillStyle = '#5c4430';
-    ctx.fillRect(drawX, drawY, a.w, a.h);
+    ctx.fillRect(drawX, drawY, a.w, bodyH);
     if (bodyA) {
-      const s = 0.46;
-      const bw = Math.max(36, Math.round(bodyA.width * s));
-      const bh = Math.max(36, Math.round(bodyA.height * s));
+      const s = 0.45;
+      const bw = Math.round(bodyA.width * s);  // 126px
+      const bh = Math.round(bodyA.height * s); // 72px (ratio = 1.00)
       let rIdx = 0;
-      for (let gy = drawY; gy < drawY + a.h; gy += bh, rIdx++) {
+      for (let gy = drawY; gy < drawY + bodyH; gy += bh - 1, rIdx++) {
         let cIdx = 0;
-        for (let gx = drawX; gx < drawX + a.w; gx += bw, cIdx++) {
+        for (let gx = drawX; gx < drawX + a.w; gx += bw - 1, cIdx++) {
           const pick = (rIdx + cIdx) % 2 === 0 ? bodyA : bodyB;
-          ctx.drawImage(pick, gx, gy, bw + 2, bh + 2);
+          ctx.drawImage(pick, gx, gy, bw, bh);
         }
       }
     }
-    // Natural rocky/mossy cliff edges along left and right sides
-    if (cliffL && cliffR) {
-      const edgeW = Math.min(Math.round(a.w * 0.48), 34);
-      const edgeH = Math.max(64, Math.round(cliffL.height * 0.42));
-      for (let gy = drawY; gy < drawY + a.h; gy += edgeH - 8) {
-        ctx.drawImage(cliffL, drawX - 2, gy, edgeW + 4, edgeH);
-        ctx.drawImage(cliffR, drawX + a.w - edgeW - 2, gy, edgeW + 4, edgeH);
-      }
-    }
-    // Soft natural earthen shading border (no dark steel rectangle)
-    ctx.strokeStyle = 'rgba(54, 72, 38, 0.55)';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
+
+    // Natural vertical earthen rock bevels along left & right sides (no green grass tufts mid-shaft!)
+    ctx.fillStyle = 'rgba(128, 96, 62, 0.28)';
+    ctx.fillRect(drawX + 2, drawY + 8, 7, bodyH - 8);
+    ctx.fillStyle = 'rgba(48, 34, 20, 0.34)';
+    ctx.fillRect(drawX + a.w - 9, drawY + 8, 7, bodyH - 8);
+
+    ctx.strokeStyle = 'rgba(54, 72, 38, 0.52)';
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, bodyH - 2);
     ctx.restore();
 
-    // Lush grass crown aligned with collision top `drawY` so the walkable top & visual surface match!
-    if (topLeft && topRight) {
-      const s = 0.42;
-      const crownH = Math.min(34, Math.round(topLeft.height * s));
-      const topY = Math.round(drawY - 14 * s);
-      const halfW = Math.round(a.w * 0.52);
-      ctx.drawImage(topLeft, drawX - 2, topY, halfW + 2, crownH);
-      ctx.drawImage(topRight, drawX + a.w - halfW, topY, halfW + 2, crownH);
-      if (topMid && a.w > 76) {
-        ctx.drawImage(topMid, drawX + Math.round(a.w * 0.25), topY, Math.round(a.w * 0.5), crownH);
-      }
+    // If `isOnThinPlatform` (`F-DROP-BARRIER` at x=3080..3134, y=180..385 on `F-DROP-01` at x=2760..3100, y=370),
+    // blend the lower root body seamlessly into the right end of `F-DROP-01` (`y=360..428`) using `topRight` root cap!
+    if (isOnThinPlatform && topRight) {
+      const sRoot = 0.50;
+      const rw = Math.round(topRight.width * sRoot);  // 71px
+      const rh = Math.round(topRight.height * sRoot); // 81px
+      const platY = 370;
+      const rTopY = Math.round(platY - 42 * sRoot);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(drawX - 4, platY - 6, a.w + 6, rh);
+      ctx.clip();
+      ctx.drawImage(topRight, drawX + a.w - rw, rTopY, rw, rh);
+      ctx.restore();
     }
-    // Bottom mossy root / bush grounding if resting near ground
-    if (bushImg && a.h <= 70) {
-      const bw = Math.min(a.w + 12, 86);
-      const bh = Math.round(bushImg.height * (bw / bushImg.width));
-      ctx.drawImage(bushImg, Math.round(drawX + (a.w - bw) * 0.5), Math.round(drawY + a.h - bh + 4), bw, bh);
+
+    // Lush grass crown aligned with collision top `drawY` (full natural height of grass overhang, zero mid-blade cut!)
+    if (topLeft && topRight) {
+      const s = 0.36;
+      const lw = Math.round(topLeft.width * s);   // 50px
+      const lh = Math.round(topLeft.height * s);  // 58px (ratio = 1.00)
+      const rw = Math.round(topRight.width * s);  // 51px
+      const rh = Math.round(topRight.height * s); // 58px (ratio = 1.00)
+      const topY = Math.round(drawY - 15 * s);
+      const totalCrownW = a.w + 4;
+      const halfW = Math.round(totalCrownW * 0.5);
+      // Clip only the bottom soil of `topLeft/topRight` (at `y = drawY + 26`), keeping the entire green grass overhang (`26px`) intact!
+      const crownClipH = Math.min(34, a.h + 8);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(drawX - 2, topY, halfW, crownClipH);
+      ctx.clip();
+      ctx.drawImage(topLeft, drawX - 2, topY, lw, lh);
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(drawX - 2 + halfW, topY, totalCrownW - halfW, crownClipH);
+      ctx.clip();
+      ctx.drawImage(topRight, drawX + a.w + 2 - rw, topY, rw, rh);
+      ctx.restore();
+    } else if (singleSmall) {
+      const uS = (a.w + 4) / singleSmall.width;
+      const ch = Math.round(singleSmall.height * uS);
+      ctx.drawImage(singleSmall, drawX - 2, Math.round(drawY - 29 * uS), a.w + 4, ch);
     }
     return;
   }
 
+  // Vertical Steel Tower Walls
   const side = a.wallSide === 'right' ? 'right' : 'left';
   const wallImg = structureImages[`tower_wall_${side}`] || structureImages['tower_wall_left'];
   const capImg = structureImages['tower_wall_cap'];
@@ -605,17 +759,17 @@ function drawStructuralWall(a, drawX, drawY) {
   ctx.clip();
 
   if (wallImg) {
-    const tileH = Math.max(96, Math.round(a.w * 2));
+    const tileH = Math.max(32, Math.round(a.w * (wallImg.height / wallImg.width)));
     for (let gy = drawY; gy < drawY + a.h; gy += tileH) {
-      ctx.drawImage(wallImg, drawX, gy, a.w, Math.min(tileH + 2, drawY + a.h - gy + 2));
+      ctx.drawImage(wallImg, drawX, gy, a.w, tileH);
     }
   } else {
     ctx.fillStyle = '#4c586c';
     ctx.fillRect(drawX, drawY, a.w, a.h);
   }
 
-  if (capImg && a.h >= 40) {
-    const capH = Math.min(32, Math.round(a.h * 0.25));
+  if (capImg && a.h >= 44) {
+    const capH = Math.max(16, Math.round(a.w * (capImg.height / capImg.width)));
     ctx.drawImage(capImg, drawX, drawY, a.w, capH);
     if (a.portalBottom) {
       ctx.drawImage(capImg, drawX, drawY + a.h - capH, a.w, capH);
@@ -626,9 +780,130 @@ function drawStructuralWall(a, drawX, drawY) {
   ctx.lineWidth = 3;
   ctx.strokeRect(drawX + 1.5, drawY + 1.5, a.w - 3, a.h - 3);
   if (a.hazardExteriorRight) {
-    // Visual warning energy trim along the outer right face of the tower wall
     ctx.fillStyle = 'rgba(255, 107, 82, 0.72)';
     ctx.fillRect(drawX + a.w - 7, drawY + 4, 5, a.h - 8);
+  }
+  ctx.restore();
+}
+
+// ============================================================================
+// P1-ART26-03 & P0-ART26-02: Coordinate- & Material-Driven Ground Joint Classifier
+// - Classifies each ground edge (`'left'` | `'right'`) into:
+//   1. `'same_material_join'`  (adjacent ground within ±4px at same y with identical material)
+//   2. `'material_transition'` (adjacent ground within ±4px at same y with different material)
+//   3. `'wall_butt_join'`      (abuts a vertical structural wall of the same material, e.g. `F-CLIFF-02`)
+//   4. `'open_edge'`           (true open cliff edge over pit or boundary)
+// ============================================================================
+function classifyGroundJoint(a, side) {
+  if (typeof platforms === 'undefined' || !platforms) {
+    return { kind: 'open_edge', neighbor: null, neighborMat: null };
+  }
+  const mat = a.visual?.material || a.skin || 'grass';
+  const edgeX = side === 'left' ? a.x : (a.x + a.w);
+
+  // 1. Check adjacent ground platforms at the same y (±4px)
+  for (const b of platforms) {
+    if (b === a || !b.groundTile || Math.abs(b.y - a.y) > 4) continue;
+    const bMat = b.visual?.material || b.skin || 'grass';
+    if (side === 'left' && Math.abs((b.x + b.w) - edgeX) <= 4) {
+      return {
+        kind: bMat === mat ? 'same_material_join' : 'material_transition',
+        neighbor: b,
+        neighborMat: bMat
+      };
+    }
+    if (side === 'right' && Math.abs(b.x - edgeX) <= 4) {
+      return {
+        kind: bMat === mat ? 'same_material_join' : 'material_transition',
+        neighbor: b,
+        neighborMat: bMat
+      };
+    }
+  }
+
+  // 2. Check if this ground edge abuts a vertical wall of the same material (e.g. F-GND-02A & F-GND-02B meeting F-CLIFF-02)
+  for (const b of platforms) {
+    if (b === a || !b.wall || b.ceiling) continue;
+    const bMat = b.visual?.material || b.skin || 'grass';
+    if (bMat !== mat) continue;
+    if (b.y < a.y && b.y + b.h > a.y) {
+      if (side === 'right' && Math.abs(b.x - edgeX) <= 4) {
+        return { kind: 'wall_butt_join', neighbor: b, neighborMat: bMat };
+      }
+      if (side === 'left' && Math.abs((b.x + b.w) - edgeX) <= 4) {
+        return { kind: 'wall_butt_join', neighbor: b, neighborMat: bMat };
+      }
+    }
+  }
+
+  return { kind: 'open_edge', neighbor: null, neighborMat: null };
+}
+window.classifyGroundJoint = classifyGroundJoint;
+
+// Erpien Gate (`gate`) <-> Royal City (`stone`) Transition Seam (ONLY for gate <-> stone!)
+function drawErpienGateStoneTransitionSeam(seamX, seamY) {
+  const stoneSmall = getTerrainImg('erpien', 'stone_', 'single_small');
+  const planterA = getTerrainImg('erpien', '', 'decoration_stone_planter_a');
+  const gateFlower = getTerrainImg('erpien', '', 'decoration_gate_flower');
+  const bushImg = getTerrainImg('forest', '', 'decoration_bush');
+
+  ctx.save();
+  if (stoneSmall) {
+    const s = 0.42;
+    const sw = Math.round(stoneSmall.width * s);
+    const sh = Math.round(stoneSmall.height * s);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(seamX - 66, seamY - 18, 132, 46);
+    ctx.clip();
+    ctx.drawImage(stoneSmall, Math.round(seamX - sw * 0.5), Math.round(seamY - 46 * s), sw, sh);
+    ctx.restore();
+  }
+  if (planterA) {
+    const s = 0.46;
+    const pw = Math.round(planterA.width * s);
+    const ph = Math.round(planterA.height * s);
+    ctx.drawImage(planterA, Math.round(seamX + 8), Math.round(seamY - ph + 5), pw, ph);
+  }
+  if (bushImg) {
+    const s = 0.56;
+    const bw = Math.round(bushImg.width * s);
+    const bh = Math.round(bushImg.height * s);
+    ctx.drawImage(bushImg, Math.round(seamX - bw - 4), Math.round(seamY - bh + 5), bw, bh);
+  }
+  if (gateFlower) {
+    const s = 0.52;
+    const fw = Math.round(gateFlower.width * s);
+    const fh = Math.round(gateFlower.height * s);
+    ctx.drawImage(gateFlower, Math.round(seamX - fw * 0.5 - 12), Math.round(seamY - fh + 6), fw, fh);
+  }
+  ctx.restore();
+}
+
+// P1-ART26-03: Monatium Road (`road`) <-> Sidewalk (`pavement`) Curbstone Transition Seam (e.g. `x = 17000`)
+function drawMonatiumRoadPavementTransitionSeam(seamX, seamY) {
+  const paveLeft = getTerrainImg('monatium', 'pavement_', 'left');
+  const bollard = getTerrainImg('monatium', '', 'decoration_bollard');
+
+  ctx.save();
+  // Clean bevelled sidewalk curb cap bridging the road-to-pavement step at seamX
+  if (paveLeft) {
+    const s = 0.46;
+    const pw = Math.round(paveLeft.width * s);  // 55px
+    const ph = Math.round(paveLeft.height * s); // 102px (ratio = 1.00)
+    const topY = Math.round(seamY - 133 * s);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(seamX - 18, seamY - 26, pw, 62);
+    ctx.clip();
+    ctx.drawImage(paveLeft, seamX - 16, topY, pw, ph);
+    ctx.restore();
+  }
+  if (bollard) {
+    const s = 0.56;
+    const bw = Math.round(bollard.width * s);  // 26px
+    const bh = Math.round(bollard.height * s); // 39px (ratio = 1.00)
+    ctx.drawImage(bollard, Math.round(seamX + 18), Math.round(seamY - 66 * s), bw, bh);
   }
   ctx.restore();
 }
@@ -648,19 +923,33 @@ function drawGroundVisual(a, drawX, drawY) {
   const bodyB = getTerrainImg(spec.folder, spec.prefix, 'ground_body_b') || bodyA;
   if (!topA || !bodyA) return;
 
+  // P1-ART26-03: Classify left & right ground boundaries by actual coordinates and materials!
+  const leftJoint = classifyGroundJoint(a, 'left');
+  const rightJoint = classifyGroundJoint(a, 'right');
+
+  const showCliffLeft = (leftJoint.kind === 'open_edge' && Boolean(cl));
+  const showCliffRight = (rightJoint.kind === 'open_edge' && Boolean(cr));
+
   const topY = Math.round(drawY - spec.groundWalk * s);
   const topH = Math.round(topA.height * s);
-  const clW = (!a.joinLeft && cl) ? Math.round(cl.width * s) : 0;
-  const clH = (!a.joinLeft && cl) ? Math.round(cl.height * s) : 0;
-  const crW = (!a.joinRight && cr) ? Math.round(cr.width * s) : 0;
-  const crH = (!a.joinRight && cr) ? Math.round(cr.height * s) : 0;
+  const clW = showCliffLeft ? Math.round(cl.width * s) : 0;
+  const clH = showCliffLeft ? Math.round(cl.height * s) : 0;
+  const crW = showCliffRight ? Math.round(cr.width * s) : 0;
+  const crH = showCliffRight ? Math.round(cr.height * s) : 0;
 
   const zoomNow = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
   const bottomY = Math.max(drawY + a.h, Math.ceil(rCamY + (H / zoomNow) + 80));
   const bodyStartY = mat === 'home' ? (topY + topH - 8) : (topY + Math.round(spec.bodyTopOffset * s));
 
-  const bodyX1 = drawX + (clW > 0 ? Math.round(clW * 0.42) : 0);
-  const bodyX2 = drawX + a.w - (crW > 0 ? Math.round(crW * 0.42) : 0);
+  // For `same_material_join`, `material_transition`, or `wall_butt_join`, extend the lower ground body
+  // all the way to `drawX` / `drawX + a.w` (plus a 4px overlap into wall_butt_join) so there is ZERO vertical hole!
+  const bodyX1 = leftJoint.kind === 'wall_butt_join'
+    ? (drawX - 6)
+    : (showCliffLeft ? (drawX + Math.round(clW * 0.36)) : drawX);
+  const bodyX2 = rightJoint.kind === 'wall_butt_join'
+    ? (drawX + a.w + 6)
+    : (showCliffRight ? (drawX + a.w - Math.round(crW * 0.36)) : (drawX + a.w));
+
   if (bodyX2 > bodyX1 && bottomY > bodyStartY) {
     const bw = Math.round(bodyA.width * s);
     const bh = Math.round(bodyA.height * s);
@@ -669,50 +958,167 @@ function drawGroundVisual(a, drawX, drawY) {
     ctx.rect(bodyX1, bodyStartY, bodyX2 - bodyX1, bottomY - bodyStartY);
     ctx.clip();
     let colIdx = 0;
-    for (let gx = bodyX1; gx < bodyX2; gx += bw, colIdx++) {
+    for (let gx = bodyX1; gx < bodyX2; gx += bw - 1, colIdx++) {
       let rowIdx = 0;
-      for (let gy = bodyStartY; gy < bottomY; gy += bh, rowIdx++) {
+      for (let gy = bodyStartY; gy < bottomY; gy += bh - 1, rowIdx++) {
         const pick = ((colIdx + rowIdx) % 2 === 0 || seededUnit(seed, colIdx * 31 + rowIdx) < 0.5) ? bodyA : bodyB;
-        ctx.drawImage(pick, gx, gy, bw + 1, bh + 1);
+        ctx.drawImage(pick, gx, gy, bw, bh);
       }
     }
     ctx.restore();
   }
 
-  if (clW > 0 && cl) {
+  if (showCliffLeft && cl) {
     ctx.drawImage(cl, drawX, topY, clW, clH);
   }
-  if (crW > 0 && cr) {
+  if (showCliffRight && cr) {
     ctx.drawImage(cr, drawX + a.w - crW, topY, crW, crH);
   }
 
-  const midX1 = drawX + clW;
-  const midX2 = drawX + a.w - crW;
+  // Top surface span (`midX1 .. midX2`):
+  // On `wall_butt_join`, overlap 4px into the vertical wall so zero gap appears at the corner (`F-CLIFF-02`).
+  const midX1 = leftJoint.kind === 'wall_butt_join' ? (drawX - 4) : (drawX + clW);
+  const midX2 = rightJoint.kind === 'wall_butt_join' ? (drawX + a.w + 4) : (drawX + a.w - crW);
   const midSpan = midX2 - midX1;
+
   if (midSpan > 2) {
-    const nomW = topA.width * s;
+    const nomW = Math.max(24, Math.round(topA.width * s));
     const tops = [topA, topB, topC];
-    if (midSpan >= nomW * 0.85) {
-      const count = Math.max(1, Math.round(midSpan / nomW));
-      const stepW = midSpan / count;
-      for (let i = 0; i < count; i++) {
-        const tx = Math.round(midX1 + i * stepW);
-        const tw = Math.round(midX1 + (i + 1) * stepW) - tx;
-        const pickIdx = mat === 'home' ? (i % 3) : (Math.floor(seededUnit(seed, i + 17) * 3) % 3);
-        const tImg = tops[pickIdx];
-        ctx.drawImage(tImg, tx - 1, topY, tw + 2, topH);
-      }
-    } else {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(midX1 - 2, topY - 10, midSpan + 4, topH + 20);
-      ctx.clip();
-      ctx.drawImage(topA, midX1 - 4, topY, Math.round(nomW), topH);
-      ctx.restore();
+    const plan = makePlatformModulePlan(midSpan, 0, 0, nomW, 0);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(midX1, topY - 12, midSpan, topH + 24);
+    ctx.clip();
+
+    let curX = midX1;
+    if (plan.neutralLeft > 0) {
+      drawNeutralStripCrop(topA, s, curX, topY, plan.neutralLeft, topH, 0.5);
+      curX += plan.neutralLeft;
+    }
+    for (let i = 0; i < plan.count; i++) {
+      const worldTileIdx = Math.floor((curX + 1) / nomW);
+      const pickIdx = mat === 'home' ? (worldTileIdx % 3) : (Math.floor(seededUnit(seed, worldTileIdx + 17) * 3) % 3);
+      const tImg = tops[pickIdx];
+      ctx.drawImage(tImg, curX, topY, nomW, topH);
+      curX += nomW;
+    }
+    if (plan.neutralRight > 0) {
+      drawNeutralStripCrop(topA, s, curX, topY, plan.neutralRight, topH, 0.5);
+    }
+    ctx.restore();
+  }
+
+  // Render material-appropriate transition seam ONLY when `leftJoint.kind === 'material_transition'`
+  if (leftJoint.kind === 'material_transition') {
+    const leftMat = leftJoint.neighborMat;
+    if ((leftMat === 'gate' && mat === 'stone') || (leftMat === 'stone' && mat === 'gate')) {
+      drawErpienGateStoneTransitionSeam(drawX, drawY);
+    } else if ((leftMat === 'road' && mat === 'pavement') || (leftMat === 'pavement' && mat === 'road')) {
+      drawMonatiumRoadPavementTransitionSeam(drawX, drawY);
     }
   }
 }
 
+// ============================================================================
+// P0-ART26-02: Post-Pass Visual Junction Overlay (`drawTerrainJunctionOverlays`)
+// - Executed in `draw()` AFTER both ground platforms and non-ground platforms/walls are rendered,
+//   and BEFORE actors/player.
+// - Seals the exact contact joints of:
+//   1. `F-OBS-01` (`wallFootOnGround` at `x=520..610, y=580`): earthen grass-tuft & bush foot collar
+//   2. `F-CLIFF-02` (`wallSideAgainstGround` at `x=2040, y=580` and `x=2120, y=580`): left & right
+//      soil/grass corner seams hiding the vertical crack between ground and cliff wall
+//   3. `F-DROP-BARRIER` (`wallOnThinPlatform` at `x=3080..3134, y=370`): inner corner grass/bush anchor
+//      where the barrier meets thin platform `F-DROP-01` (`x=2760..3100, y=370`)
+// ============================================================================
+function drawTerrainJunctionOverlays() {
+  const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
+  if (!l || l.id !== 'forest') return;
+
+  const topA = getTerrainImg('forest', '', 'ground_top_a') || getTerrainImg('forest', '', 'ground_top');
+  const bushImg = getTerrainImg('forest', '', 'decoration_bush');
+  const flowerA = getTerrainImg('forest', '', 'decoration_flower_a');
+  if (!topA) return;
+
+  const sTop = TERRAIN_SPECS.grass.groundScale; // 0.54
+  const topH = Math.round(topA.height * sTop);  // 95px
+  const topY580 = Math.round(580 - TERRAIN_SPECS.grass.groundWalk * sTop); // 555
+
+  for (const a of platforms) {
+    if (!a.wall || a.hidden) continue;
+    const mat = a.visual?.material || a.skin || 'grass';
+    if (mat !== 'grass') continue;
+    if (a.x + a.w < rCam - 120 || a.x > rCam + W + 120) continue;
+
+    // Case 1: `F-OBS-01` (`wallFootOnGround`, `y + h === 580`)
+    if (Math.abs((a.y + a.h) - 580) <= 4) {
+      // Draw continuous grass-blade turf across `[a.x - 10, a.x + a.w + 10]` at `y = 580` so the wall's
+      // bottom corners are embedded inside the lawn turf with 0px gap!
+      const spanW = a.w + 20;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(a.x - 10, 566, spanW, 32);
+      ctx.clip();
+      drawNeutralStripCrop(topA, sTop, a.x - 10, topY580, spanW, topH, 0.5);
+      ctx.restore();
+
+      if (bushImg) {
+        const bw = Math.min(a.w + 10, 84);
+        const bh = Math.round(bushImg.height * (bw / bushImg.width));
+        ctx.drawImage(bushImg, Math.round(a.x + (a.w - bw) * 0.5), Math.round(580 - bh + 5), bw, bh);
+      }
+      continue;
+    }
+
+    // Case 2: `F-CLIFF-02` (`wallSideAgainstGround`, `x = 2040..2120, y = 420..900` meeting ground at `y = 580`)
+    if (a.y < 580 && a.y + a.h > 620) {
+      // Seal both left (`a.x = 2040`) and right (`a.x + a.w = 2120`) vertical ground-to-wall joints at `y = 580`
+      for (const seamX of [a.x, a.x + a.w]) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(seamX - 18, 560, 36, 44);
+        ctx.clip();
+        drawNeutralStripCrop(topA, sTop, seamX - 18, topY580, 36, topH, 0.5);
+        ctx.restore();
+      }
+      if (bushImg) {
+        const sB = 0.48;
+        const bw = Math.round(bushImg.width * sB);  // 55px
+        const bh = Math.round(bushImg.height * sB); // 22px
+        ctx.drawImage(bushImg, Math.round(a.x - bw * 0.65), Math.round(580 - bh + 4), bw, bh);
+        ctx.drawImage(bushImg, Math.round(a.x + a.w - bw * 0.35), Math.round(580 - bh + 4), bw, bh);
+      }
+      continue;
+    }
+
+    // Case 3: `F-DROP-BARRIER` (`wallOnThinPlatform`, `x = 3080..3134, y = 180..385` on `F-DROP-01` `y = 370`)
+    const touchPlat = platforms.find(pl =>
+      pl !== a && pl.thin && !pl.wall && a.x < pl.x + pl.w + 8 && a.x + a.w > pl.x - 8 && Math.abs((a.y + a.h) - pl.y) <= 22
+    );
+    if (touchPlat) {
+      const py = touchPlat.y;
+      if (bushImg) {
+        const sB = 0.46;
+        const bw = Math.round(bushImg.width * sB);  // 53px
+        const bh = Math.round(bushImg.height * sB); // 21px
+        ctx.drawImage(bushImg, Math.round(a.x - bw * 0.45), Math.round(py - bh + 4), bw, bh);
+      }
+      if (flowerA) {
+        const sF = 0.36;
+        const fw = Math.round(flowerA.width * sF);
+        const fh = Math.round(flowerA.height * sF);
+        ctx.drawImage(flowerA, Math.round(a.x + (a.w - fw) * 0.5), Math.round(a.y - fh + 4), fw, fh);
+      }
+    }
+  }
+}
+
+// ============================================================================
+// P0-ART26-01: Sliver-Free Thin Platform Visual Renderer
+// - Uses `makePlatformModulePlan()` + `stone_inner_strip.webp` / `gate_inner_strip.webp`
+//   so every complete arch/motif tile (`middle_a/b/c`) is drawn 100% unclipped (`lastClippedWidth === 0`).
+// - Never exposes a 1~20px cut-off ornament sliver at either end of a platform!
+// ============================================================================
 function drawThinPlatformVisual(a, drawX, drawY) {
   if (a.wall) {
     drawStructuralWall(a, drawX, drawY);
@@ -725,6 +1131,7 @@ function drawThinPlatformVisual(a, drawX, drawY) {
   if (a.ceiling && mat === 'stone') {
     const leftImg = getTerrainImg('erpien', 'stone_', 'left');
     const midImg = getTerrainImg('erpien', 'stone_', 'middle_a');
+    const stripImg = getTerrainImg('erpien', 'stone_', 'inner_strip') || midImg;
     const rightImg = getTerrainImg('erpien', 'stone_', 'right');
     ctx.save();
     ctx.beginPath();
@@ -735,11 +1142,23 @@ function drawThinPlatformVisual(a, drawX, drawY) {
     if (leftImg && midImg && rightImg) {
       const s = 0.42;
       const lw = Math.round(leftImg.width * s), rw = Math.round(rightImg.width * s);
-      ctx.drawImage(leftImg, drawX, drawY - 6, lw, a.h + 12);
-      ctx.drawImage(rightImg, drawX + a.w - rw, drawY - 6, rw, a.h + 12);
-      for (let gx = drawX + lw; gx < drawX + a.w - rw; gx += 90) {
-        ctx.drawImage(midImg, gx, drawY - 6, 94, a.h + 12);
+      const lh = Math.round(leftImg.height * s);
+      const mw = Math.round(midImg.width * s), mh = Math.round(midImg.height * s);
+      const plan = makePlatformModulePlan(a.w, lw, rw, mw, 0);
+      let curX = drawX + lw;
+      if (plan.neutralLeft > 0) {
+        drawNeutralStripCrop(stripImg, s, curX, drawY - 6, plan.neutralLeft, mh, 0.5);
+        curX += plan.neutralLeft;
       }
+      for (let i = 0; i < plan.count; i++) {
+        ctx.drawImage(midImg, curX, drawY - 6, mw, mh);
+        curX += mw;
+      }
+      if (plan.neutralRight > 0) {
+        drawNeutralStripCrop(stripImg, s, curX, drawY - 6, plan.neutralRight, mh, 0.5);
+      }
+      ctx.drawImage(leftImg, drawX, drawY - 6, lw, lh);
+      ctx.drawImage(rightImg, drawX + a.w - rw, drawY - 6, rw, lh);
     }
     ctx.strokeStyle = '#3f3947';
     ctx.lineWidth = 2.5;
@@ -747,47 +1166,20 @@ function drawThinPlatformVisual(a, drawX, drawY) {
     ctx.restore();
     return;
   }
+
   if (a.ceiling && mat === 'steel') {
-    const cl = getTerrainImg('monatium', 'steel_ceiling_', 'left');
-    const cm = getTerrainImg('monatium', 'steel_ceiling_', 'middle');
-    const cr = getTerrainImg('monatium', 'steel_ceiling_', 'right');
-    if (cl && cm && cr) {
-      const s = Math.max(0.34, Math.min(0.45, a.h / 90));
-      const topY = Math.round(drawY - 4 * s);
-      const drawH = Math.round(cl.height * s);
-      const lw = Math.round(cl.width * s);
-      const rw = Math.round(cr.width * s);
-      ctx.drawImage(cl, drawX, topY, lw, drawH);
-      ctx.drawImage(cr, drawX + a.w - rw, topY, rw, drawH);
-      const span = a.w - lw - rw;
-      if (span > 0) {
-        ctx.drawImage(cm, drawX + lw - 1, topY, span + 2, drawH);
-      }
-      return;
-    }
+    drawSteelHorizontalGirder(a, drawX, drawY);
+    return;
   }
 
-  if ((a.useSmallVisual || a.w <= 96 || (a.w <= 145 && !a.towerStep && !a.descentStep)) && a.behavior !== 'blink') {
-    const smallImg = getTerrainImg(spec.folder, spec.prefix, 'single_small');
-    if (smallImg) {
-      // Gate G2 (Section 3.1): Prevent narrow 38~70px platforms from shrinking into tiny flat specks!
-      // Maintain a minimum vertical thickness (minScale = 0.42 -> drawH >= 32px) so narrow perches have a clear, readable turf & root body whose width matches [drawX, drawX + a.w].
-      const rawS = a.w / smallImg.width;
-      const vS = Math.max(0.42, rawS);
-      const drawH = Math.round(smallImg.height * vS);
-      const topY = Math.round(drawY - spec.smallWalk * vS);
+  // For non-stone small perches (or explicitly flagged `useSmallVisual`), allow `single_small` when scale is natural
+  const smallImg = getTerrainImg(spec.folder, spec.prefix, 'single_small');
+  if (smallImg && (a.useSmallVisual || (mat !== 'stone' && a.w <= 140))) {
+    const uS = a.w / smallImg.width;
+    if (uS >= 0.36 && uS <= 0.58) {
+      const drawH = Math.round(smallImg.height * uS);
+      const topY = Math.round(drawY - spec.smallWalk * uS);
       ctx.drawImage(smallImg, drawX, topY, a.w, drawH);
-      return;
-    }
-  }
-
-  if (a.w <= 225 && !a.towerStep && !a.descentStep && a.behavior !== 'blink') {
-    const medImg = getTerrainImg(spec.folder, spec.prefix, 'single_medium');
-    if (medImg && a.w >= medImg.width * 0.36 && a.w <= medImg.width * 0.52) {
-      const s = a.w / medImg.width;
-      const drawH = Math.round(medImg.height * s);
-      const topY = Math.round(drawY - spec.medWalk * s);
-      ctx.drawImage(medImg, drawX, topY, a.w, drawH);
       return;
     }
   }
@@ -797,6 +1189,7 @@ function drawThinPlatformVisual(a, drawX, drawY) {
   const midB = getTerrainImg(spec.folder, spec.prefix, 'middle_b') || midA;
   const midC = getTerrainImg(spec.folder, spec.prefix, 'middle_c') || midA;
   const rightImg = getTerrainImg(spec.folder, spec.prefix, 'right');
+  const innerStrip = getTerrainImg(spec.folder, spec.prefix, 'inner_strip') || midA;
   if (!leftImg || !midA || !rightImg) return;
 
   const s = spec.thinScale;
@@ -805,44 +1198,51 @@ function drawThinPlatformVisual(a, drawX, drawY) {
   const lw = Math.round(leftImg.width * s);
   const rw = Math.round(rightImg.width * s);
 
+  // Compact platforms (`a.w <= lw + rw`): join the outer `halfW` of `leftImg` and outer `a.w - halfW` of `rightImg`
+  // via 1:1 source cropping (`dw/sw === dh/sh === s`), so neither cap is distorted and no middle sliver exists!
   if (a.w <= lw + rw) {
-    const us = a.w / (leftImg.width + rightImg.width);
-    const uTopY = Math.round(drawY - spec.thinWalk * us);
-    const uH = Math.round(leftImg.height * us);
-    const uLw = Math.round(leftImg.width * us);
-    ctx.drawImage(leftImg, drawX, uTopY, uLw + 1, uH);
-    ctx.drawImage(rightImg, drawX + uLw, uTopY, a.w - uLw, uH);
+    const halfW = Math.round(a.w * 0.5);
+    const rightHalfW = a.w - halfW;
+    drawNeutralStripCrop(leftImg, s, drawX, topY, halfW, drawH, 0.0);
+    drawNeutralStripCrop(rightImg, s, drawX + halfW, topY, rightHalfW, drawH, 1.0);
     return;
   }
+
+  const nomW = Math.max(24, Math.round(midA.width * s));
+  // For `stone` (`260x216`), each `stone_middle_a` / `stone_middle_c` contains two symmetric `130px` complete arch bays (`halfBayW = 62px`).
+  const halfBayW = mat === 'stone' ? Math.round(130 * s) : 0;
+  const plan = makePlatformModulePlan(a.w, lw, rw, nomW, halfBayW);
+  const mids = [midA, midB, midC];
 
   ctx.save();
   ctx.beginPath();
   ctx.rect(drawX, topY - 4, a.w, drawH + 8);
   ctx.clip();
 
-  const midX1 = drawX + lw;
-  const midX2 = drawX + a.w - rw;
-  const midSpan = midX2 - midX1;
-  const nomW = midA.width * s;
-  const mids = [midA, midB, midC];
+  // 1. Left complete cap
+  ctx.drawImage(leftImg, drawX, topY, lw, drawH);
 
-  if (midSpan > 0) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(midX1, topY - 4, midSpan, drawH + 8);
-    ctx.clip();
-    const count = Math.max(1, Math.ceil(midSpan / nomW));
-    const stepW = midSpan / count;
-    for (let i = 0; i < count; i++) {
-      const tx = Math.floor(midX1 + i * stepW);
-      const tw = Math.ceil(midX1 + (i + 1) * stepW) - tx;
-      const mImg = mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3];
-      ctx.drawImage(mImg, tx, topY, tw + 1, drawH);
-    }
-    ctx.restore();
+  // 2. Sliver-free middle assembly: `neutralLeft` + `plan.count` complete middle tiles + optional `halfCount` 1-arch bay + `neutralRight`
+  let curX = drawX + lw;
+  if (plan.neutralLeft > 0) {
+    drawNeutralStripCrop(innerStrip, s, curX, topY, plan.neutralLeft, drawH, 0.5);
+    curX += plan.neutralLeft;
+  }
+  for (let i = 0; i < plan.count; i++) {
+    const mImg = mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3];
+    ctx.drawImage(mImg, curX, topY, nomW, drawH);
+    curX += nomW;
+  }
+  if (plan.halfCount === 1) {
+    // Draw a single complete 1-arch bay (`sx=0, sw=130, sh=216`) from `midA` at exact 1:1 scale (`62x104`)
+    ctx.drawImage(midA, 0, 0, halfBayW / (drawH / midA.height), midA.height, curX, topY, halfBayW, drawH);
+    curX += halfBayW;
+  }
+  if (plan.neutralRight > 0) {
+    drawNeutralStripCrop(innerStrip, s, curX, topY, plan.neutralRight, drawH, 0.5);
   }
 
-  ctx.drawImage(leftImg, drawX, topY, lw, drawH);
+  // 3. Right complete cap
   ctx.drawImage(rightImg, drawX + a.w - rw, topY, rw, drawH);
   ctx.restore();
 }
@@ -863,7 +1263,6 @@ function drawStageProps(layerFilter) {
     const anchorRow = (typeof fp.groundAnchorPx === 'number') ? fp.groundAnchorPx : fp.walkOffset;
     const dy = Math.round(fp.anchorBottom - anchorRow * fp.scale);
     ctx.drawImage(im, dx, dy, dw, dh);
-    // Gate 6 (P0): Subtle natural grass-blade rim blend at the bottom 5px of village props so cottages/stalls/gates/fences bed seamlessly into the lawn
     if (topA && fp.anchorBottom === 580 && l.id === 'village') {
       ctx.save();
       ctx.beginPath();
@@ -874,7 +1273,7 @@ function drawStageProps(layerFilter) {
       const tileH = Math.round(topA.height * 0.54);
       const startX = Math.floor(dx / tileW) * tileW;
       for (let gx = startX; gx < dx + dw; gx += tileW) {
-        ctx.drawImage(topA, gx, 555, tileW + 1, tileH);
+        ctx.drawImage(topA, gx, 555, tileW, tileH);
       }
       ctx.restore();
     }
@@ -889,7 +1288,7 @@ function drawPlatformDecorations(a, drawX, drawY) {
       if (!im) continue;
       const dx = dec.x;
       const decViewW = (typeof rCamZoom === 'number' && rCamZoom > 0) ? (W / rCamZoom) : W;
-    if (dx < rCam - 160 || dx > rCam + decViewW + 160) continue;
+      if (dx < rCam - 160 || dx > rCam + decViewW + 160) continue;
       const dw = Math.round(im.width * dec.scale);
       const dh = Math.round(im.height * dec.scale);
       const dy = Math.round(drawY - dec.walkOffset * dec.scale);
@@ -943,7 +1342,6 @@ function drawPlatform(a) {
   const drawY = Math.round((a.prevY ?? a.y) + (a.y - (a.prevY ?? a.y)) * renderAlpha);
 
   if (a.motion) {
-    // Draw authentic track rail matching the exact movement bounds on the user sketch!
     ctx.save();
     ctx.strokeStyle = 'rgba(210, 225, 245, 0.45)';
     ctx.lineWidth = 3.5;
@@ -981,10 +1379,8 @@ function drawPlatform(a) {
     ctx.restore();
   }
 
-  // Gate 6 (P0): Blinking platforms communicate state purely via alpha, subtle vibration, and color rim — ZERO text labels!
   if (a.behavior === 'blink') {
     if (a.silentBlink && a.blinkState === 'off') {
-      // Unmarked blink platforms vanish cleanly when OFF so player never mistakes them for solid ground!
       return;
     }
     ctx.save();
@@ -1112,7 +1508,6 @@ function drawSpecialCoins() {
   }
 }
 
-// Developer QA Overlay for Gate 1.4 (`window.__showArtQaOverlay = true` draws reservedFootprint, art anchorBottom, and collision tops)
 function drawDeveloperQaOverlay() {
   if (!window.__showArtQaOverlay) return;
   const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
@@ -1136,6 +1531,13 @@ function drawDeveloperQaOverlay() {
   }
   for (const a of platforms) {
     if (a.x + a.w < rCam - 100 || a.x > rCam + W + 100) continue;
+    if (a.wall || a.ceiling) {
+      ctx.strokeStyle = a.ceiling ? '#ffd43bcc' : '#ff6b6bcc';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(a.x, a.y, a.w, a.h);
+      ctx.setLineDash([]);
+    }
     ctx.strokeStyle = a.groundTile ? '#339af0' : '#00f5d4';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -1162,13 +1564,13 @@ function draw() {
 
   drawTowerStructures();
   drawMonatiumBArchitecture();
+  drawErpienAArchitecture();
 
   for (const a of platforms) {
     if (!a.groundTile) continue;
     if (a.x + a.w < rCam - 120 || a.x > rCam + viewW + 120) continue;
     drawPlatform(a);
   }
-  // Gate 1: Render BACKGROUND_PROP (cottages/stalls/gates) and midground DECORATION behind floating platforms & player!
   drawStageProps('background');
   drawStageProps('midground');
 
@@ -1177,6 +1579,9 @@ function draw() {
     if (a.x + a.w < rCam - 160 || a.x > rCam + viewW + 160 || a.y - rCamY > viewH + 280 || a.y + a.h - rCamY < -280) continue;
     drawPlatform(a);
   }
+
+  // P0-ART26-02: Post-pass visual junction overlay for Suin Forest tutorial wall-to-ground/platform joints
+  drawTerrainJunctionOverlays();
 
   if (typeof gameMode !== 'undefined' && gameMode === 'challenge') {
     if (typeof drawChallengeHazards === 'function') drawChallengeHazards();
@@ -1217,7 +1622,6 @@ function draw() {
     ctx.lineTo(f.x, f.y - 65);
     ctx.fill();
   }
-  // Section 1-2 (P0): Render tutorial signs ONLY when in Story Mode AND active level is Suin Forest!
   const activeLvForSigns = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
   if ((typeof gameMode === 'undefined' || gameMode === 'story') && activeLvForSigns?.id === 'forest') {
     for (const s of (activeLvForSigns.signs || [])) {
@@ -1279,7 +1683,6 @@ function draw() {
   }
 }
 
-
 function drawMonatiumBArchitecture() {
   const curId = (typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex])?.id;
   if (curId !== 'monatium_b') return;
@@ -1289,7 +1692,6 @@ function drawMonatiumBArchitecture() {
   const pier = structureImages['rooftop_pier'];
   const truss = structureImages['rooftop_truss'];
 
-  // 1. Connecting Skybridges & Substructure Piers (Arch 1: x=1700..2500, Expanded Summit Arch: x=3600..5500)
   const trussSpans = [
     { x1: mb.arch1Start - 20, x2: mb.arch1End + 20, y: -600 },
     { x1: mb.arch1Start - 20, x2: mb.arch1End + 20, y: -940 },
@@ -1304,8 +1706,8 @@ function drawMonatiumBArchitecture() {
       ctx.beginPath();
       ctx.rect(sp.x1, sp.y, sp.x2 - sp.x1, 128);
       ctx.clip();
-      for (let gx = sp.x1; gx < sp.x2; gx += 260) {
-        ctx.drawImage(truss, gx, sp.y, 262, 128);
+      for (let gx = sp.x1; gx < sp.x2; gx += 256) {
+        ctx.drawImage(truss, gx, sp.y, 256, 128);
       }
       ctx.restore();
     }
@@ -1320,46 +1722,44 @@ function drawMonatiumBArchitecture() {
   if (pier) {
     for (const pc of pierColumns) {
       if (pc.x + pc.w < rCam - 120 || pc.x > rCam + W + 120) continue;
-      const bottomY = 580;
-      const tileH = 440;
+      const bottomY = 740;
+      const tileH = Math.round(pc.w * (pier.height / pier.width));
       ctx.save();
       ctx.beginPath();
       ctx.rect(pc.x, pc.topY, pc.w, bottomY - pc.topY);
       ctx.clip();
       for (let gy = pc.topY; gy < bottomY; gy += tileH) {
-        ctx.drawImage(pier, pc.x, gy, pc.w, tileH + 2);
+        ctx.drawImage(pier, pc.x, gy, pc.w, tileH);
       }
       ctx.restore();
     }
   }
 
-  // 2. Three Enclosed Tower Shafts (using STAGE_ANCHORS.monatium_b)
   const shafts = [
     {
-      // Tower 1 (West): x=664..1636, y=-980..580
       x1: mb.tower1Start + 64, x2: mb.tower1End - 64, y1: -1120, y2: 580,
       rails: [805, 1045, 1260],
       portals: [
-        { x: mb.tower1Start - 8, y: 356, w: 84, h: 224 },
-        { x: mb.tower1End - 76, y: -945, w: 84, h: 224 }
+        { x: mb.tower1Start - 8, y: 356, w: 84, h: 126 },
+        { x: mb.tower1End - 76, y: -945, w: 84, h: 126 }
       ]
     },
     {
-      // Tower 2 (Central High): x=2564..3536, y=-2220..580
       x1: mb.tower2Start + 64, x2: mb.tower2End - 64, y1: -2180, y2: 580,
-      rails: [3240, 3530, 3810],
+      rails: [2760, 3050, 3340],
       portals: [
-        { x: mb.tower2Start - 8, y: -945, w: 84, h: 224 },
-        { x: mb.tower2End - 76, y: -1940, w: 84, h: 224 }
-      ]
+        { x: mb.tower2Start - 8, y: -945, w: 84, h: 126 },
+        { x: mb.tower2End - 76, y: -1940, w: 84, h: 126 }
+      ],
+      // FIX28.2: Visible fall warning, matching Tower 3's existing bottomless-pit cue.
+      hasBottomPit: true, pitX1: mb.tower2Start + 64, pitX2: mb.tower2End - 64
     },
     {
-      // Tower 3 (East Descent): x=5564..6536, y=-2500..580
       x1: mb.tower3Start + 64, x2: mb.tower3End - 64, y1: -2420, y2: 580,
       rails: [5680, 5995, 6310],
       portals: [
-        { x: mb.tower3Start - 8, y: -1940, w: 84, h: 224 },
-        { x: mb.tower3End - 76, y: 356, w: 84, h: 224 }
+        { x: mb.tower3Start - 8, y: -1940, w: 84, h: 126 },
+        { x: mb.tower3End - 76, y: 356, w: 84, h: 126 }
       ],
       hasBottomPit: true, pitX1: mb.tower3Start + 64, pitX2: mb.tower3End - 64
     }
@@ -1376,9 +1776,9 @@ function drawMonatiumBArchitecture() {
     ctx.clip();
 
     const grad = ctx.createLinearGradient(0, sh.y1, 0, sh.y2);
-    grad.addColorStop(0, 'rgba(34, 45, 64, 0.80)');
-    grad.addColorStop(0.5, 'rgba(28, 38, 55, 0.84)');
-    grad.addColorStop(1, 'rgba(22, 30, 44, 0.88)');
+    grad.addColorStop(0, 'rgba(42, 56, 78, 0.74)');
+    grad.addColorStop(0.5, 'rgba(34, 46, 66, 0.78)');
+    grad.addColorStop(1, 'rgba(26, 36, 52, 0.84)');
     ctx.fillStyle = grad;
     ctx.fillRect(sh.x1, sh.y1, spanW, spanH);
 
@@ -1386,12 +1786,17 @@ function drawMonatiumBArchitecture() {
       const tileW = 480, tileH = 480;
       for (let gy = sh.y1; gy < sh.y2; gy += tileH) {
         for (let gx = sh.x1; gx < sh.x2; gx += tileW) {
-          ctx.drawImage(backdrop, gx, gy, tileW + 1, tileH + 1);
+          ctx.drawImage(backdrop, gx, gy, tileW, tileH);
         }
       }
     }
 
-    ctx.strokeStyle = 'rgba(145, 185, 220, 0.22)';
+    ctx.fillStyle = 'rgba(188, 226, 255, 0.11)';
+    for (const rx of sh.rails) {
+      ctx.fillRect(rx - 30, sh.y1 + 28, 60, spanH - 56);
+    }
+
+    ctx.strokeStyle = 'rgba(160, 200, 235, 0.25)';
     ctx.lineWidth = 4;
     for (const rx of sh.rails) {
       ctx.beginPath();
@@ -1411,7 +1816,8 @@ function drawMonatiumBArchitecture() {
 
     if (portalArch) {
       for (const pt of sh.portals) {
-        ctx.drawImage(portalArch, pt.x, pt.y, pt.w, pt.h);
+        const pH = Math.round(pt.w * (portalArch.height / portalArch.width));
+        ctx.drawImage(portalArch, pt.x, pt.y, pt.w, pH);
       }
     }
   }

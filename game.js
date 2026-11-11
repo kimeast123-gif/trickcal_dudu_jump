@@ -166,7 +166,17 @@ function updateShadow(dt){
  shadow.alpha+=(opacity-shadow.alpha)*(1-Math.exp(-dt*18));
  shadow.width+=((25-Math.min(11,height*.04))-shadow.width)*(1-Math.exp(-dt*14));
 }
-function spriteFacing(name){return (meta[name]?.facing??1)*p.face;}
+// FIX28.2: Keep every story pose oriented in the player's LAST intentional move direction.
+// `run/jump/spin` sheets were authored left-facing; `idle/win/rest_*` were front-left.
+// Normalize their visual authoring direction only. p.face is already persisted by movement/dash.
+// Challenge mode retains its original sprite orientation for tournament compatibility.
+function spriteFacing(name){
+ const authoredFacing = meta[name]?.facing ?? 1;
+ const storyIdlePose = gameMode !== 'challenge' &&
+   (name === 'idle' || name === 'win' || name.startsWith('rest_'));
+ const nativeDirection = storyIdlePose ? -1 : authoredFacing;
+ return nativeDirection * (p.face < 0 ? -1 : 1);
+}
 const visual={name:'idle',phase:0,frame:0,blend:1,reset:true};
 const spriteLayer=document.createElement('canvas'),oldLayer=document.createElement('canvas');spriteLayer.width=oldLayer.width=256;spriteLayer.height=oldLayer.height=224;const sc=spriteLayer.getContext('2d'),oc=oldLayer.getContext('2d');
 function updateAnimation(dt){
