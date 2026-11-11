@@ -184,35 +184,41 @@ function updateVillageFriends(dt){
 }
 
 // Unified Speech Bubble with Speaker Name Badge (`디아나`, `코미`, `버터`, `엘레나`, `아멜리아`, `칸나`, `네르`, `죠안`, `스키아`, `크레페`, `스피키(메이드)`)
+const _friendlyBubbleLayoutCache = new Map();
 function drawFriendlySpeechBubble(text, x, y, color = '#fff8e7', speaker = '') {
  if (!text) return;
  ctx.save();
- ctx.font = '16px "ONE Mobile POP", "Malgun Gothic", sans-serif';
- const maxTextW = 330;
- const words = text.split(' ');
- const lines = [];
- let curLine = '';
- for (const w of words) {
-  const testLine = curLine ? (curLine + ' ' + w) : w;
-  if (ctx.measureText(testLine).width > maxTextW && curLine) {
-   lines.push(curLine);
-   curLine = w;
-  } else {
-   curLine = testLine;
-  }
- }
- if (curLine) lines.push(curLine);
-
- let textW = 0;
- for (const ln of lines) {
-  textW = Math.max(textW, ctx.measureText(ln).width);
- }
- ctx.font = 'bold 12px "ONE Mobile POP", "Malgun Gothic", sans-serif';
- const speakerW = speaker ? (ctx.measureText(speaker).width + 18) : 0;
-
- const boxW = Math.ceil(Math.max(textW + 28, speakerW + 24, 76));
  const lineH = 21;
- const boxH = lines.length * lineH + 16;
+ const cacheKey = speaker + '\0' + text;
+ let layout = _friendlyBubbleLayoutCache.get(cacheKey);
+ if (!layout) {
+  ctx.font = '16px "ONE Mobile POP", "Malgun Gothic", sans-serif';
+  const maxTextW = 330;
+  const words = text.split(' ');
+  const lines = [];
+  let curLine = '';
+  for (const w of words) {
+   const testLine = curLine ? (curLine + ' ' + w) : w;
+   if (ctx.measureText(testLine).width > maxTextW && curLine) {
+    lines.push(curLine);
+    curLine = w;
+   } else {
+    curLine = testLine;
+   }
+  }
+  if (curLine) lines.push(curLine);
+  let textW = 0;
+  for (const ln of lines) {
+   textW = Math.max(textW, ctx.measureText(ln).width);
+  }
+  ctx.font = 'bold 12px "ONE Mobile POP", "Malgun Gothic", sans-serif';
+  const speakerW = speaker ? (ctx.measureText(speaker).width + 18) : 0;
+  const boxW = Math.ceil(Math.max(textW + 28, speakerW + 24, 76));
+  const boxH = lines.length * lineH + 16;
+  layout = { lines, speakerW, boxW, boxH };
+  _friendlyBubbleLayoutCache.set(cacheKey, layout);
+ }
+ const { lines, speakerW, boxW, boxH } = layout;
 
  const zoomNow = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
  const viewW = W / zoomNow;
@@ -989,7 +995,11 @@ function updateBukgyeong(dt){
 function updateWalker(a,dt){
  if(a.photo||a.chaser||a.retreating)return;
  if(a.platformId){
-  const pl=platforms.find(x=>x.id===a.platformId);
+  if(!a._cachedPlat||a._cachedPlat.id!==a.platformId||a._cachedPlatLen!==platforms.length){
+   a._cachedPlat=platforms.find(x=>x.id===a.platformId)||null;
+   a._cachedPlatLen=platforms.length;
+  }
+  const pl=a._cachedPlat;
   if(pl){
    a.y=pl.y;
    if(typeof a.patrolX1==='number')a.minX=a.patrolX1;
@@ -1529,10 +1539,14 @@ function updateMayo(a,dt){
  const dxToPlayer=p.x-a.x;
  a.face=dxToPlayer>=0?1:-1;
 
- const support=platforms.filter(pl=>!pl.wall&&!pl.ceiling&&pl.challenge!=='special'&&a.x>=pl.x-14&&a.x<=pl.x+pl.w+14).sort((u,v)=>{
-  const du=Math.abs(u.y-p.y),dv=Math.abs(v.y-p.y);
-  return du-dv;
- })[0];
+ let support=null,bestDistY=Infinity;
+ for(let i=0,len=platforms.length;i<len;i++){
+  const pl=platforms[i];
+  if(!pl.wall&&!pl.ceiling&&pl.challenge!=='special'&&a.x>=pl.x-14&&a.x<=pl.x+pl.w+14){
+   const dY=Math.abs(pl.y-p.y);
+   if(dY<bestDistY){bestDistY=dY;support=pl;}
+  }
+ }
 
  if(support){
   if(a.y>support.y+6||a.inAir){
@@ -2351,6 +2365,6 @@ function practiceEncounter(key){
 }
 async function loadNpcImages(){
  const extraAssets=['president','vice','president_cutout','vice_cutout','bukgyeong_building','bukgyeong_door_l','bukgyeong_door_r'];
- await Promise.all([...Object.keys(npcMeta),...extraAssets].map(n=>new Promise((ok)=>{const im=new Image();im.onload=()=>{npcImages[n]=im;ok();};im.onerror=()=>{console.warn('[NPC] Failed to load asset:',n);ok();};im.src='assets/npc/'+n+'.webp?v=29';})));
+ await Promise.all([...Object.keys(npcMeta),...extraAssets].map(n=>new Promise((ok)=>{const im=new Image();im.onload=()=>{npcImages[n]=im;ok();};im.onerror=()=>{console.warn('[NPC] Failed to load asset:',n);ok();};im.src='assets/npc/'+n+'.webp?v=30';})));
 }
 for(const key of Object.keys(encounterPresets)){const btn=$('practice-'+key);if(btn)btn.onclick=()=>practiceEncounter(key);}

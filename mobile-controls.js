@@ -245,13 +245,13 @@ window.setMobilePref = setMobilePref;
 function isMobileOrTabletViewport() {
   const w = window.innerWidth || document.documentElement.clientWidth || 1280;
   const h = window.innerHeight || document.documentElement.clientHeight || 720;
-  // A 1280x720 or 1366x768 desktop has a short viewport but is not a phone.
-  // Require an actual touch-capable device and either a coarse primary pointer
-  // (tablet/iPad desktop-UA included) or an explicit mobile/tablet user agent.
-  const coarse = Boolean(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
-  const touchCapable = ('ontouchstart' in window) || (Number(navigator.maxTouchPoints) > 0);
-  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent || '');
-  return Boolean(touchCapable && (coarse || mobileUA));
+  // TEST30.1 release: a narrow desktop viewport is not evidence of a phone.
+  // Only a mobile/tablet user agent or an actual touch+coarse pointer qualifies.
+  const coarse = Boolean(window.matchMedia && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches));
+  const touchCapable = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const ua = navigator.userAgent || '';
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle/i.test(ua);
+  return Boolean(mobileUA || (touchCapable && coarse));
 }
 
 function updateVisualViewportVars() {

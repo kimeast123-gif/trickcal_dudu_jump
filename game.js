@@ -76,6 +76,7 @@ window.__getTower3WallState=()=>({exitAuth:monatiumBTower3ExitAuthorized,cleared
 const keys=new Set(),images={},meta={};let particles=[],coins=[],saved=new Set();
 const rest={clip:null,elapsed:0,wait:3.5,bag:[],previous:null};
 const shadow={y:583,alpha:.13,width:25};
+const _hudDomCache={toastOp:'',progW:'',dashTxt:'',jumpW:'',jumpTxt:''};
 
 const SPRITE_ANCHORS={
  idle:76,win:76,run:79,jump:95,spin:95,
@@ -225,7 +226,17 @@ function updateRest(dt,dir){
  }
 }
 function updateShadow(dt){
- const support=p.ground&&p.on&&p.on.collidable!==false?p.on:platforms.filter(a=>a!==p.drop&&a.collidable!==false&&!a.wall&&!a.ceiling&&p.x>=a.x&&p.x<=a.x+a.w&&a.y>=p.y-1).sort((a,b)=>a.y-b.y)[0];
+ let support=(p.ground&&p.on&&p.on.collidable!==false)?p.on:null;
+ if(!support){
+  let bestY=Infinity;
+  for(let i=0,len=platforms.length;i<len;i++){
+   const a=platforms[i];
+   if(a!==p.drop&&a.collidable!==false&&!a.wall&&!a.ceiling&&p.x>=a.x&&p.x<=a.x+a.w&&a.y>=p.y-1&&a.y<bestY){
+    bestY=a.y;
+    support=a;
+   }
+  }
+ }
  const height=support?Math.max(0,support.y-p.y):400;
  const opacity=support ? 0.13*Math.max(.15,1-height/420) : 0;
  if(support)shadow.y=support.y+3;
@@ -586,8 +597,10 @@ function beginDash(){
 }
 function update(dt){
  debugMetrics.physicsUpdates++;
- p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom; // TEST29.1: synchronize camera zoom per physics tick.
- time+=dt;levelClock+=dt;animTime+=dt;spin=Math.max(0,spin-dt);land=Math.max(0,land-dt);toastTime=Math.max(0,toastTime-dt);$('toast').style.opacity=toastTime>0?1:0;
+ p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom; // TEST29.1 camera stabilization.
+ time+=dt;levelClock+=dt;animTime+=dt;spin=Math.max(0,spin-dt);land=Math.max(0,land-dt);toastTime=Math.max(0,toastTime-dt);
+ const nextToastOp=toastTime>0?'1':'0';
+ if(_hudDomCache.toastOp!==nextToastOp){_hudDomCache.toastOp=nextToastOp;$('toast').style.opacity=nextToastOp;}
  const wasGround=p.ground;
  platformStep();
 
@@ -913,17 +926,47 @@ function update(dt){
   camY+=(desiredY-camY)*(1-Math.exp(-dt*5.5));
  }
 
+ let progPct=0;
  if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
-  $('progress').style.width=Math.max(0,Math.min(100,(p.x/Math.max(1,END))*100))+'%';
+  progPct=Math.max(0,Math.min(100,(p.x/Math.max(1,END))*100));
  }else{
-  $('progress').style.width=((levels.slice(0,levelIndex).reduce((v,lv)=>v+lv.worldWidth,0)+p.x)/levels.reduce((v,lv)=>v+lv.worldWidth,0)*100)+'%';
+  let prefixW=0,totalW=0;
+  for(let i=0,len=levels.length;i<len;i++){
+   const w=levels[i].worldWidth||0;
+   if(i<levelIndex)prefixW+=w;
+   totalW+=w;
+  }
+  progPct=totalW>0?((prefixW+p.x)/totalW*100):0;
  }
- $('dashStatus').textContent=p.guardStun>0?`경직 중 (${p.guardStun.toFixed(1)}s)`:p.dash>0?'대시 중':p.airDashUsed&&!p.ground?'대시 · 착지 후 충전':p.dashCooldown>0?'대시 · 충전 중':'L SHIFT · 대시 준비';
- $('jumpMeter').style.width=(p.jumpHeld?Math.min(100,p.hold/.24*100):0)+'%';
- $('jumpInfo').textContent=lookDownHold>0.10?'↓ 아래보기 활성화 중':'SPACE · 짧게 / 길게 · ↓ 아래보기';
+ const nextProgStr=progPct.toFixed(2)+'%';
+ if(_hudDomCache.progW!==nextProgStr){_hudDomCache.progW=nextProgStr;$('progress').style.width=nextProgStr;}
+ const nextDashTxt=p.guardStun>0?`경직 중 (${p.guardStun.toFixed(1)}s)`:p.dash>0?'대시 중':p.airDashUsed&&!p.ground?'대시 · 착지 후 충전':p.dashCooldown>0?'대시 · 충전 중':'L SHIFT · 대시 준비';
+ if(_hudDomCache.dashTxt!==nextDashTxt){_hudDomCache.dashTxt=nextDashTxt;$('dashStatus').textContent=nextDashTxt;}
+ const nextJumpW=(p.jumpHeld?Math.min(100,p.hold/.24*100).toFixed(1):'0')+'%';
+ if(_hudDomCache.jumpW!==nextJumpW){_hudDomCache.jumpW=nextJumpW;$('jumpMeter').style.width=nextJumpW;}
+ const nextJumpTxt=lookDownHold>0.10?'↓ 아래보기 활성화 중':'SPACE · 짧게 / 길게 · ↓ 아래보기';
+ if(_hudDomCache.jumpTxt!==nextJumpTxt){_hudDomCache.jumpTxt=nextJumpTxt;$('jumpInfo').textContent=nextJumpTxt;}
  updateRest(dt,dir);updateShadow(dt);updateAnimation(dt);
- if(dashing)trail.push({x:p.x,y:p.y,life:.13,face:p.dashDir});trail=trail.filter(t=>(t.life-=dt)>0);
- particles=particles.filter(q=>q.life>0);for(const q of particles){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=250*dt;}
+ if(dashing)trail.push({x:p.x,y:p.y,life:.13,face:p.dashDir});
+ if(trail.length){
+  let tw=0;
+  for(let i=0,len=trail.length;i<len;i++){
+   const t=trail[i];
+   if((t.life-=dt)>0)trail[tw++]=t;
+  }
+  trail.length=tw;
+ }
+ if(particles.length){
+  let pw=0;
+  for(let i=0,len=particles.length;i<len;i++){
+   const q=particles[i];
+   if(q.life>0){
+    q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=250*dt;
+    particles[pw++]=q;
+   }
+  }
+  particles.length=pw;
+ }
 }
 let seed=7;function rand(){seed=(seed*16807)%2147483647;return seed/2147483647;}const noise=document.createElement('canvas');noise.width=noise.height=256;const nc=noise.getContext('2d');for(let i=0;i<9000;i++){nc.fillStyle=i%2?'#705d3510':'#ffffff38';nc.fillRect(rand()*256,rand()*256,rand()*2+1,1);}const texture=ctx.createPattern(noise,'repeat');
 function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
@@ -989,4 +1032,4 @@ async function load(){try{Object.assign(meta,{
   "rest_happy_1": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
   "rest_happy_2": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
   "rest_happy_8": {"frames": 33, "fps": 24, "cols": 8, "facing": 1}
-});await Promise.all(Object.keys(meta).map(name=>new Promise((ok,no)=>{let im=new Image();im.onload=()=>{images[name]=im;ok();};im.onerror=no;im.src='assets/'+name+'.png?v=12';})));if(document.fonts&&document.fonts.load){try{await document.fonts.load('16px "ONE Mobile POP"');}catch{}}await loadWorldImages();await loadNpcImages();if(typeof preloadEventImages==='function')await preloadEventImages();resetJourney();initVoiceClips();state='ready';$('start').disabled=false;$('start').textContent='이벤트 시작하기  →';updateHud();}catch(e){$('start').textContent='새로고침해 다시 불러오기';$('start').disabled=false;$('start').onclick=()=>location.reload();$('modalText').textContent='두두 모션을 불러오지 못했어요. 다시 시도해 주세요.';console.error(e);}}
+});const duduLoads=Promise.all(Object.keys(meta).map(name=>new Promise((ok,no)=>{let im=new Image();im.onload=()=>{images[name]=im;ok();};im.onerror=no;im.src='assets/'+name+'.png?v=30';})));const fontLoad=(document.fonts&&document.fonts.load)?document.fonts.load('16px "ONE Mobile POP"').catch(()=>{}):Promise.resolve();await Promise.all([duduLoads,fontLoad,loadWorldImages(),loadNpcImages(),typeof preloadEventImages==='function'?preloadEventImages():Promise.resolve()]);resetJourney();initVoiceClips();state='ready';$('start').disabled=false;$('start').textContent='이벤트 시작하기  →';updateHud();}catch(e){$('start').textContent='새로고침해 다시 불러오기';$('start').disabled=false;$('start').onclick=()=>location.reload();$('modalText').textContent='두두 모션을 불러오지 못했어요. 다시 시도해 주세요.';console.error(e);}}

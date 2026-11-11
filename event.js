@@ -1,6 +1,6 @@
 'use strict';
 // TEST12 Event & BGM Loop Controller:
-// - Gate G1-3: Updates special ending text from `별동전/특수코인` to `황금 크레파스` while preserving `TOTAL_SPECIAL_COINS = 9` and all ending conditions.
+// - Gate G1-3: Updates special ending text from `별동전/특수코인` to `황금 크레파스` while preserving `TOTAL_SPECIAL_COINS = 12` and all ending conditions.
 // - Gate G6-2: Eliminates 1.6~2.2s trailing silence gaps in BGM MP3 loops using measured `BGM_LOOP_BOUNDS` (`loopStartSec` / `loopEndSec` verified via ffmpeg silencedetect).
 let eventMode=false,eventElapsed=0,eventLast=0,sceneElapsed=0,typed=0,storyLine='',scenePaused=false,musicStage=-1;
 let storySessionId=0,activeStoryKind=null;
@@ -18,7 +18,7 @@ window.__bgmLoopBounds=BGM_LOOP_BOUNDS;
 
 const tracks=musicNames.map(n=>{
  const a=new Audio(EVENT_ROOT+n+'.mp3');
- a.preload='auto';
+ a.preload=(n==='opening'||n==='day')?'auto':'metadata';
  a.loop=true;
  a.volume=0;
  const bounds=BGM_LOOP_BOUNDS[n];
@@ -28,7 +28,7 @@ const tracks=musicNames.map(n=>{
   a.addEventListener('timeupdate',()=>{
    if(a.currentTime>=bounds.end){
     a.currentTime=bounds.start;
-    if(a.paused&&!muted&&state!=='paused'&&!scenePaused)a.play().catch(()=>{});
+    if(a.paused&&getEffectiveSoundVolume()>0&&state!=='paused'&&!scenePaused)a.play().catch(()=>{});
    }
   });
  }
@@ -39,8 +39,9 @@ function playTrack(n,restart=false){
  if(n===musicSelected&&!restart)return;
  musicSelected=n;
  const a=tracks[n];
+ if(a.preload!=='auto')a.preload='auto';
  if(restart)a.currentTime=a.loopStartSec||0;
- if(!muted)a.play().catch(()=>notify('음악 버튼을 눌러 소리를 켜 주세요.'));
+ if(getEffectiveSoundVolume()>0)a.play().catch(()=>notify('음악 버튼을 눌러 소리를 켜 주세요.'));
 }
 function stopMusic(){musicSelected=-1;tracks.forEach(a=>a.pause());gains.fill(0);}
 function musicTick(dt){
@@ -50,11 +51,12 @@ function musicTick(dt){
   if(i===musicSelected&&a.loopEndSec&&a.currentTime>=a.loopEndSec){
    a.currentTime=a.loopStartSec||0;
   }
-  const target=i===musicSelected&&!muted&&!halted?.38:0;
+  const audible=getEffectiveSoundVolume()>0;
+  const target=i===musicSelected&&audible&&!halted?.38:0;
   gains[i]+=Math.sign(target-gains[i])*Math.min(Math.abs(target-gains[i]),dt*.22);
   a.volume=Math.max(0,Math.min(1,gains[i]*getEffectiveSoundVolume()));
-  if((muted||halted||i!==musicSelected)&&gains[i]<.001)a.pause();
-  else if(i===musicSelected&&!muted&&!halted&&a.paused)a.play().catch(()=>{});
+  if((!audible||halted||i!==musicSelected)&&gains[i]<.001)a.pause();
+  else if(i===musicSelected&&audible&&!halted&&a.paused)a.play().catch(()=>{});
  });
 }
 // Keep the slider and mute button synchronized even while an audio track is active.
@@ -71,7 +73,7 @@ syncSoundVolumeUi();
 const lines={
  opening:'두두~ 오늘 저녁 맛있는 거 해 줄 테니 너무 늦게까지 놀지 말고 일찍 돌아오렴',
  success:'신나게 놀고 왔니 두두? 이제 코~ 잘 시간이로구나.',
- special:'신나게 놀고 왔니 두두? 모나티엄의 반짝이는 황금 크레파스 9개를 전부 모아왔구나! 이제 코~ 잘 시간이로구나.',
+ special:'신나게 놀고 왔니 두두? 모나티엄의 반짝이는 황금 크레파스 12개를 전부 모아왔구나! 이제 코~ 잘 시간이로구나.',
  late:'두두~ 요 개구쟁이 녀석. 늦은 시간까지 그렇게 돌아다니면 못써요. 얼른 씻고 자야지.'
 };
 
@@ -149,8 +151,9 @@ async function preloadEventImages(){
   const im=new Image();
   im.onload=async()=>{try{if(im.decode)await im.decode();}catch{}eventImages[k]=im;ok();};
   im.onerror=()=>ok();
-  im.src=EVENT_ROOT+k+'.png?v=12';
+  im.src=EVENT_ROOT+k+'.png?v=30';
  })));
+ setTimeout(()=>{for(const a of tracks){if(a.preload!=='auto')a.preload='auto';}},1500);
 }
 
 function hideAllCutsceneLayers(){
@@ -382,8 +385,10 @@ function eventTick(now){
   }
  }
  musicTick(Math.min(dt,.1));
- $('eventClock').textContent=eventMode?clockText(LIMIT-eventElapsed):(state==='ready'||state==='loading'?'25:00':'연습');
- $('eventClock').classList.toggle('urgent',eventMode&&eventElapsed>=1350);
+ const nextClockTxt=eventMode?clockText(LIMIT-eventElapsed):(state==='ready'||state==='loading'?'25:00':'연습');
+ if(window.__lastClockTxt!==nextClockTxt){window.__lastClockTxt=nextClockTxt;$('eventClock').textContent=nextClockTxt;}
+ const nextUrgent=Boolean(eventMode&&eventElapsed>=1350);
+ if(window.__lastClockUrgent!==nextUrgent){window.__lastClockUrgent=nextUrgent;$('eventClock').classList.toggle('urgent',nextUrgent);}
 }
 window.addEventListener('blur',()=>{if(['opening','popup','night','ending','regionTransition'].includes(state)){scenePaused=true;$('storyHint').textContent='클릭 · 계속 보기';}tracks.forEach(a=>a.pause());if($('storyVideo'))$('storyVideo').pause();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&['opening','popup','night','ending','regionTransition'].includes(state)){scenePaused=true;tracks.forEach(a=>a.pause());if($('storyVideo'))$('storyVideo').pause();}});

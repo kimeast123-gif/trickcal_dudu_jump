@@ -1569,9 +1569,9 @@ function practiceRegion(n){
  state='playing';updateRegionHud();keys.clear();canvas.focus();
 }
 async function loadWorldImages(){
- const bgLoads=worldFiles.map(n=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{worldImages[n]=im;ok();};im.onerror=no;im.src='assets/world/'+n+'.webp?v=29';}));
- const terrainLoads=TERRAIN_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{terrainImages[k]=im;ok();};im.onerror=no;im.src='assets/terrain/'+k+'.webp?v='+(k==='erpien/gate_inner_strip'?'28_gate_seam':'16');}));
- const structureLoads=STRUCTURE_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{structureImages[k]=im;ok();};im.onerror=no;im.src='assets/structure/'+k+'.webp?v=29';}));
+ const bgLoads=worldFiles.map(n=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{worldImages[n]=im;ok();};im.onerror=no;im.src='assets/world/'+n+'.webp?v=30';}));
+ const terrainLoads=TERRAIN_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{terrainImages[k]=im;ok();};im.onerror=no;im.src='assets/terrain/'+k+'.webp?v=30';}));
+ const structureLoads=STRUCTURE_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{structureImages[k]=im;ok();};im.onerror=no;im.src='assets/structure/'+k+'.webp?v=30';}));
  const colLoads=['king_candy','golden_crayon'].map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{collectibleImages[k]=im;ok();};im.onerror=no;im.src='assets/collectibles/'+k+'.png?v=16';}));
  const cloudLoads=Array.from({length:TRANSITION_FRAME_COUNT},(_,i)=>new Promise(ok=>{
   const im=new Image();

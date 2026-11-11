@@ -232,6 +232,35 @@ function drawNeutralStripCrop(stripImg, s, dx, dy, dw, dh, srcCenterRatio = 0.5)
 
 // Gate 4 (P0): Single Source of Truth (SSOT) panorama rendering from `l.backgroundRanges[bgKey]`
 const _warnedMissingBgKeys = new Set();
+// TEST30.1: Keep at most two full-width offscreen panoramas in memory.
+// A crossfade renders at most two backgrounds at once; 3x 720p-wide panoramas
+// may retain tens of MB of additional canvas memory on mobile devices.
+const _prescaledPanoramaCache = new Map();
+function getPrescaledPanorama(bgKey, im) {
+  let cached = _prescaledPanoramaCache.get(bgKey);
+  if (cached) {
+    _prescaledPanoramaCache.delete(bgKey);
+    _prescaledPanoramaCache.set(bgKey, cached);
+    return cached;
+  }
+  const scale = H / im.height;
+  const effectiveImgW = bgKey === 'city-bg' ? 1722 : im.width;
+  const scaledW = Math.max(W, Math.round(effectiveImgW * scale));
+  const off = document.createElement('canvas');
+  off.width = scaledW;
+  off.height = H;
+  const octx = off.getContext('2d');
+  octx.imageSmoothingEnabled = true;
+  octx.imageSmoothingQuality = 'high';
+  octx.drawImage(im, 0, 0, effectiveImgW, im.height, 0, 0, scaledW, H);
+  cached = { canvas: off, width: scaledW, height: H };
+  _prescaledPanoramaCache.set(bgKey, cached);
+  if (_prescaledPanoramaCache.size > 2) {
+    const oldestKey = _prescaledPanoramaCache.keys().next().value;
+    _prescaledPanoramaCache.delete(oldestKey);
+  }
+  return cached;
+}
 function drawPanoramaByBgKey(bgKey, alpha = 1) {
   const im = worldImages[bgKey];
   if (!im) {
@@ -246,18 +275,19 @@ function drawPanoramaByBgKey(bgKey, alpha = 1) {
   const travel = Math.max(1, bgEnd - bgStart - W);
   const progress = Math.max(0, Math.min(1, (rCam - bgStart) / travel));
 
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-
-  const scale = H / im.height;
-  const effectiveImgW = bgKey === 'city-bg' ? 1722 : im.width;
-  const sw = Math.min(effectiveImgW, Math.round(W / scale));
-  const maxSx = Math.max(0, effectiveImgW - sw);
+  const pre = getPrescaledPanorama(bgKey, im);
+  const sw = Math.min(pre.width, W);
+  const maxSx = Math.max(0, pre.width - sw);
   const sx = Math.round(progress * maxSx);
-  ctx.drawImage(im, sx, 0, sw, im.height, 0, 0, W, H);
-  ctx.restore();
+
+  if (alpha >= 0.999) {
+    ctx.drawImage(pre.canvas, sx, 0, sw, H, 0, 0, W, H);
+  } else {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(pre.canvas, sx, 0, sw, H, 0, 0, W, H);
+    ctx.restore();
+  }
 }
 
 function renderBackground() {
@@ -659,9 +689,13 @@ function drawStructuralWall(a, drawX, drawY) {
 
     // Classify junction type for bottom corner anchoring
     const isFootOnGround = (a.y + a.h >= 575 && a.y < 580);
-    const isOnThinPlatform = (typeof platforms !== 'undefined' && platforms.some(pl =>
-      pl !== a && pl.thin && !pl.wall && a.x < pl.x + pl.w + 8 && a.x + a.w > pl.x - 8 && Math.abs((a.y + a.h) - pl.y) <= 22
-    ));
+    if (a._isOnThinPlat === undefined || a._platLenTag !== platforms.length) {
+      a._platLenTag = platforms.length;
+      a._isOnThinPlat = (typeof platforms !== 'undefined' && platforms.some(pl =>
+        pl !== a && pl.thin && !pl.wall && a.x < pl.x + pl.w + 8 && a.x + a.w > pl.x - 8 && Math.abs((a.y + a.h) - pl.y) <= 22
+      ));
+    }
+    const isOnThinPlatform = a._isOnThinPlat;
     const extendBottom = isFootOnGround ? 14 : 0;
     const bodyH = isOnThinPlatform ? Math.max(24, 372 - drawY) : (a.h + extendBottom);
     const bottomRadii = (isFootOnGround || isOnThinPlatform || a.y + a.h >= 850) ? 0 : 10;
@@ -798,6 +832,10 @@ function classifyGroundJoint(a, side) {
   if (typeof platforms === 'undefined' || !platforms) {
     return { kind: 'open_edge', neighbor: null, neighborMat: null };
   }
+  const cacheProp = side === 'left' ? '_jointCacheL' : '_jointCacheR';
+  if (a[cacheProp] && a._jointCacheLen === platforms.length) {
+    return a[cacheProp];
+  }
   const mat = a.visual?.material || a.skin || 'grass';
   const edgeX = side === 'left' ? a.x : (a.x + a.w);
 
@@ -806,18 +844,24 @@ function classifyGroundJoint(a, side) {
     if (b === a || !b.groundTile || Math.abs(b.y - a.y) > 4) continue;
     const bMat = b.visual?.material || b.skin || 'grass';
     if (side === 'left' && Math.abs((b.x + b.w) - edgeX) <= 4) {
-      return {
+      const res = {
         kind: bMat === mat ? 'same_material_join' : 'material_transition',
         neighbor: b,
         neighborMat: bMat
       };
+      a._jointCacheLen = platforms.length;
+      a[cacheProp] = res;
+      return res;
     }
     if (side === 'right' && Math.abs(b.x - edgeX) <= 4) {
-      return {
+      const res = {
         kind: bMat === mat ? 'same_material_join' : 'material_transition',
         neighbor: b,
         neighborMat: bMat
       };
+      a._jointCacheLen = platforms.length;
+      a[cacheProp] = res;
+      return res;
     }
   }
 
@@ -828,15 +872,24 @@ function classifyGroundJoint(a, side) {
     if (bMat !== mat) continue;
     if (b.y < a.y && b.y + b.h > a.y) {
       if (side === 'right' && Math.abs(b.x - edgeX) <= 4) {
-        return { kind: 'wall_butt_join', neighbor: b, neighborMat: bMat };
+        const res = { kind: 'wall_butt_join', neighbor: b, neighborMat: bMat };
+        a._jointCacheLen = platforms.length;
+        a[cacheProp] = res;
+        return res;
       }
       if (side === 'left' && Math.abs((b.x + b.w) - edgeX) <= 4) {
-        return { kind: 'wall_butt_join', neighbor: b, neighborMat: bMat };
+        const res = { kind: 'wall_butt_join', neighbor: b, neighborMat: bMat };
+        a._jointCacheLen = platforms.length;
+        a[cacheProp] = res;
+        return res;
       }
     }
   }
 
-  return { kind: 'open_edge', neighbor: null, neighborMat: null };
+  const res = { kind: 'open_edge', neighbor: null, neighborMat: null };
+  a._jointCacheLen = platforms.length;
+  a[cacheProp] = res;
+  return res;
 }
 window.classifyGroundJoint = classifyGroundJoint;
 
@@ -950,28 +1003,37 @@ function drawGroundVisual(a, drawX, drawY) {
     ? (drawX + a.w + 6)
     : (showCliffRight ? (drawX + a.w - Math.round(crW * 0.36)) : (drawX + a.w));
 
+  const viewLeft = rCam - 96;
+  const viewRight = rCam + (W / zoomNow) + 96;
+
   if (bodyX2 > bodyX1 && bottomY > bodyStartY) {
     const bw = Math.round(bodyA.width * s);
     const bh = Math.round(bodyA.height * s);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(bodyX1, bodyStartY, bodyX2 - bodyX1, bottomY - bodyStartY);
-    ctx.clip();
-    let colIdx = 0;
-    for (let gx = bodyX1; gx < bodyX2; gx += bw - 1, colIdx++) {
-      let rowIdx = 0;
-      for (let gy = bodyStartY; gy < bottomY; gy += bh - 1, rowIdx++) {
-        const pick = ((colIdx + rowIdx) % 2 === 0 || seededUnit(seed, colIdx * 31 + rowIdx) < 0.5) ? bodyA : bodyB;
-        ctx.drawImage(pick, gx, gy, bw, bh);
+    const visBodyX1 = Math.max(bodyX1, Math.floor(viewLeft));
+    const visBodyX2 = Math.min(bodyX2, Math.ceil(viewRight));
+    if (visBodyX2 > visBodyX1) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(visBodyX1, bodyStartY, visBodyX2 - visBodyX1, bottomY - bodyStartY);
+      ctx.clip();
+      const stepX = Math.max(1, bw - 1);
+      const startCol = Math.max(0, Math.floor((visBodyX1 - bodyX1) / stepX));
+      let colIdx = startCol;
+      for (let gx = bodyX1 + startCol * stepX; gx < visBodyX2; gx += stepX, colIdx++) {
+        let rowIdx = 0;
+        for (let gy = bodyStartY; gy < bottomY; gy += bh - 1, rowIdx++) {
+          const pick = ((colIdx + rowIdx) % 2 === 0 || seededUnit(seed, colIdx * 31 + rowIdx) < 0.5) ? bodyA : bodyB;
+          ctx.drawImage(pick, gx, gy, bw, bh);
+        }
       }
+      ctx.restore();
     }
-    ctx.restore();
   }
 
-  if (showCliffLeft && cl) {
+  if (showCliffLeft && cl && drawX + clW >= viewLeft && drawX <= viewRight) {
     ctx.drawImage(cl, drawX, topY, clW, clH);
   }
-  if (showCliffRight && cr) {
+  if (showCliffRight && cr && drawX + a.w >= viewLeft && drawX + a.w - crW <= viewRight) {
     ctx.drawImage(cr, drawX + a.w - crW, topY, crW, crH);
   }
 
@@ -985,28 +1047,37 @@ function drawGroundVisual(a, drawX, drawY) {
     const nomW = Math.max(24, Math.round(topA.width * s));
     const tops = [topA, topB, topC];
     const plan = makePlatformModulePlan(midSpan, 0, 0, nomW, 0);
+    const visMidX1 = Math.max(midX1, Math.floor(viewLeft));
+    const visMidX2 = Math.min(midX2, Math.ceil(viewRight));
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(midX1, topY - 12, midSpan, topH + 24);
-    ctx.clip();
+    if (visMidX2 > visMidX1) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(visMidX1, topY - 12, visMidX2 - visMidX1, topH + 24);
+      ctx.clip();
 
-    let curX = midX1;
-    if (plan.neutralLeft > 0) {
-      drawNeutralStripCrop(topA, s, curX, topY, plan.neutralLeft, topH, 0.5);
-      curX += plan.neutralLeft;
+      let curX = midX1;
+      if (plan.neutralLeft > 0) {
+        if (curX + plan.neutralLeft >= viewLeft && curX <= viewRight) {
+          drawNeutralStripCrop(topA, s, curX, topY, plan.neutralLeft, topH, 0.5);
+        }
+        curX += plan.neutralLeft;
+      }
+      const startI = Math.max(0, Math.floor((viewLeft - curX) / nomW));
+      const endI = Math.min(plan.count, Math.ceil((viewRight - curX) / nomW));
+      for (let i = startI; i < endI; i++) {
+        const tx = curX + i * nomW;
+        const worldTileIdx = Math.floor((tx + 1) / nomW);
+        const pickIdx = mat === 'home' ? (worldTileIdx % 3) : (Math.floor(seededUnit(seed, worldTileIdx + 17) * 3) % 3);
+        const tImg = tops[pickIdx];
+        ctx.drawImage(tImg, tx, topY, nomW, topH);
+      }
+      curX += plan.count * nomW;
+      if (plan.neutralRight > 0 && curX + plan.neutralRight >= viewLeft && curX <= viewRight) {
+        drawNeutralStripCrop(topA, s, curX, topY, plan.neutralRight, topH, 0.5);
+      }
+      ctx.restore();
     }
-    for (let i = 0; i < plan.count; i++) {
-      const worldTileIdx = Math.floor((curX + 1) / nomW);
-      const pickIdx = mat === 'home' ? (worldTileIdx % 3) : (Math.floor(seededUnit(seed, worldTileIdx + 17) * 3) % 3);
-      const tImg = tops[pickIdx];
-      ctx.drawImage(tImg, curX, topY, nomW, topH);
-      curX += nomW;
-    }
-    if (plan.neutralRight > 0) {
-      drawNeutralStripCrop(topA, s, curX, topY, plan.neutralRight, topH, 0.5);
-    }
-    ctx.restore();
   }
 
   // Render material-appropriate transition seam ONLY when `leftJoint.kind === 'material_transition'`
@@ -1092,9 +1163,13 @@ function drawTerrainJunctionOverlays() {
     }
 
     // Case 3: `F-DROP-BARRIER` (`wallOnThinPlatform`, `x = 3080..3134, y = 180..385` on `F-DROP-01` `y = 370`)
-    const touchPlat = platforms.find(pl =>
-      pl !== a && pl.thin && !pl.wall && a.x < pl.x + pl.w + 8 && a.x + a.w > pl.x - 8 && Math.abs((a.y + a.h) - pl.y) <= 22
-    );
+    if (a._touchPlatCached === undefined || a._touchPlatLen !== platforms.length) {
+      a._touchPlatLen = platforms.length;
+      a._touchPlatCached = platforms.find(pl =>
+        pl !== a && pl.thin && !pl.wall && a.x < pl.x + pl.w + 8 && a.x + a.w > pl.x - 8 && Math.abs((a.y + a.h) - pl.y) <= 22
+      ) || null;
+    }
+    const touchPlat = a._touchPlatCached;
     if (touchPlat) {
       const py = touchPlat.y;
       if (bushImg) {
@@ -1750,8 +1825,7 @@ function drawMonatiumBArchitecture() {
       portals: [
         { x: mb.tower2Start - 8, y: -945, w: 84, h: 126 },
         { x: mb.tower2End - 76, y: -1940, w: 84, h: 126 }
-      ],
-      hasBottomPit: true, pitX1: mb.tower2Start + 64, pitX2: mb.tower2End - 64
+      ]
     },
     {
       x1: mb.tower3Start + 64, x2: mb.tower3End - 64, y1: -2420, y2: 580,
