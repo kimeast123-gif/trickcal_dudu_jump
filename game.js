@@ -166,16 +166,15 @@ function updateShadow(dt){
  shadow.alpha+=(opacity-shadow.alpha)*(1-Math.exp(-dt*18));
  shadow.width+=((25-Math.min(11,height*.04))-shadow.width)*(1-Math.exp(-dt*14));
 }
-// FIX28.2: Keep every story pose oriented in the player's LAST intentional move direction.
-// `run/jump/spin` sheets were authored left-facing; `idle/win/rest_*` were front-left.
-// Normalize their visual authoring direction only. p.face is already persisted by movement/dash.
-// Challenge mode retains its original sprite orientation for tournament compatibility.
+// TEST28.6: Preserve every original animated sprite (including all 31 idle frames).
+// Align the front-left-authored idle/rest/win atlases with the last movement direction.
+// Tournament challenge retains the original orientation handling.
 function spriteFacing(name){
- const authoredFacing = meta[name]?.facing ?? 1;
- const storyIdlePose = gameMode !== 'challenge' &&
-   (name === 'idle' || name === 'win' || name.startsWith('rest_'));
- const nativeDirection = storyIdlePose ? -1 : authoredFacing;
- return nativeDirection * (p.face < 0 ? -1 : 1);
+ const authoredFacing=meta[name]?.facing??1;
+ const storyIdlePose=gameMode!=='challenge'&&
+   (name==='idle'||name==='win'||name.startsWith('rest_'));
+ const authoredDirection=storyIdlePose?-1:authoredFacing;
+ return authoredDirection*(p.face<0?-1:1);
 }
 const visual={name:'idle',phase:0,frame:0,blend:1,reset:true};
 const spriteLayer=document.createElement('canvas'),oldLayer=document.createElement('canvas');spriteLayer.width=oldLayer.width=256;spriteLayer.height=oldLayer.height=224;const sc=spriteLayer.getContext('2d'),oc=oldLayer.getContext('2d');
@@ -197,26 +196,16 @@ function updateAnimation(dt){
   visual.frame=visual.phase;
  }
 }
-// FIX28.4: The original idle atlas faces the camera, not sideways. Horizontal
-// mirroring it cannot create a visible left/right standing pose. In STORY mode,
-// reuse a compact, feet-together side pose from the EXISTING run atlas instead.
-// The run atlas was authored facing LEFT; spriteFacing('run') mirrors it to
-// the player's last intentional direction (p.face). No asset changes required.
-// Tournament/challenge animations and physics remain untouched.
-const DUDU_DIRECTIONAL_IDLE_FRAME = 3;
 function drawSample(name,frame,alpha=1){
- if(alpha<=0)return;
- const directionalIdle = gameMode !== 'challenge' && name === 'idle';
- const sheetName = directionalIdle ? 'run' : name;
- if(!images[sheetName])return;
- const m=meta[sheetName],cols=m.cols||m.frames,anchor=SPRITE_ANCHORS[sheetName]??76;
- const f=directionalIdle ? DUDU_DIRECTIONAL_IDLE_FRAME : ((Math.floor(frame)%m.frames)+m.frames)%m.frames;
+ if(!images[name]||alpha<=0)return;
+ const m=meta[name],cols=m.cols||m.frames,anchor=SPRITE_ANCHORS[name]??76;
+ const f=((Math.floor(frame)%m.frames)+m.frames)%m.frames;
  sc.save();
  sc.translate(128,204);
- sc.scale(spriteFacing(sheetName),1);
+ sc.scale(spriteFacing(name),1);
  sc.globalCompositeOperation='source-over';
  sc.globalAlpha=alpha;
- sc.drawImage(images[sheetName],f%cols*192,Math.floor(f/cols)*192,192,192,-anchor,-180,192,192);
+ sc.drawImage(images[name],f%cols*192,Math.floor(f/cols)*192,192,192,-anchor,-180,192,192);
  sc.restore();
 }
 function renderCharacter(){
@@ -442,7 +431,15 @@ function updateHud(){
   $('specialPill')?.classList.toggle('pending',pendCount>0);
  }
 }
-function modal(tag,title,text,button){$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;$('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';}
+function modal(tag,title,text,button){
+ // Legacy TEST23 challenge return menu mentions 15 minutes/9 crayons. Its competition code is frozen.
+ if(typeof text==='string'&&text.includes('황금 크레파스 9개는 숙련자 도전')){
+  text=text.replace('15분 동안 두두와 산책','25분 동안 두두와 산책')
+           .replace('황금 크레파스 9개는',`황금 크레파스 ${TOTAL_SPECIAL_COINS}개는`);
+ }
+ $('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;
+ $('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';
+}
 function pause(){if(state==='playing'){if(typeof ensurePaused==='function')ensurePaused('manual');else{state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}}else if(state==='paused'){if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;start();}}
 function start(){if(state==='loading')return;if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;if(state==='won')reset(true);state='playing';if(window.__mobileUIState){window.__mobileUIState.pausedByPortrait=false;window.__mobileUIState.lastPauseReason=null;}$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();if(typeof syncMobileViewMode==='function')syncMobileViewMode();last=performance.now();acc=0;}
 $('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'효과음 켜기':'효과음 끄기');if(!muted)tone(660);};$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};

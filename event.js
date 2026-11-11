@@ -1,6 +1,6 @@
 'use strict';
 // TEST12 Event & BGM Loop Controller:
-// - Gate G1-3: Updates special ending text from `별동전/특수코인` to `황금 크레파스` while preserving `TOTAL_SPECIAL_COINS = 9` and all ending conditions.
+// - Gate G1-3: Updates special ending text from `별동전/특수코인` to `황금 크레파스` while preserving official dynamic `TOTAL_SPECIAL_COINS` and all ending conditions.
 // - Gate G6-2: Eliminates 1.6~2.2s trailing silence gaps in BGM MP3 loops using measured `BGM_LOOP_BOUNDS` (`loopStartSec` / `loopEndSec` verified via ffmpeg silencedetect).
 let eventMode=false,eventElapsed=0,eventLast=0,sceneElapsed=0,typed=0,storyLine='',scenePaused=false,musicStage=-1;
 let storySessionId=0,activeStoryKind=null;
@@ -63,7 +63,7 @@ $('sound').onclick=setSound;
 const lines={
  opening:'두두~ 오늘 저녁 맛있는 거 해 줄 테니 너무 늦게까지 놀지 말고 일찍 돌아오렴',
  success:'신나게 놀고 왔니 두두? 이제 코~ 잘 시간이로구나.',
- special:'신나게 놀고 왔니 두두? 모나티엄의 반짝이는 황금 크레파스 9개를 전부 모아왔구나! 이제 코~ 잘 시간이로구나.',
+ special:'신나게 놀고 왔니 두두? 반짝이는 황금 크레파스 12개를 전부 모아왔구나! 이제 코~ 잘 시간이로구나.',
  late:'두두~ 요 개구쟁이 녀석. 늦은 시간까지 그렇게 돌아다니면 못써요. 얼른 씻고 자야지.'
 };
 
@@ -190,7 +190,7 @@ function showStory(kind){
   if(kind==='special'){
    const reward=$('storyRewardArt');
    if(reward&&!reward.getAttribute('src'))reward.src=reward.dataset.src;
-   notify('황금 크레파스 9/9 올 컬렉션 달성! 전용 엔딩 연출로 연결됩니다.');
+   notify(`황금 크레파스 ${TOTAL_SPECIAL_COINS}/${TOTAL_SPECIAL_COINS} 올 컬렉션 달성! 전용 엔딩 연출로 연결됩니다.`);
   }
  };
  baseEl.src=src;

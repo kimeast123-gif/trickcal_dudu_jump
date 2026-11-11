@@ -1751,7 +1751,6 @@ function drawMonatiumBArchitecture() {
         { x: mb.tower2Start - 8, y: -945, w: 84, h: 126 },
         { x: mb.tower2End - 76, y: -1940, w: 84, h: 126 }
       ],
-      // FIX28.2: Visible fall warning, matching Tower 3's existing bottomless-pit cue.
       hasBottomPit: true, pitX1: mb.tower2Start + 64, pitX2: mb.tower2End - 64
     },
     {

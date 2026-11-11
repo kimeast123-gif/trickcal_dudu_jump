@@ -245,11 +245,13 @@ window.setMobilePref = setMobilePref;
 function isMobileOrTabletViewport() {
   const w = window.innerWidth || document.documentElement.clientWidth || 1280;
   const h = window.innerHeight || document.documentElement.clientHeight || 720;
-  const minDim = Math.min(w, h);
-  const maxDim = Math.max(w, h);
-  const coarse = window.matchMedia && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches);
-  const touchCapable = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  return Boolean(coarse || (touchCapable && maxDim <= 1366) || minDim <= 900 || w <= 1024);
+  // A 1280x720 or 1366x768 desktop has a short viewport but is not a phone.
+  // Require an actual touch-capable device and either a coarse primary pointer
+  // (tablet/iPad desktop-UA included) or an explicit mobile/tablet user agent.
+  const coarse = Boolean(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  const touchCapable = ('ontouchstart' in window) || (Number(navigator.maxTouchPoints) > 0);
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent || '');
+  return Boolean(touchCapable && (coarse || mobileUA));
 }
 
 function updateVisualViewportVars() {

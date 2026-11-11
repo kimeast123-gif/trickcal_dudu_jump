@@ -121,20 +121,10 @@ body.mobile-web-portrait .game{
   display:none;
 }
 
-@media(pointer:coarse), (hover:none), (max-width:1024px){
-  .mobileControls{
-    display:block;
-  }
-  .mobileOptBtn,
-  .mobileOptModalBtn,
-  .landscapeStartBtn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .below .keys{
-    display:none;
-  }
+/* TEST28.6: The runtime sets is-mobile-device only for a touch-capable mobile/tablet.
+   Never enable the gamepad or lock desktop scrolling on width alone. */
+body.is-mobile-device .below .keys{
+  display:none;
 }
 
 /* Explicit override class when mobile mode is active */

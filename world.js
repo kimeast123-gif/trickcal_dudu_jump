@@ -640,7 +640,8 @@ for(const [idx,[cx,cy]] of [
  // M4 9-Step Descent + M-DSC-FINAL (4)
  [12502,-1598],[12672,-578],[12690,-68],[12995,447],
  // M5 Tactical Guards G1~G4 & M6 Beijing Castle (6)
- [14665,417],[17810,437],[18267,397],[21265,457],[24307,407],[25600,542]
+ // M-C32/M-C33 raised above their actual bridge/blink platform collision tops (420/385).
+ [14665,417],[17810,383],[18267,347],[21265,457],[24307,407],[25600,542]
 ].entries()){
  addCandy(monatium_a,`M-C${String(idx+1).padStart(2,'0')}`,cx,cy,'main');
 }
@@ -740,7 +741,7 @@ surface(monatium_b, 2235, -780, 165, 'steel', {
 surface(monatium_b, 2630, -745, 175, 'steel', { id: 'MB-ARCH1-P02', routeOrder: 14, prevId: 'MB-ARCH1-B01', nextId: 'MB-T2-BASE' });
 
 // --- 3. TOWER 2 (x = 3000 .. 4100, y = 580 .. -2180) ---
-floor(monatium_b, 3000, 1100, 'pavement', 580, { id: 'MB-T2-GND' });
+// TEST28.6: MB-T2-GND removed. The second tower shaft is a fall/reset zone, not a trapped floor.
 wall(monatium_b, 3000, -2180, 64, 1240, 'steel', { id: 'MB-T2-WALL-L-TOP', wallSide: 'left', noTopLand: true, portalBottom: true });
 wall(monatium_b, 3000, -660, 64, 1240, 'steel', { id: 'MB-T2-WALL-L-BOT', wallSide: 'left', noTopLand: true });
 wall(monatium_b, 3000, -2180, 1100, 36, 'steel', { id: 'MB-T2-ROOF', ceiling: true, noTopLand: true });
@@ -1236,6 +1237,8 @@ function getKillY(x){
  if (curId === 'monatium_b') {
   const mb = STAGE_ANCHORS.monatium_b;
   if (x >= mb.summitStart && x < mb.summitEnd) return -1350;
+  // Dedicated tower-2 pit; other three-tower rules are unchanged.
+  if (x >= mb.tower2Start && x < mb.tower2End) return 650;
   return 780;
  }
  if (curId === 'erpien_b' || curId === 'erpien') {
@@ -1558,7 +1561,7 @@ function practiceRegion(n){
  clearRegionTransitionLayer();
  securedSpecialPractice.clear();
  if(typeof resetErpienEncounterState==='function')resetErpienEncounterState();
- const erpIdx=levels.findIndex(lv=>lv.id==='erpien');
+ const erpIdx=levels.findIndex(lv=>lv.id==='erpien_b');
  if(n===4&&erpIdx>=0){
   loadLevel(erpIdx,{section:Math.max(0,levels[erpIdx].sections.findIndex(s=>s.title==='교단 복도'))});
  }else{
