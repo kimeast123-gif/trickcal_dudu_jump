@@ -166,7 +166,17 @@ function updateShadow(dt){
  shadow.alpha+=(opacity-shadow.alpha)*(1-Math.exp(-dt*18));
  shadow.width+=((25-Math.min(11,height*.04))-shadow.width)*(1-Math.exp(-dt*14));
 }
-function spriteFacing(name){return (meta[name]?.facing??1)*p.face;}
+// FIX28.2: Keep every story pose oriented in the player's LAST intentional move direction.
+// `run/jump/spin` sheets were authored left-facing; `idle/win/rest_*` were front-left.
+// Normalize their visual authoring direction only. p.face is already persisted by movement/dash.
+// Challenge mode retains its original sprite orientation for tournament compatibility.
+function spriteFacing(name){
+ const authoredFacing = meta[name]?.facing ?? 1;
+ const storyIdlePose = gameMode !== 'challenge' &&
+   (name === 'idle' || name === 'win' || name.startsWith('rest_'));
+ const nativeDirection = storyIdlePose ? -1 : authoredFacing;
+ return nativeDirection * (p.face < 0 ? -1 : 1);
+}
 const visual={name:'idle',phase:0,frame:0,blend:1,reset:true};
 const spriteLayer=document.createElement('canvas'),oldLayer=document.createElement('canvas');spriteLayer.width=oldLayer.width=256;spriteLayer.height=oldLayer.height=224;const sc=spriteLayer.getContext('2d'),oc=oldLayer.getContext('2d');
 function updateAnimation(dt){
@@ -187,16 +197,26 @@ function updateAnimation(dt){
   visual.frame=visual.phase;
  }
 }
+// FIX28.4: The original idle atlas faces the camera, not sideways. Horizontal
+// mirroring it cannot create a visible left/right standing pose. In STORY mode,
+// reuse a compact, feet-together side pose from the EXISTING run atlas instead.
+// The run atlas was authored facing LEFT; spriteFacing('run') mirrors it to
+// the player's last intentional direction (p.face). No asset changes required.
+// Tournament/challenge animations and physics remain untouched.
+const DUDU_DIRECTIONAL_IDLE_FRAME = 3;
 function drawSample(name,frame,alpha=1){
- if(!images[name]||alpha<=0)return;
- const m=meta[name],cols=m.cols||m.frames,anchor=SPRITE_ANCHORS[name]??76;
- const f=((Math.floor(frame)%m.frames)+m.frames)%m.frames;
+ if(alpha<=0)return;
+ const directionalIdle = gameMode !== 'challenge' && name === 'idle';
+ const sheetName = directionalIdle ? 'run' : name;
+ if(!images[sheetName])return;
+ const m=meta[sheetName],cols=m.cols||m.frames,anchor=SPRITE_ANCHORS[sheetName]??76;
+ const f=directionalIdle ? DUDU_DIRECTIONAL_IDLE_FRAME : ((Math.floor(frame)%m.frames)+m.frames)%m.frames;
  sc.save();
  sc.translate(128,204);
- sc.scale(spriteFacing(name),1);
+ sc.scale(spriteFacing(sheetName),1);
  sc.globalCompositeOperation='source-over';
  sc.globalAlpha=alpha;
- sc.drawImage(images[name],f%cols*192,Math.floor(f/cols)*192,192,192,-anchor,-180,192,192);
+ sc.drawImage(images[sheetName],f%cols*192,Math.floor(f/cols)*192,192,192,-anchor,-180,192,192);
  sc.restore();
 }
 function renderCharacter(){
