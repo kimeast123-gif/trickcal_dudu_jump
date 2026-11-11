@@ -121,10 +121,20 @@ body.mobile-web-portrait .game{
   display:none;
 }
 
-/* TEST28.6: The runtime sets is-mobile-device only for a touch-capable mobile/tablet.
-   Never enable the gamepad or lock desktop scrolling on width alone. */
-body.is-mobile-device .below .keys{
-  display:none;
+@media(pointer:coarse), (hover:none), (max-width:1024px){
+  .mobileControls{
+    display:block;
+  }
+  .mobileOptBtn,
+  .mobileOptModalBtn,
+  .landscapeStartBtn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .below .keys{
+    display:none;
+  }
 }
 
 /* Explicit override class when mobile mode is active */
@@ -542,7 +552,8 @@ body.is-mobile-device .landscapeStartBtn{
 }
 
 /* TEST24_FIX8 production UI: keep the developer DOM nodes for engine compatibility but hide them. */
-.practiceNav,.encounterNav,.practiceHUD,.debugHud { display:none !important; }
+/* DEV BUILD: .practiceNav, .encounterNav, .practiceHUD enabled */
+.debugHud[hidden] { display:none !important; }
 
 /* TEST27: videos are an independent visual layer. All game interaction remains unchanged. */
 .story .storyVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;pointer-events:none;z-index:1}
@@ -558,3 +569,36 @@ body.is-mobile-device .landscapeStartBtn{
 .story[hidden] .storyVideo,.story>img[hidden]{display:none!important}
 @media(max-width:800px){.story.withDialogueTemplate .storyText{font-size:clamp(10px,1.8vw,17px);line-height:1.2}}
 @media(prefers-reduced-motion:reduce){.story.hasVideo .storyVideo{display:block}}
+
+
+html.mobile-landscape-lock, body.mobile-game-landscape {
+  overflow: auto !important;
+  height: auto !important;
+  position: static !important;
+}
+body.mobile-game-landscape main {
+  max-width: 1480px !important;
+  padding: 20px 4% !important;
+}
+body.mobile-game-landscape #game {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9 !important;
+  border-radius: 22px !important;
+}
+body.mobile-game-landscape .practiceNav,
+body.mobile-game-landscape .encounterNav {
+  display: flex !important;
+}
+
+/* TEST29.1 — Story health: five NeonSaurus icons below the existing top-right HUD. */
+.playerHealthHud{position:absolute;z-index:6;top:70px;right:22px;display:flex;align-items:center;gap:10px;pointer-events:none;padding:5px 10px;background:#fffdf0eb;border:1px solid #fffcf1;border-radius:13px;box-shadow:0 3px 0 #999c7920;white-space:nowrap}
+.playerHealthHud[hidden]{display:none!important}
+.playerHealthIcons{display:flex;align-items:center;gap:2px}
+.playerHealthIcons img{width:31px;height:31px;object-fit:contain;opacity:1;transition:opacity .15s ease,filter .15s ease}
+.playerHealthIcons img.lost{filter:grayscale(1);opacity:.22}
+#playerHealthCount{font:800 14px/1 Arial,'Malgun Gothic',sans-serif;color:#607e55;font-variant-numeric:tabular-nums}
+@media(max-width:960px),(max-height:520px){.playerHealthHud{top:43px;right:10px;padding:3px 8px;gap:5px;border-radius:10px}.playerHealthIcons img{width:23px;height:23px}#playerHealthCount{font-size:11px}}
+@media(max-width:580px){.playerHealthHud{top:42px;right:8px;gap:4px;padding:2px 6px}.playerHealthIcons img{width:18px;height:18px}.playerHealthIcons{gap:0}#playerHealthCount{font-size:10px}}

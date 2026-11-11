@@ -1,28 +1,28 @@
 
 const MONATIUM_B_FRIEND_DEFS = [
  {
-  id: 'monatium_elena', kind: 'elena', levelId: 'monatium_b',
+  id: 'monatium_elena', kind: 'elena', name: '엘레나', levelId: 'monatium_b',
   x: 7100, y: 580, face: -1,
   idleClip: 'idle', happyClip: 'idle', disableHappy: true,
   greetingText: '어 그래 두두인지 뭔지... 여론이 아직 않좋으니 빨리 가라구',
   happyText: '',
-  greetRadius: 175, happyRadius: 0, happyDur: 0
+  greetRadius: 175, happyRadius: 0, happyDur: 0, bubbleColor: '#eef6ff'
  },
  {
-  id: 'monatium_amelia', kind: 'amelia', levelId: 'monatium_b',
+  id: 'monatium_amelia', kind: 'amelia', name: '아멜리아', levelId: 'monatium_b',
   x: 7380, y: 580, face: -1,
   idleClip: 'idle', happyClip: 'idle', disableHappy: true,
   greetingText: '저는 아망이 아니라 아멜리아 입니다! 아.멜.리.아',
   happyText: '',
-  greetRadius: 175, happyRadius: 0, happyDur: 0
+  greetRadius: 175, happyRadius: 0, happyDur: 0, bubbleColor: '#fff5eb'
  },
  {
-  id: 'monatium_canna', kind: 'canna', levelId: 'monatium_b',
+  id: 'monatium_canna', kind: 'canna', name: '칸나', levelId: 'monatium_b',
   x: 7900, y: 580, face: -1,
   idleClip: 'idle', happyClip: 'idle', disableHappy: true,
   greetingText: '캬~ 볼케니카 휴가는 참 좋았는데! 별일 없었겠죠? 이 귀여운 꼬마용족 친구는 누구?',
   happyText: '',
-  greetRadius: 175, happyRadius: 0, happyDur: 0
+  greetRadius: 175, happyRadius: 0, happyDur: 0, bubbleColor: '#f3f9ee'
  }
 ];
 
@@ -51,28 +51,28 @@ const MAYO_SPEECH_LINES=[
 // Gate G3 (Section 5.1 ~ 5.5): Suin Village Friendly NPCs (Diana, Kommy, Butter) Single Source of Truth
 const VILLAGE_FRIEND_DEFS=[
  {
-  id:'diana',kind:'diana',houseId:'V-PROP-HOUSE-A',
+  id:'diana',kind:'diana',name:'디아나',houseId:'V-PROP-HOUSE-A',
   x:648,y:580,face:-1,
   idleClip:'idle',happyClip:'happy',
   greetingText:'두두야 몸 조심히 다녀오렴',
   happyText:'두두구나~',
-  greetRadius:175,happyRadius:155,happyDur:2.4
+  greetRadius:175,happyRadius:155,happyDur:2.4,bubbleColor:'#fff8e7'
  },
  {
-  id:'kommy',kind:'kommy',houseId:'V-PROP-HOUSE-B',
+  id:'kommy',kind:'kommy',name:'코미',houseId:'V-PROP-HOUSE-B',
   x:3005,y:580,face:-1,
   idleClip:'melong',happyClip:'happy',
   greetingText:'두두 잘 다녀와, 코미는 이만 자야겠어',
   happyText:'교주 보고싶어. 지금 연회장 가면 사료 주려나? 하암',
-  greetRadius:175,happyRadius:155,happyDur:2.6
+  greetRadius:175,happyRadius:155,happyDur:2.6,bubbleColor:'#fff8e7'
  },
  {
-  id:'butter',kind:'butter',houseId:'V-PROP-HOUSE-C',
+  id:'butter',kind:'butter',name:'버터',houseId:'V-PROP-HOUSE-C',
   x:4785,y:580,face:-1,
   idleClip:'idle',happyClip:'happy',
   greetingText:'두두! 다음에 또 놀아! 버터 기다릴께!',
   happyText:'버터도 교주님 보고싶어! 다음에 만나면 같이 산책갈꺼야!',
-  greetRadius:175,happyRadius:155,happyDur:2.6
+  greetRadius:175,happyRadius:155,happyDur:2.6,bubbleColor:'#fff8e7'
  }
 ];
 const villageFriendHappyPlayed=new Set();
@@ -82,6 +82,7 @@ window.__villageFriendHappyPlayed=villageFriendHappyPlayed;
 
 function resetVillageFriendRunState(){
  villageFriendHappyPlayed.clear();
+ if(typeof resetTempleFriendRunState==='function')resetTempleFriendRunState();
  for(const vf of villageFriends){
   vf.happyPlayedThisRun=false;
   vf.state='idle';
@@ -94,6 +95,7 @@ window.resetVillageFriendRunState=resetVillageFriendRunState;
 
 function initVillageFriends(){
  const curId = levels[levelIndex]?.id;
+ if (curId !== 'erpien_b') templeFriends = [];
  const defs = (curId === 'monatium_b') ? MONATIUM_B_FRIEND_DEFS : VILLAGE_FRIEND_DEFS;
  villageFriends = defs.map(d => ({
   ...d,
@@ -181,11 +183,98 @@ function updateVillageFriends(dt){
  }
 }
 
+// Unified Speech Bubble with Speaker Name Badge (`디아나`, `코미`, `버터`, `엘레나`, `아멜리아`, `칸나`, `네르`, `죠안`, `스키아`, `크레페`, `스피키(메이드)`)
+function drawFriendlySpeechBubble(text, x, y, color = '#fff8e7', speaker = '') {
+ if (!text) return;
+ ctx.save();
+ ctx.font = '16px "ONE Mobile POP", "Malgun Gothic", sans-serif';
+ const maxTextW = 330;
+ const words = text.split(' ');
+ const lines = [];
+ let curLine = '';
+ for (const w of words) {
+  const testLine = curLine ? (curLine + ' ' + w) : w;
+  if (ctx.measureText(testLine).width > maxTextW && curLine) {
+   lines.push(curLine);
+   curLine = w;
+  } else {
+   curLine = testLine;
+  }
+ }
+ if (curLine) lines.push(curLine);
+
+ let textW = 0;
+ for (const ln of lines) {
+  textW = Math.max(textW, ctx.measureText(ln).width);
+ }
+ ctx.font = 'bold 12px "ONE Mobile POP", "Malgun Gothic", sans-serif';
+ const speakerW = speaker ? (ctx.measureText(speaker).width + 18) : 0;
+
+ const boxW = Math.ceil(Math.max(textW + 28, speakerW + 24, 76));
+ const lineH = 21;
+ const boxH = lines.length * lineH + 16;
+
+ const zoomNow = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+ const viewW = W / zoomNow;
+ const minCenterX = rCam + boxW * 0.5 + 14;
+ const maxCenterX = rCam + viewW - boxW * 0.5 - 14;
+ const clampedX = clamp(x, minCenterX, maxCenterX);
+ const boxX = Math.round(clampedX - boxW * 0.5);
+ const boxY = Math.round(y - boxH);
+
+ // Main speech bubble box
+ ctx.fillStyle = color;
+ ctx.strokeStyle = 'rgba(81, 74, 66, 0.28)';
+ ctx.lineWidth = 2;
+ ctx.beginPath();
+ ctx.roundRect(boxX, boxY, boxW, boxH, 11);
+ ctx.fill();
+ ctx.stroke();
+
+ // Pointer tail toward NPC head
+ const tailX = clamp(x, boxX + 16, boxX + boxW - 16);
+ ctx.beginPath();
+ ctx.moveTo(tailX - 7, boxY + boxH - 1);
+ ctx.lineTo(tailX, boxY + boxH + 7);
+ ctx.lineTo(tailX + 7, boxY + boxH - 1);
+ ctx.closePath();
+ ctx.fillStyle = color;
+ ctx.fill();
+
+ // Speaker name tag badge on top-left of bubble
+ if (speaker) {
+  const badgeH = 19;
+  const badgeW = speakerW;
+  const badgeX = boxX + 10;
+  const badgeY = boxY - Math.round(badgeH * 0.68);
+  ctx.fillStyle = '#5c4b41';
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 7);
+  ctx.fill();
+  ctx.font = 'bold 11.5px "ONE Mobile POP", "Malgun Gothic", sans-serif';
+  ctx.fillStyle = '#fffdf8';
+  ctx.textAlign = 'center';
+  ctx.fillText(speaker, Math.round(badgeX + badgeW * 0.5), badgeY + 13.5);
+ }
+
+ // Verbatim dialogue text lines
+ ctx.font = '16px "ONE Mobile POP", "Malgun Gothic", sans-serif';
+ ctx.fillStyle = '#4a423b';
+ ctx.textAlign = 'center';
+ for (let i = 0; i < lines.length; i++) {
+  const ly = boxY + 22 + i * lineH;
+  ctx.fillText(lines[i], Math.round(clampedX), ly);
+ }
+ ctx.restore();
+}
+
 function drawVillageFriends(){
  if(typeof gameMode!=='undefined'&&gameMode==='challenge')return;
  if(levels[levelIndex]?.id!=='village'&&levels[levelIndex]?.id!=='monatium_b')return;
+ const viewW=(typeof rCamZoom==='number'&&rCamZoom>0)?(W/rCamZoom):W;
+ // Pass 1: Draw NPC sprites
  for(const vf of villageFriends){
-  if(vf.x<rCam-200||vf.x>rCam+W+200)continue;
+  if(vf.x<rCam-200||vf.x>rCam+viewW+200)continue;
   ellipse(vf.x,vf.y+2,24,4,'#34463b28');
   const key=`${vf.kind}_${vf.clip}`;
   const m=npcMeta[key]||npcMeta[`${vf.kind}_idle`];
@@ -207,33 +296,353 @@ function drawVillageFriends(){
    ctx.drawImage(npcCanvas,-Math.round((m.anchor/256)*size),-Math.round((m.foot/256)*size),size,size);
    ctx.restore();
   }
-  // Priority: Happy > Normal Pass-By Greeting; hide if off-screen
-  const onScreen=(vf.x>=rCam+40&&vf.x<=rCam+W-40);
-  if(onScreen){
-   if(vf.state==='happy'){
-    bubble(vf.happyText,vf.x,vf.y-152,'#ffe8f0');
-   }else if(vf.greetingVisible){
-    bubble(vf.greetingText,vf.x,vf.y-152,'#fff8e7');
+ }
+ // Pass 2: Draw speech bubbles with speaker name tags on top of sprites (closest active speaker priority to prevent overlap)
+ let activeBubbleTarget = null;
+ let bestDist = Infinity;
+ for (const vf of villageFriends) {
+  const onScreen = (vf.x >= rCam + 40 && vf.x <= rCam + viewW - 40);
+  if (!onScreen) continue;
+  if (vf.state === 'happy') {
+   activeBubbleTarget = vf;
+   break;
+  }
+  if (vf.greetingVisible) {
+   const d = Math.abs(p.x - vf.x);
+   if (d < bestDist) {
+    bestDist = d;
+    activeBubbleTarget = vf;
+   }
+  }
+ }
+ if (activeBubbleTarget) {
+  if (activeBubbleTarget.state === 'happy') {
+   drawFriendlySpeechBubble(activeBubbleTarget.happyText, activeBubbleTarget.x, activeBubbleTarget.y - 152, '#ffe8f0', activeBubbleTarget.name || '');
+  } else {
+   drawFriendlySpeechBubble(activeBubbleTarget.greetingText, activeBubbleTarget.x, activeBubbleTarget.y - 152, activeBubbleTarget.bubbleColor || '#fff8e7', activeBubbleTarget.name || '');
+  }
+ }
+}
+
+// ============================================================================
+// TEST28: Erpien B Temple Corridor Friendly NPCs (Ner -> Joanne -> Skea -> Crepe & Speaki(Maid))
+// ============================================================================
+const ERP_B_TEMPLE_FRIEND_DEFS = [
+ {
+  id: 'ner', kind: 'ner', name: '네르', levelId: 'erpien_b',
+  x: 17200, y: 580, face: -1,
+  defaultClip: 'idle', reactClip: 'happy',
+  dialogue: '어머, 고생많으셨어요! 어서 방으로 들어가 쉬세요',
+  triggerRadius: 175, exitRadius: 210, maxYDiff: 115,
+  bubbleDur: 3.10, reactHoldDur: 2.90,
+  pairGroup: null, pairOrder: 0, bubbleColor: '#fff8e7'
+ },
+ {
+  id: 'joanne', kind: 'joanne', name: '죠안', levelId: 'erpien_b',
+  x: 17930, y: 580, face: -1,
+  defaultClip: 'idle', reactClip: 'happy',
+  dialogue: '늦지않게 잘 왔구나 두두. 참으로 기특하도다.',
+  triggerRadius: 175, exitRadius: 210, maxYDiff: 115,
+  bubbleDur: 3.10, reactHoldDur: 2.90,
+  pairGroup: null, pairOrder: 0, bubbleColor: '#eef8ee'
+ },
+ {
+  id: 'skea', kind: 'skea', name: '스키아', levelId: 'erpien_b',
+  x: 18770, y: 580, face: -1,
+  defaultClip: 'eat2', reactClip: 'panic',
+  dialogue: '...!',
+  triggerRadius: 175, exitRadius: 210, maxYDiff: 115,
+  bubbleDur: 2.60, reactHoldDur: 2.40,
+  pairGroup: null, pairOrder: 0, bubbleColor: '#f3f0ff'
+ },
+ {
+  id: 'crepe', kind: 'crepe', name: '크레페', levelId: 'erpien_b',
+  x: 19620, y: 580, face: -1,
+  defaultClip: 'idle', reactClip: 'happy',
+  dialogue: '크레페와 크레페는!',
+  triggerRadius: 185, exitRadius: 225, maxYDiff: 115,
+  bubbleDur: 1.50, reactHoldDur: 3.00,
+  pairGroup: 'crepe_speaki', pairOrder: 1, bubbleColor: '#ffeef4'
+ },
+ {
+  id: 'speaki_maid', kind: 'speaki_maid', name: '스피키(메이드)', levelId: 'erpien_b',
+  x: 19810, y: 580, face: -1,
+  defaultClip: 'idle', reactClip: 'happy',
+  dialogue: '일 심 동 체!',
+  triggerRadius: 185, exitRadius: 225, maxYDiff: 115,
+  bubbleDur: 1.50, reactHoldDur: 3.00,
+  pairGroup: 'crepe_speaki', pairOrder: 2, bubbleColor: '#fff4e6'
+ }
+];
+
+let templeFriends = [];
+const templePairState = {
+ groupCenterX: 19715,
+ groupY: 580,
+ enterHalfSpan: 270,
+ exitHalfSpan: 310,
+ step1Dur: 1.50,
+ totalDur: 3.00,
+ active: false,
+ seqTime: 0,
+ activeStep: 0,
+ reenterCooldown: 0
+};
+window.__templeFriends = () => templeFriends;
+window.__templePairState = templePairState;
+
+function resetTemplePairState() {
+ templePairState.active = false;
+ templePairState.seqTime = 0;
+ templePairState.activeStep = 0;
+ templePairState.reenterCooldown = 0;
+}
+
+function initTempleFriends() {
+ const curId = levels[levelIndex]?.id;
+ resetTemplePairState();
+ if (curId !== 'erpien_b') {
+  templeFriends = [];
+  return;
+ }
+ templeFriends = ERP_B_TEMPLE_FRIEND_DEFS.map(d => ({
+  ...d,
+  near: false,
+  bubbleVisible: false,
+  bubbleTimer: 0,
+  reenterCooldown: 0,
+  triggeredInVisit: false,
+  state: 'idle',
+  stateTime: 0,
+  clip: d.defaultClip,
+  anim: 0
+ }));
+}
+window.initTempleFriends = initTempleFriends;
+
+function resetTempleFriendRunState() {
+ resetTemplePairState();
+ for (const tf of templeFriends) {
+  tf.near = false;
+  tf.bubbleVisible = false;
+  tf.bubbleTimer = 0;
+  tf.reenterCooldown = 0;
+  tf.triggeredInVisit = false;
+  tf.state = 'idle';
+  tf.stateTime = 0;
+  tf.clip = tf.defaultClip;
+  tf.anim = 0;
+ }
+}
+window.resetTempleFriendRunState = resetTempleFriendRunState;
+
+function updateTempleFriends(dt) {
+ if (typeof gameMode !== 'undefined' && gameMode === 'challenge') return;
+ if (levels[levelIndex]?.id !== 'erpien_b') return;
+ if (!templeFriends.length) initTempleFriends();
+
+ for (const tf of templeFriends) {
+  if (tf.pairGroup) continue;
+  tf.anim += dt;
+  if (tf.reenterCooldown > 0) tf.reenterCooldown = Math.max(0, tf.reenterCooldown - dt);
+
+  const dx = Math.abs(p.x - tf.x);
+  const dy = Math.abs(p.y - tf.y);
+  const inEnterRange = (dx <= tf.triggerRadius && dy <= tf.maxYDiff);
+  const outExitRange = (dx > tf.exitRadius || dy > tf.maxYDiff + 50);
+
+  if (inEnterRange && Math.abs(p.x - tf.x) > 12) {
+   tf.face = (p.x < tf.x) ? -1 : 1;
+  }
+
+  if (!tf.near) {
+   if (inEnterRange && tf.reenterCooldown <= 0) {
+    tf.near = true;
+    tf.triggeredInVisit = true;
+    tf.state = 'react';
+    tf.stateTime = 0;
+    tf.clip = tf.reactClip;
+    tf.anim = 0;
+    tf.bubbleVisible = true;
+    tf.bubbleTimer = tf.bubbleDur;
+   }
+  } else {
+   if (outExitRange) {
+    tf.near = false;
+    tf.triggeredInVisit = false;
+    tf.bubbleVisible = false;
+    tf.bubbleTimer = 0;
+    tf.state = 'idle';
+    tf.stateTime = 0;
+    tf.clip = tf.defaultClip;
+    tf.anim = 0;
+    tf.face = -1;
+    tf.reenterCooldown = 0.40;
+   } else {
+    if (tf.bubbleTimer > 0) {
+     tf.bubbleTimer = Math.max(0, tf.bubbleTimer - dt);
+     if (tf.bubbleTimer <= 0) tf.bubbleVisible = false;
+    }
+    if (tf.state === 'react') {
+     tf.stateTime += dt;
+     if (tf.stateTime >= tf.reactHoldDur) {
+      tf.state = 'idle';
+      tf.stateTime = 0;
+      tf.clip = tf.defaultClip;
+      tf.anim = 0;
+     }
+    }
+   }
+  }
+ }
+
+ const crepe = templeFriends.find(t => t.id === 'crepe');
+ const speaki = templeFriends.find(t => t.id === 'speaki_maid');
+ if (!crepe || !speaki) return;
+
+ crepe.anim += dt;
+ speaki.anim += dt;
+ if (templePairState.reenterCooldown > 0) {
+  templePairState.reenterCooldown = Math.max(0, templePairState.reenterCooldown - dt);
+ }
+
+ const pairDx = Math.abs(p.x - templePairState.groupCenterX);
+ const pairDy = Math.abs(p.y - templePairState.groupY);
+ const inPairEnter = (pairDx <= templePairState.enterHalfSpan && pairDy <= 115);
+ const outPairExit = (pairDx > templePairState.exitHalfSpan || pairDy > 165);
+
+ if (!templePairState.active) {
+  if (inPairEnter && templePairState.reenterCooldown <= 0) {
+   templePairState.active = true;
+   templePairState.seqTime = 0;
+   templePairState.activeStep = 1;
+   for (const member of [crepe, speaki]) {
+    member.near = true;
+    member.triggeredInVisit = true;
+    member.state = 'react';
+    member.stateTime = 0;
+    member.clip = member.reactClip;
+    member.anim = 0;
+   }
+   crepe.bubbleVisible = true;
+   speaki.bubbleVisible = false;
+  }
+ } else {
+  if (outPairExit) {
+   templePairState.active = false;
+   templePairState.seqTime = 0;
+   templePairState.activeStep = 0;
+   templePairState.reenterCooldown = 0.40;
+   for (const member of [crepe, speaki]) {
+    member.near = false;
+    member.triggeredInVisit = false;
+    member.bubbleVisible = false;
+    member.bubbleTimer = 0;
+    member.state = 'idle';
+    member.stateTime = 0;
+    member.clip = member.defaultClip;
+    member.anim = 0;
+    member.face = -1;
+   }
+  } else {
+   for (const member of [crepe, speaki]) {
+    if (Math.abs(p.x - member.x) > 12) {
+     member.face = (p.x < member.x) ? -1 : 1;
+    }
+    member.stateTime += dt;
+   }
+   templePairState.seqTime += dt;
+   if (templePairState.seqTime >= 0.65 && templePairState.seqTime < templePairState.step1Dur && p.x >= 19745 && p.vx > 80) {
+    templePairState.seqTime = templePairState.step1Dur;
+   }
+
+   if (templePairState.seqTime < templePairState.step1Dur) {
+    templePairState.activeStep = 1;
+    crepe.bubbleVisible = true;
+    speaki.bubbleVisible = false;
+   } else if (templePairState.seqTime < templePairState.totalDur) {
+    if (templePairState.activeStep !== 2) {
+     templePairState.activeStep = 2;
+     speaki.anim = 0;
+    }
+    crepe.bubbleVisible = false;
+    speaki.bubbleVisible = true;
+   } else {
+    templePairState.activeStep = 3;
+    crepe.bubbleVisible = false;
+    speaki.bubbleVisible = false;
+    for (const member of [crepe, speaki]) {
+     if (member.state === 'react') {
+      member.state = 'idle';
+      member.stateTime = 0;
+      member.clip = member.defaultClip;
+      member.anim = 0;
+     }
+    }
    }
   }
  }
 }
 
+function drawTempleFriends() {
+ if (typeof gameMode !== 'undefined' && gameMode === 'challenge') return;
+ if (levels[levelIndex]?.id !== 'erpien_b') return;
+ const viewW = (typeof rCamZoom === 'number' && rCamZoom > 0) ? (W / rCamZoom) : W;
+
+ for (const tf of templeFriends) {
+  if (tf.x < rCam - 220 || tf.x > rCam + viewW + 220) continue;
+  ellipse(tf.x, tf.y + 2, 24, 4, '#34463b28');
+  const key = `${tf.kind}_${tf.clip}`;
+  const m = npcMeta[key] || npcMeta[`${tf.kind}_${tf.defaultClip}`];
+  const im = npcImages[key] || npcImages[`${tf.kind}_${tf.defaultClip}`];
+  if (m && im && im.complete && im.naturalWidth > 0) {
+   const duration = m.frames / m.fps;
+   const rawFrame = (tf.state === 'react')
+    ? Math.min(m.frames - 1, tf.anim * m.fps)
+    : ((tf.anim % duration) * m.fps);
+   const f = Math.max(0, Math.min(m.frames - 1, Math.floor(rawFrame) % m.frames));
+   nx.clearRect(0, 0, 256, 256);
+   nx.save();
+   nx.globalCompositeOperation = 'source-over';
+   nx.globalAlpha = 1;
+   nx.drawImage(im, (f % m.cols) * 256, Math.floor(f / m.cols) * 256, 256, 256, 0, 0, 256, 256);
+   nx.restore();
+   ctx.save();
+   ctx.translate(Math.round(tf.x), Math.round(tf.y));
+   ctx.scale(-tf.face, 1);
+   const size = m.display || 148;
+   ctx.drawImage(npcCanvas, -Math.round((m.anchor / 256) * size), -Math.round((m.foot / 256) * size), size, size);
+   ctx.restore();
+  }
+ }
+
+ for (const tf of templeFriends) {
+  if (!tf.bubbleVisible) continue;
+  if (tf.x < rCam - 80 || tf.x > rCam + viewW + 80) continue;
+  drawFriendlySpeechBubble(tf.dialogue, tf.x, tf.y - 156, tf.bubbleColor || '#fff8e7', tf.name || '');
+ }
+}
+
 const encounterPresets = {
  forest: { levelId: 'forest', title: '수인숲 출발', x: 150, y: 580 },
- village: { levelId: 'village', title: '수인마을 광장', x: 150, y: 580 },
+ village: { levelId: 'village', title: '수인마을 광장', x: 520, y: 580 },
+ kommy: { levelId: 'village', title: '수인마을 광장', x: 2880, y: 580 },
+ butter: { levelId: 'village', title: '수인마을 광장', x: 4660, y: 580 },
+ monatiuma: { levelId: 'monatium_a', title: '모나티엄 진입로', x: 150, y: 580 },
  tower: { levelId: 'monatium_a', title: '상승 타워 입구', x: 4180, y: 580 },
  skywalk: { levelId: 'monatium_a', title: '모나티엄 옥상 입구', x: 6160, y: -1785 },
  descent: { levelId: 'monatium_a', title: '옥상 하강 입구', x: 12120, y: -1730 },
  guards: { levelId: 'monatium_a', title: '진압반 공중 교량', x: 17120, y: 580 },
  bukgyeong: { levelId: 'monatium_a', title: '북경성 앞 광장', x: 25750, y: 580 },
  monatiumb: { levelId: 'monatium_b', title: '모나티엄 B · 서측 타워', x: 150, y: 580 },
+ monatiumb_npc: { levelId: 'monatium_b', title: '모나티엄 B · 서측 타워', x: 6970, y: 580 },
  erpiena: { levelId: 'erpien_a', title: '에르피엔 A · 요정 입구', x: 6920, y: 580 },
  erpienb: { levelId: 'erpien_b', title: '에르피엔 B · 도심 마요 추격', x: 150, y: 580 },
  mayo: { levelId: 'erpien_b', title: '에르피엔 도심 입구', x: 150, y: 580 },
  fairies: { levelId: 'erpien_b', title: '빵집 처마 거리', x: 3300, y: 580 },
  marie: { levelId: 'erpien_b', title: '마리 광장 아레나', x: 11170, y: 540 },
- temple: { levelId: 'erpien_b', title: '교단 회랑 및 엄마의 방', x: 12200, y: 580 }
+ temple: { levelId: 'erpien_b', title: '교단 회랑 및 엄마의 방', x: 12200, y: 580 },
+ temple_npc: { levelId: 'erpien_b', title: '교단 회랑 및 엄마의 방', x: 17050, y: 580 }
 };
 
 const BUKGYEONG_LANDMARK={
@@ -385,6 +794,7 @@ function resetHazards(){
    actor('fairy2', 10012, 350, { id: 'EA-F11', platformId: 'EA-P10', fullSpanPatrol: true, patrolX1: 9500, patrolX2: 10012, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 })
   ];
  } else if (curId === 'erpien_b') {
+  initTempleFriends();
   const e = STAGE_ANCHORS.erpien_b;
   const exitWall = platforms.find(pl => pl.id === 'B-EXIT-WALL');
   if (p.x < e.templeStart) {
@@ -449,6 +859,7 @@ function applyStunHit(sourceX,sourceKind='generic',customMsg=null){
   if(p.ground&&p.on){const margin=dir<0?p.x-p.on.x-24:p.on.x+p.on.w-p.x-24;force=Math.min(force,Math.max(0,margin)/.22);}
   p.invulnerable=1.5;p.knock=.18;p.knockVX=dir*force;p.vx=p.knockVX;p.vy=-190;p.dash=0;p.buffer=0;p.jumpHeld=false;p.ground=false;p.on=null;p.coyote=0;p.jumps=Math.max(1,p.jumps);hitCount++;
   burst(p.x,p.y-30,'#ffe1a1',8);tone(220,.12,'triangle',.035);notify('앗! 북경성 돌출에 밀렸어요!');
+  if(typeof registerPlayerDamage==='function')registerPlayerDamage(sourceKind);
   return true;
  }
 
@@ -471,6 +882,7 @@ function applyStunHit(sourceX,sourceKind='generic',customMsg=null){
  tone(165,.18,'sawtooth',.045);
  if(typeof playDuduVoice==='function')playDuduVoice('hit_stun');
  if(customMsg)notify(customMsg);
+ if(typeof registerPlayerDamage==='function')registerPlayerDamage(sourceKind);
  return true;
 }
 
@@ -1367,6 +1779,7 @@ function updateHazards(dt){
  const curId=levels[levelIndex]?.id;
  if(curId==='monatium_a'||curId==='monatium')updateBukgyeong(dt);
  if(curId==='village'||curId==='monatium_b')updateVillageFriends(dt);
+ if(curId==='erpien_b')updateTempleFriends(dt);
 
  if(curId==='erpien'||curId==='erpien_b'){
   const e=STAGE_ANCHORS.erpien_b||STAGE_ANCHORS.erpien;
@@ -1659,6 +2072,7 @@ function drawMarieBossOverlay(marieX,marieY){
 function drawActors(){
  drawBukgyeongLandmark();
  drawVillageFriends();
+ drawTempleFriends();
  for(const a of actors){
   if(a.hiddenInDoor)continue;
   if(a.kind==='mayo'&&!a.active&&!a.retreating)continue;
@@ -1928,12 +2342,15 @@ function practiceEncounter(key){
   }
  }else if(key==='marie'){
   if(typeof enterMarieBossArena==='function')enterMarieBossArena();
+ }else if(key==='monatiumb_npc'){
+  monatiumBTower3ExitAuthorized=true;
+  monatiumBTower3Cleared=true;
  }
  if(typeof syncRenderCoords==='function')syncRenderCoords();
  state='playing';updateRegionHud();keys.clear();canvas.focus();
 }
 async function loadNpcImages(){
  const extraAssets=['president','vice','president_cutout','vice_cutout','bukgyeong_building','bukgyeong_door_l','bukgyeong_door_r'];
- await Promise.all([...Object.keys(npcMeta),...extraAssets].map(n=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{npcImages[n]=im;ok();};im.onerror=no;im.src='assets/npc/'+n+'.webp?v=12';})));
+ await Promise.all([...Object.keys(npcMeta),...extraAssets].map(n=>new Promise((ok)=>{const im=new Image();im.onload=()=>{npcImages[n]=im;ok();};im.onerror=()=>{console.warn('[NPC] Failed to load asset:',n);ok();};im.src='assets/npc/'+n+'.webp?v=29';})));
 }
 for(const key of Object.keys(encounterPresets)){const btn=$('practice-'+key);if(btn)btn.onclick=()=>practiceEncounter(key);}

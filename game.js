@@ -166,16 +166,7 @@ function updateShadow(dt){
  shadow.alpha+=(opacity-shadow.alpha)*(1-Math.exp(-dt*18));
  shadow.width+=((25-Math.min(11,height*.04))-shadow.width)*(1-Math.exp(-dt*14));
 }
-// TEST28.6: Preserve every original animated sprite (including all 31 idle frames).
-// Align the front-left-authored idle/rest/win atlases with the last movement direction.
-// Tournament challenge retains the original orientation handling.
-function spriteFacing(name){
- const authoredFacing=meta[name]?.facing??1;
- const storyIdlePose=gameMode!=='challenge'&&
-   (name==='idle'||name==='win'||name.startsWith('rest_'));
- const authoredDirection=storyIdlePose?-1:authoredFacing;
- return authoredDirection*(p.face<0?-1:1);
-}
+function spriteFacing(name){return (meta[name]?.facing??1)*p.face;}
 const visual={name:'idle',phase:0,frame:0,blend:1,reset:true};
 const spriteLayer=document.createElement('canvas'),oldLayer=document.createElement('canvas');spriteLayer.width=oldLayer.width=256;spriteLayer.height=oldLayer.height=224;const sc=spriteLayer.getContext('2d'),oc=oldLayer.getContext('2d');
 function updateAnimation(dt){
@@ -236,6 +227,42 @@ function renderCharacter(){
 }
 function restBlend(){if(!rest.clip)return 0;const duration=meta[rest.clip].frames/meta[rest.clip].fps*2;
  const t=Math.max(0,Math.min(1,rest.elapsed/.22,(duration-rest.elapsed)/.22));return t*t*(3-2*t);}
+
+// TEST29.1: Story-mode player HP. Death/fall resets refill HP; challenge remains unchanged.
+const PLAYER_MAX_HEALTH=5;
+let playerHealth=PLAYER_MAX_HEALTH;
+function updatePlayerHealthHud(){
+ const hud=$('playerHealthHud');
+ if(!hud)return;
+ const storyActive=gameMode!=='challenge';
+ hud.hidden=!storyActive;
+ if(!storyActive)return;
+ const value=Math.max(0,Math.min(PLAYER_MAX_HEALTH,playerHealth));
+ const count=$('playerHealthCount');
+ if(count)count.textContent=`${value}/${PLAYER_MAX_HEALTH}`;
+ hud.setAttribute('aria-label',`두두 체력 ${value}/${PLAYER_MAX_HEALTH}`);
+ const icons=$('playerHealthIcons');
+ if(icons){
+  for(let i=0;i<icons.children.length;i++){
+   const full=i<value;
+   icons.children[i].classList.toggle('lost',!full);
+  }
+ }
+}
+function registerPlayerDamage(sourceKind='generic'){
+ if(gameMode==='challenge'||state!=='playing')return false;
+ playerHealth=Math.max(0,playerHealth-1);
+ updatePlayerHealthHud();
+ if(playerHealth>0)return false;
+ // Fifth valid enemy hit follows the same checkpoint reset path as a fall.
+ deaths++;
+ reset(false);
+ // Give the freshly respawned Dudu brief immunity against a spawn-camp double hit.
+ p.invulnerable=Math.max(p.invulnerable,1.2);
+ notify('체력이 모두 소진되어 체크포인트로 돌아왔어요!');
+ return true;
+}
+window.__duduHealthDebug=()=>({hp:playerHealth,max:PLAYER_MAX_HEALTH,mode:gameMode});
 
 const platforms=[];
 function add(x,y,w,h=20,thin=true,extra={}){
@@ -394,6 +421,7 @@ function reset(full=false){
   return;
  }
  if(full){resetJourney();checkpoint=0;saved.clear();deaths=0;completed.fill(false);}
+ playerHealth=PLAYER_MAX_HEALTH; // Any story checkpoint respawn begins with five full HP.
  resetPlatforms();
  if(typeof resetPendingSpecialCoins==='function')resetPendingSpecialCoins();
  const isPlazaSpawn = !!(levels[levelIndex]?.id==='monatium_b' && sections[checkpoint] && sections[checkpoint].x >= STAGE_ANCHORS.monatium_b.plazaStart);
@@ -430,16 +458,9 @@ function updateHud(){
   $('specialPending').textContent=pendCount>0?` (+${pendCount} 임시)`:'';
   $('specialPill')?.classList.toggle('pending',pendCount>0);
  }
+ updatePlayerHealthHud();
 }
-function modal(tag,title,text,button){
- // Legacy TEST23 challenge return menu mentions 15 minutes/9 crayons. Its competition code is frozen.
- if(typeof text==='string'&&text.includes('황금 크레파스 9개는 숙련자 도전')){
-  text=text.replace('15분 동안 두두와 산책','25분 동안 두두와 산책')
-           .replace('황금 크레파스 9개는',`황금 크레파스 ${TOTAL_SPECIAL_COINS}개는`);
- }
- $('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;
- $('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';
-}
+function modal(tag,title,text,button){$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;$('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';}
 function pause(){if(state==='playing'){if(typeof ensurePaused==='function')ensurePaused('manual');else{state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}}else if(state==='paused'){if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;start();}}
 function start(){if(state==='loading')return;if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;if(state==='won')reset(true);state='playing';if(window.__mobileUIState){window.__mobileUIState.pausedByPortrait=false;window.__mobileUIState.lastPauseReason=null;}$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();if(typeof syncMobileViewMode==='function')syncMobileViewMode();last=performance.now();acc=0;}
 $('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'♪ OFF':'♪ ON';$('sound').setAttribute('aria-label',muted?'효과음 켜기':'효과음 끄기');if(!muted)tone(660);};$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
@@ -499,7 +520,7 @@ function beginDash(){
 }
 function update(dt){
  debugMetrics.physicsUpdates++;
- p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom;
+ p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom; // TEST29.1: synchronize camera zoom per physics tick.
  time+=dt;levelClock+=dt;animTime+=dt;spin=Math.max(0,spin-dt);land=Math.max(0,land-dt);toastTime=Math.max(0,toastTime-dt);$('toast').style.opacity=toastTime>0?1:0;
  const wasGround=p.ground;
  platformStep();
@@ -845,6 +866,8 @@ function cloud(x,y,s){ellipse(x,y,65*s,22*s,'#fffdf1');ellipse(x-28*s,y-12*s,29*
 function flower(x,y,s=1){line(x,y,x,y-30*s,'#9eaf81',2);ellipse(x-7*s,y-10*s,9*s,4*s,'#b0c294');for(let i=0;i<5;i++){let a=i*Math.PI*2/5;ellipse(x+Math.cos(a)*9*s,y-34*s+Math.sin(a)*9*s,6*s,6*s,'#e9b8ac');}ellipse(x,y-34*s,5*s,5*s,'#e9cd7d');}
 function label(text,x,y){ctx.font='bold 16px Arial, "Malgun Gothic"';ctx.textAlign='center';ctx.fillStyle='#7b9074';ctx.fillText(text,x,y);}
 function frame(now){
+ const hpHud=$('playerHealthHud');
+ if(hpHud && hpHud.hidden !== (gameMode==='challenge'))updatePlayerHealthHud();
  if(!last)last=now;
  const dt=Math.min(.1,(now-last)/1000);
  last=now;

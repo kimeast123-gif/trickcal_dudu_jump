@@ -640,8 +640,7 @@ for(const [idx,[cx,cy]] of [
  // M4 9-Step Descent + M-DSC-FINAL (4)
  [12502,-1598],[12672,-578],[12690,-68],[12995,447],
  // M5 Tactical Guards G1~G4 & M6 Beijing Castle (6)
- // M-C32/M-C33 raised above their actual bridge/blink platform collision tops (420/385).
- [14665,417],[17810,383],[18267,347],[21265,457],[24307,407],[25600,542]
+ [14665,417],[17810,437],[18267,397],[21265,457],[24307,407],[25600,542]
 ].entries()){
  addCandy(monatium_a,`M-C${String(idx+1).padStart(2,'0')}`,cx,cy,'main');
 }
@@ -741,7 +740,7 @@ surface(monatium_b, 2235, -780, 165, 'steel', {
 surface(monatium_b, 2630, -745, 175, 'steel', { id: 'MB-ARCH1-P02', routeOrder: 14, prevId: 'MB-ARCH1-B01', nextId: 'MB-T2-BASE' });
 
 // --- 3. TOWER 2 (x = 3000 .. 4100, y = 580 .. -2180) ---
-// TEST28.6: MB-T2-GND removed. The second tower shaft is a fall/reset zone, not a trapped floor.
+// TEST29.1: Tower 2 fall shaft MUST remain open: no MB-T2-GND collision floor.
 wall(monatium_b, 3000, -2180, 64, 1240, 'steel', { id: 'MB-T2-WALL-L-TOP', wallSide: 'left', noTopLand: true, portalBottom: true });
 wall(monatium_b, 3000, -660, 64, 1240, 'steel', { id: 'MB-T2-WALL-L-BOT', wallSide: 'left', noTopLand: true });
 wall(monatium_b, 3000, -2180, 1100, 36, 'steel', { id: 'MB-T2-ROOF', ceiling: true, noTopLand: true });
@@ -1237,8 +1236,8 @@ function getKillY(x){
  if (curId === 'monatium_b') {
   const mb = STAGE_ANCHORS.monatium_b;
   if (x >= mb.summitStart && x < mb.summitEnd) return -1350;
-  // Dedicated tower-2 pit; other three-tower rules are unchanged.
-  if (x >= mb.tower2Start && x < mb.tower2End) return 650;
+  // TEST29.1: Tower 2 open fall shaft reset before falling below the viewport.
+  if (x >= 3000 && x <= 4100) return 650;
   return 780;
  }
  if (curId === 'erpien_b' || curId === 'erpien') {
@@ -1561,7 +1560,7 @@ function practiceRegion(n){
  clearRegionTransitionLayer();
  securedSpecialPractice.clear();
  if(typeof resetErpienEncounterState==='function')resetErpienEncounterState();
- const erpIdx=levels.findIndex(lv=>lv.id==='erpien_b');
+ const erpIdx=levels.findIndex(lv=>lv.id==='erpien');
  if(n===4&&erpIdx>=0){
   loadLevel(erpIdx,{section:Math.max(0,levels[erpIdx].sections.findIndex(s=>s.title==='교단 복도'))});
  }else{
@@ -1570,9 +1569,9 @@ function practiceRegion(n){
  state='playing';updateRegionHud();keys.clear();canvas.focus();
 }
 async function loadWorldImages(){
- const bgLoads=worldFiles.map(n=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{worldImages[n]=im;ok();};im.onerror=no;im.src='assets/world/'+n+'.webp?v=16';}));
+ const bgLoads=worldFiles.map(n=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{worldImages[n]=im;ok();};im.onerror=no;im.src='assets/world/'+n+'.webp?v=29';}));
  const terrainLoads=TERRAIN_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{terrainImages[k]=im;ok();};im.onerror=no;im.src='assets/terrain/'+k+'.webp?v='+(k==='erpien/gate_inner_strip'?'28_gate_seam':'16');}));
- const structureLoads=STRUCTURE_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{structureImages[k]=im;ok();};im.onerror=no;im.src='assets/structure/'+k+'.webp?v=16';}));
+ const structureLoads=STRUCTURE_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{structureImages[k]=im;ok();};im.onerror=no;im.src='assets/structure/'+k+'.webp?v=29';}));
  const colLoads=['king_candy','golden_crayon'].map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{collectibleImages[k]=im;ok();};im.onerror=no;im.src='assets/collectibles/'+k+'.png?v=16';}));
  const cloudLoads=Array.from({length:TRANSITION_FRAME_COUNT},(_,i)=>new Promise(ok=>{
   const im=new Image();
