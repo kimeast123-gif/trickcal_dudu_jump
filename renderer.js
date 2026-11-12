@@ -233,11 +233,38 @@ function drawNeutralStripCrop(stripImg, s, dx, dy, dw, dh, srcCenterRatio = 0.5)
 // Gate 4 (P0): Single Source of Truth (SSOT) panorama rendering from `l.backgroundRanges[bgKey]`
 const _warnedMissingBgKeys = new Set();
 const _prescaledPanoramaCache = {};
+// TEST31.5: The original cache kept every fully decoded/prescaled panoramic canvas forever.
+// Cap only the DERIVED canvases (source images remain loaded); 24M pixels ~= 92MiB RGBA.
+// LRU eviction runs exclusively when a new panorama is created, never inside per-frame draw calls.
+const PANORAMA_CANVAS_PIXEL_BUDGET = 24_000_000;
+let _panoramaCacheClock = 0;
+function prunePanoramaCanvasCache(keepKey) {
+  let pixels = 0;
+  for (const key in _prescaledPanoramaCache) {
+    const entry = _prescaledPanoramaCache[key];
+    pixels += entry.width * entry.height;
+  }
+  if (pixels <= PANORAMA_CANVAS_PIXEL_BUDGET) return;
+  const oldFirst = Object.entries(_prescaledPanoramaCache)
+    .filter(([key]) => key !== keepKey)
+    .sort((a, b) => a[1].lastUsed - b[1].lastUsed);
+  for (const [key, entry] of oldFirst) {
+    if (pixels <= PANORAMA_CANVAS_PIXEL_BUDGET) break;
+    pixels -= entry.width * entry.height;
+    // Releasing the backing store prevents accumulating multiple giant surfaces on mobile.
+    entry.canvas.width = 0;
+    entry.canvas.height = 0;
+    delete _prescaledPanoramaCache[key];
+  }
+}
 function getPrescaledPanorama(bgKey, im) {
   const isWorld1Tall = bgKey.startsWith('w1-') || (typeof gameMode !== 'undefined' && gameMode === 'world' && bgKey === 'village-bg');
   const cacheKey = isWorld1Tall ? `${bgKey}__tall` : bgKey;
   let cached = _prescaledPanoramaCache[cacheKey];
-  if (cached) return cached;
+  if (cached) {
+    cached.lastUsed = ++_panoramaCacheClock;
+    return cached;
+  }
   const targetH = isWorld1Tall ? Math.max(H, Math.min(960, im.height)) : H;
   const scale = targetH / im.height;
   const effectiveImgW = bgKey === 'city-bg' ? 1722 : im.width;
@@ -249,8 +276,9 @@ function getPrescaledPanorama(bgKey, im) {
   octx.imageSmoothingEnabled = true;
   octx.imageSmoothingQuality = 'high';
   octx.drawImage(im, 0, 0, effectiveImgW, im.height, 0, 0, scaledW, targetH);
-  cached = { canvas: off, width: scaledW, height: targetH };
+  cached = { canvas: off, width: scaledW, height: targetH, lastUsed: ++_panoramaCacheClock };
   _prescaledPanoramaCache[cacheKey] = cached;
+  prunePanoramaCanvasCache(cacheKey);
   return cached;
 }
 function drawPanoramaByBgKey(bgKey, alpha = 1) {
@@ -1099,21 +1127,31 @@ function drawGroundVisual(a, drawX, drawY) {
     const visBodyX1 = Math.max(bodyX1, Math.floor(viewLeft));
     const visBodyX2 = Math.min(bodyX2, Math.ceil(viewRight));
     if (visBodyX2 > visBodyX1) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(visBodyX1, bodyStartY, visBodyX2 - visBodyX1, bottomY - bodyStartY);
-      ctx.clip();
-      const stepX = Math.max(1, bw - 1);
-      const startCol = Math.max(0, Math.floor((visBodyX1 - bodyX1) / stepX));
-      let colIdx = startCol;
-      for (let gx = bodyX1 + startCol * stepX; gx < visBodyX2; gx += stepX, colIdx++) {
-        let rowIdx = 0;
-        for (let gy = bodyStartY; gy < bottomY; gy += bh - 1, rowIdx++) {
-          const pick = ((colIdx + rowIdx) % 2 === 0 || seededUnit(seed, colIdx * 31 + rowIdx) < 0.5) ? bodyA : bodyB;
-          ctx.drawImage(pick, gx, gy, bw, bh);
+      // TEST31.5: Cull rows outside the visible vertical range as well as columns.
+      // The tile grid is anchored at bodyStartY, so the visual pattern never shifts with the camera.
+      const viewTop = rCamY - 96;
+      const viewBottom = rCamY + (H / zoomNow) + 96;
+      const visBodyY1 = Math.max(bodyStartY, Math.floor(viewTop));
+      const visBodyY2 = Math.min(bottomY, Math.ceil(viewBottom));
+      if (visBodyY2 > visBodyY1) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(visBodyX1, visBodyY1, visBodyX2 - visBodyX1, visBodyY2 - visBodyY1);
+        ctx.clip();
+        const stepX = Math.max(1, bw - 1);
+        const stepY = Math.max(1, bh - 1);
+        const startCol = Math.max(0, Math.floor((visBodyX1 - bodyX1) / stepX));
+        const startRow = Math.max(0, Math.floor((visBodyY1 - bodyStartY) / stepY));
+        let colIdx = startCol;
+        for (let gx = bodyX1 + startCol * stepX; gx < visBodyX2; gx += stepX, colIdx++) {
+          let rowIdx = startRow;
+          for (let gy = bodyStartY + startRow * stepY; gy < visBodyY2; gy += stepY, rowIdx++) {
+            const pick = ((colIdx + rowIdx) % 2 === 0 || seededUnit(seed, colIdx * 31 + rowIdx) < 0.5) ? bodyA : bodyB;
+            ctx.drawImage(pick, gx, gy, bw, bh);
+          }
         }
+        ctx.restore();
       }
-      ctx.restore();
     }
   }
 
@@ -1446,18 +1484,10 @@ function drawThinPlatformVisual(a, drawX, drawY) {
   // 1. Left complete cap
   ctx.drawImage(leftImg, drawX, topY, lw, drawH);
 
+  // TEST31.5: Same 1:1 motif renderer as the original story mode. The former
+  // World1-specific branch stretched middle tiles and generated unequal seams.
   let curX = drawX + lw;
-  if (typeof gameMode !== 'undefined' && gameMode === 'world' && (mat === 'grass' || mat === 'village')) {
-    const innerSpan = Math.max(1, a.w - lw - rw);
-    const tileCount = Math.max(1, Math.round(innerSpan / nomW));
-    const tileW = innerSpan / tileCount;
-    for (let i = 0; i < tileCount; i++) {
-      const mImg = mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3];
-      const tx = Math.round(drawX + lw + i * tileW);
-      const tw = Math.round(drawX + lw + (i + 1) * tileW) - tx;
-      ctx.drawImage(mImg, tx - 1, topY, tw + 2, drawH);
-    }
-  } else {
+  {
     if (plan.neutralLeft > 0) {
       drawNeutralStripCrop(innerStrip, s, curX, topY, plan.neutralLeft, drawH, 0.5);
       curX += plan.neutralLeft;
@@ -1486,16 +1516,20 @@ function drawStageProps(layerFilter) {
   const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
   if (!l || !l.villageProps || !l.villageProps.length) return;
   const topA = l.id === 'village' ? (getTerrainImg('village', '', 'ground_top_a') || getTerrainImg('village', '', 'ground_top')) : null;
+  const zoomNow = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+  const right = rCam + W / zoomNow + 128;
+  const bottom = rCamY + H / zoomNow + 128;
   for (const fp of l.villageProps) {
     if (fp.layer !== layerFilter) continue;
-    if (fp.x2 < rCam - 160 || fp.x1 > rCam + W + 160) continue;
     const im = terrainImages[fp.key];
-    if (!im) continue;
+    if (!im || !im.complete || !im.naturalWidth) continue;
     const dw = Math.round(im.width * fp.scale);
     const dh = Math.round(im.height * fp.scale);
     const dx = Math.round(fp.x - dw * 0.5);
     const anchorRow = (typeof fp.groundAnchorPx === 'number') ? fp.groundAnchorPx : fp.walkOffset;
     const dy = Math.round(fp.anchorBottom - anchorRow * fp.scale);
+    // Actual art bounds, not manually estimated fp.x1/x2. Prevents premature pop-in/out.
+    if (dx + dw < rCam - 128 || dx > right || dy + dh < rCamY - 128 || dy > bottom) continue;
     ctx.drawImage(im, dx, dy, dw, dh);
     if (topA && fp.anchorBottom === 580 && l.id === 'village') {
       ctx.save();

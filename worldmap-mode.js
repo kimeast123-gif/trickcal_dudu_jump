@@ -354,11 +354,15 @@ window.updateWorld1Friends = updateWorld1Friends;
 
 function drawWorld1Friends() {
   if (typeof gameMode === 'undefined' || gameMode !== 'world' || world1Stages[activeWorldStageIndex]?.stageCode !== '1-5') return;
-  const viewW = W / ((typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1);
+  const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+  const viewW = W / zoom;
+  const viewH = H / zoom;
   let nearest = null;
   let nearestDistance = Infinity;
   for (const f of world1NpcSlots) {
-    if (f.x < rCam-180 || f.x > rCam+viewW+180) continue;
+    // TEST31.5: Only update canvas pixels for NPCs actually near the camera.
+    if (f.x < rCam-180 || f.x > rCam+viewW+180 ||
+        f.feetY < rCamY-180 || f.feetY-180 > rCamY+viewH+180) continue;
     const clip = f.clip || f.idleClip;
     const key = `${f.kind}_${clip}`;
     const m = npcMeta[key], im = npcImages[key];
@@ -442,7 +446,8 @@ function drawWorld1TentaclesAndSlots() {
   const crayonImg = (typeof collectibleImages !== 'undefined') ? collectibleImages['golden_crayon'] : null;
   for (let i = 0; i < world1Collectibles.length; i++) {
     const col = world1Collectibles[i];
-    if (col.state === 'collected' || col.x < rCam - 90 || col.x > rCam + viewW + 90) continue;
+    if (col.state === 'collected' || col.x < rCam - 90 || col.x > rCam + viewW + 90 ||
+        col.y < rCamY - 90 || col.y > rCamY + viewH + 90) continue;
     const bob = Math.sin(time * 4.0 + i) * 4;
     ctx.save();
     ctx.translate(Math.round(col.x), Math.round(col.y + bob));
@@ -1291,6 +1296,18 @@ function buildWorld1Stages() {
     { id: 'W1-S5-NPC-BANA', name: "바나", kind: 'bana', x: 4720, feetY: 580, platformId: 'W1-S5-GND-4', facing: -1, interactionRadius: 165, heightTolerance: 116, idleClip: 'idle', happyClip: 'happy', dialogue: "개조할거 있으면 언제든 말만 하라구!", pendingAsset: false, sourceSketchRef: '1-5 손그림 NPC 8' },
     { id: 'W1-S5-NPC-RAN', name: "란", kind: 'ran', x: 4760, feetY: -275, platformId: 'W1-S5-UP-RAN-PLAT', facing: -1, interactionRadius: 165, heightTolerance: 116, idleClip: 'idle', happyClip: 'happy', dialogue: "귀여운 꼬마구나. 홍삼 캔디 하나 줄까?", pendingAsset: false, sourceSketchRef: '1-5 손그림 NPC 9' },
   ];
+
+  // TEST31.5 art pass: keep procedural flowers/mushrooms out of houses, market stalls,
+  // and NPC foot positions. This changes decoration placement only; all collisions remain intact.
+  s5.decorFootprints = s5.villageProps.map(fp => ({
+    id: fp.id, x1: fp.x1, x2: fp.x2, y: fp.anchorBottom, key: fp.key
+  }));
+  for (const npc of s5.npcSlots) {
+    if (npc.platformId === 'W1-S5-UP-RAN-PLAT') continue;
+    s5.decorFootprints.push({
+      id: `${npc.id}-clearance`, x1: npc.x - 64, x2: npc.x + 64, y: npc.feetY, key: 'npc-clearance'
+    });
+  }
 
   stages.push(s5);
   // World 1 only: deterministic left-to-right blink activation sequence.
