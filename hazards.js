@@ -865,7 +865,6 @@ function applyStunHit(sourceX,sourceKind='generic',customMsg=null){
   if(p.ground&&p.on){const margin=dir<0?p.x-p.on.x-24:p.on.x+p.on.w-p.x-24;force=Math.min(force,Math.max(0,margin)/.22);}
   p.invulnerable=1.5;p.knock=.18;p.knockVX=dir*force;p.vx=p.knockVX;p.vy=-190;p.dash=0;p.buffer=0;p.jumpHeld=false;p.ground=false;p.on=null;p.coyote=0;p.jumps=Math.max(1,p.jumps);hitCount++;
   burst(p.x,p.y-30,'#ffe1a1',8);tone(220,.12,'triangle',.035);notify('앗! 북경성 돌출에 밀렸어요!');
-  if(typeof registerPlayerDamage==='function')registerPlayerDamage(sourceKind);
   return true;
  }
 
@@ -884,11 +883,34 @@ function applyStunHit(sourceX,sourceKind='generic',customMsg=null){
  p.dash=0;p.buffer=0;p.jumpHeld=false;dashRequest=false;
  p.ground=false;p.on=null;p.coyote=0;p.jumps=Math.max(1,p.jumps);
  hitCount++;
+ if (typeof gameMode === 'undefined' || gameMode !== 'challenge') {
+  p.hp = Math.max(0, (typeof p.hp === 'number' ? p.hp : 5) - 1);
+ }
+ if (typeof gameMode !== 'undefined' && gameMode === 'world' && typeof worldStageHitsThisRun !== 'undefined') {
+  worldStageHitsThisRun++;
+  const save = typeof loadWorldMapSave === 'function' ? loadWorldMapSave() : null;
+  const stg = (typeof world1Stages !== 'undefined') ? world1Stages[activeWorldStageIndex] : null;
+  if (save && stg && save.worlds.world1_beastforest.stages[stg.stageCode]) {
+   save.worlds.world1_beastforest.stages[stg.stageCode].hits++;
+   saveWorldMapData(save);
+  }
+ }
+ if (typeof updateHud === 'function') updateHud();
  burst(p.x,p.y-35,'#ff9e7d',12);
  tone(165,.18,'sawtooth',.045);
  if(typeof playDuduVoice==='function')playDuduVoice('hit_stun');
+ if ((typeof gameMode === 'undefined' || gameMode !== 'challenge') && p.hp <= 0) {
+  deaths++;
+  notify('체력이 모두 소진되어 체크포인트로 돌아왔어요!');
+  if (typeof gameMode !== 'undefined' && gameMode === 'world' && typeof retryWorld1StageCheckpoint === 'function') {
+   retryWorld1StageCheckpoint();
+  } else {
+   reset(false);
+  }
+  p.invulnerable = Math.max(p.invulnerable, 1.2);
+  return true;
+ }
  if(customMsg)notify(customMsg);
- if(typeof registerPlayerDamage==='function')registerPlayerDamage(sourceKind);
  return true;
 }
 
@@ -1787,6 +1809,13 @@ function updateHazards(dt){
   if(typeof updateChallengeHazards==='function')updateChallengeHazards(dt);
   return;
  }
+ if(typeof gameMode!=='undefined'&&gameMode==='world'){
+  if(p.invulnerable>0)p.invulnerable=Math.max(0,p.invulnerable-dt);
+  if(typeof syncWorld1Tentacles==='function')syncWorld1Tentacles(dt);
+  if(typeof updateWorld1Collectibles==='function')updateWorld1Collectibles();
+  if(typeof updateWorld1Friends==='function')updateWorld1Friends(dt);
+  return;
+ }
  hazardClock+=dt;
  if(p.invulnerable>0)p.invulnerable=Math.max(0,p.invulnerable-dt);
  for(const a of actors){a.prevX=a.x;a.prevY=a.y;}
@@ -2364,7 +2393,7 @@ function practiceEncounter(key){
  state='playing';updateRegionHud();keys.clear();canvas.focus();
 }
 async function loadNpcImages(){
- const extraAssets=['president','vice','president_cutout','vice_cutout','bukgyeong_building','bukgyeong_door_l','bukgyeong_door_r'];
+ const extraAssets=['president','vice','president_cutout','vice_cutout','bukgyeong_building','bukgyeong_door_l','bukgyeong_door_r','tentacle_idle'];
  await Promise.all([...Object.keys(npcMeta),...extraAssets].map(n=>new Promise((ok)=>{const im=new Image();im.onload=()=>{npcImages[n]=im;ok();};im.onerror=()=>{console.warn('[NPC] Failed to load asset:',n);ok();};im.src='assets/npc/'+n+'.webp?v=30';})));
 }
 for(const key of Object.keys(encounterPresets)){const btn=$('practice-'+key);if(btn)btn.onclick=()=>practiceEncounter(key);}

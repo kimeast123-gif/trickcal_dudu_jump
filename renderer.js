@@ -232,33 +232,25 @@ function drawNeutralStripCrop(stripImg, s, dx, dy, dw, dh, srcCenterRatio = 0.5)
 
 // Gate 4 (P0): Single Source of Truth (SSOT) panorama rendering from `l.backgroundRanges[bgKey]`
 const _warnedMissingBgKeys = new Set();
-// TEST30.1: Keep at most two full-width offscreen panoramas in memory.
-// A crossfade renders at most two backgrounds at once; 3x 720p-wide panoramas
-// may retain tens of MB of additional canvas memory on mobile devices.
-const _prescaledPanoramaCache = new Map();
+const _prescaledPanoramaCache = {};
 function getPrescaledPanorama(bgKey, im) {
-  let cached = _prescaledPanoramaCache.get(bgKey);
-  if (cached) {
-    _prescaledPanoramaCache.delete(bgKey);
-    _prescaledPanoramaCache.set(bgKey, cached);
-    return cached;
-  }
-  const scale = H / im.height;
+  const isWorld1Tall = bgKey.startsWith('w1-') || (typeof gameMode !== 'undefined' && gameMode === 'world' && bgKey === 'village-bg');
+  const cacheKey = isWorld1Tall ? `${bgKey}__tall` : bgKey;
+  let cached = _prescaledPanoramaCache[cacheKey];
+  if (cached) return cached;
+  const targetH = isWorld1Tall ? Math.max(H, Math.min(960, im.height)) : H;
+  const scale = targetH / im.height;
   const effectiveImgW = bgKey === 'city-bg' ? 1722 : im.width;
   const scaledW = Math.max(W, Math.round(effectiveImgW * scale));
   const off = document.createElement('canvas');
   off.width = scaledW;
-  off.height = H;
+  off.height = targetH;
   const octx = off.getContext('2d');
   octx.imageSmoothingEnabled = true;
   octx.imageSmoothingQuality = 'high';
-  octx.drawImage(im, 0, 0, effectiveImgW, im.height, 0, 0, scaledW, H);
-  cached = { canvas: off, width: scaledW, height: H };
-  _prescaledPanoramaCache.set(bgKey, cached);
-  if (_prescaledPanoramaCache.size > 2) {
-    const oldestKey = _prescaledPanoramaCache.keys().next().value;
-    _prescaledPanoramaCache.delete(oldestKey);
-  }
+  octx.drawImage(im, 0, 0, effectiveImgW, im.height, 0, 0, scaledW, targetH);
+  cached = { canvas: off, width: scaledW, height: targetH };
+  _prescaledPanoramaCache[cacheKey] = cached;
   return cached;
 }
 function drawPanoramaByBgKey(bgKey, alpha = 1) {
@@ -271,21 +263,33 @@ function drawPanoramaByBgKey(bgKey, alpha = 1) {
     return;
   }
   const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
-  const [bgStart, bgEnd] = (l.backgroundRanges && l.backgroundRanges[bgKey]) || [0, l.worldWidth];
+  const rangeSpec = (l.backgroundRanges && l.backgroundRanges[bgKey]) || [0, l.worldWidth, 0, 1];
+  const bgStart = rangeSpec[0], bgEnd = rangeSpec[1];
+  const uStart = (typeof rangeSpec[2] === 'number') ? rangeSpec[2] : 0;
+  const uEnd = (typeof rangeSpec[3] === 'number' && rangeSpec[3] > uStart) ? rangeSpec[3] : 1;
   const travel = Math.max(1, bgEnd - bgStart - W);
-  const progress = Math.max(0, Math.min(1, (rCam - bgStart) / travel));
+  const rawProg = Math.max(0, Math.min(1, (rCam - bgStart) / travel));
+  const progress = uStart + rawProg * (uEnd - uStart);
 
   const pre = getPrescaledPanorama(bgKey, im);
   const sw = Math.min(pre.width, W);
   const maxSx = Math.max(0, pre.width - sw);
   const sx = Math.round(progress * maxSx);
+  window.__lastBgScrollDebug = { bgKey, rCam, sx, progress, uStart, uEnd };
+  let sy = 0;
+  if (pre.height > H) {
+    const minCY = (typeof l.minCamY === 'number') ? l.minCamY : -700;
+    const maxCY = (typeof l.maxCamY === 'number') ? l.maxCamY : 200;
+    const vProg = Math.max(0, Math.min(1, ((typeof rCamY === 'number' ? rCamY : 0) - minCY) / Math.max(1, maxCY - minCY)));
+    sy = Math.round(vProg * (pre.height - H));
+  }
 
   if (alpha >= 0.999) {
-    ctx.drawImage(pre.canvas, sx, 0, sw, H, 0, 0, W, H);
+    ctx.drawImage(pre.canvas, sx, sy, sw, H, 0, 0, W, H);
   } else {
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.drawImage(pre.canvas, sx, 0, sw, H, 0, 0, W, H);
+    ctx.drawImage(pre.canvas, sx, sy, sw, H, 0, 0, W, H);
     ctx.restore();
   }
 }
@@ -297,7 +301,7 @@ function renderBackground() {
   if (activeIdx < 0) activeIdx = segments.length - 1;
   const active = segments[activeIdx];
 
-  const halfWin = 320;
+  const halfWin = (typeof gameMode !== 'undefined' && gameMode === 'world') ? 640 : 320;
   const prev = activeIdx > 0 ? segments[activeIdx - 1] : null;
   const next = activeIdx < segments.length - 1 ? segments[activeIdx + 1] : null;
 
@@ -678,6 +682,67 @@ function drawStructuralWall(a, drawX, drawY) {
   // - Extends bottom corners squarely into supporting ground/platform so zero white corner gap appears.
   // - Renders full-height grass crown (`lh = 58px`) at the top without harsh 36px vertical clipping.
   // ==========================================================================
+  if (mat === 'wood') {
+    const bodyA = getTerrainImg('forest', '', 'ground_body_a');
+    const bodyB = getTerrainImg('forest', '', 'ground_body_b') || bodyA;
+
+    // Horizontal under-platform earthen/root layer (`ceiling: true` on `W1-S1-WALL-UPPER-UNDER`, `W1-S1-WALL-MID-UNDER`, `W1-S3-WALL-CEIL`)
+    if (a.ceiling) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(drawX, drawY, a.w, a.h + 6, 8);
+      ctx.clip();
+      ctx.fillStyle = '#5c4228';
+      ctx.fillRect(drawX, drawY, a.w, a.h + 6);
+      if (bodyA) {
+        const s = 0.45;
+        const bw = Math.round(bodyA.width * s);
+        const bh = Math.round(bodyA.height * s);
+        let cIdx = 0;
+        for (let gx = drawX; gx < drawX + a.w; gx += bw - 1, cIdx++) {
+          const pick = (cIdx % 2 === 0) ? bodyA : bodyB;
+          ctx.drawImage(pick, gx, drawY - 6, bw, bh);
+        }
+      }
+      ctx.fillStyle = 'rgba(34, 22, 12, 0.34)';
+      ctx.fillRect(drawX, drawY + a.h - 6, a.w, 8);
+      ctx.restore();
+      return;
+    }
+
+    // Vertical Earthen/Root Column (`W1-S1-WALL-TALL`, `W1-S2-WALL-ENTRY`, `W1-S2-WALL-LOW-L`, `W1-S2-WALL-MID`)
+    // Joined seamlessly to adjacent walls/platforms without artificial bottom grass tufts!
+    const extBot = (a.joinBottomWall || a.joinBottomPlat) ? 14 : 0;
+    const topRad = a.underShelfCap ? 0 : 8;
+    const botRad = (a.joinBottomWall || a.joinBottomPlat || a.y + a.h >= 850) ? 0 : 8;
+    const totalH = a.h + extBot;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(drawX, drawY, a.w, totalH, [topRad, topRad, botRad, botRad]);
+    ctx.clip();
+    ctx.fillStyle = '#5c4228';
+    ctx.fillRect(drawX, drawY, a.w, totalH);
+    if (bodyA) {
+      const s = 0.45;
+      const bw = Math.round(bodyA.width * s);
+      const bh = Math.round(bodyA.height * s);
+      let rIdx = 0;
+      for (let gy = drawY; gy < drawY + totalH; gy += bh - 1, rIdx++) {
+        let cIdx = 0;
+        for (let gx = drawX; gx < drawX + a.w; gx += bw - 1, cIdx++) {
+          const pick = (rIdx + cIdx) % 2 === 0 ? bodyA : bodyB;
+          ctx.drawImage(pick, gx, gy, bw, bh);
+        }
+      }
+    }
+    ctx.fillStyle = 'rgba(136, 98, 60, 0.24)';
+    ctx.fillRect(drawX + 2, drawY + 2, Math.min(7, a.w * 0.2), Math.max(4, totalH - 4));
+    ctx.fillStyle = 'rgba(34, 20, 10, 0.30)';
+    ctx.fillRect(drawX + a.w - 7, drawY + 2, 5, Math.max(4, totalH - 4));
+    ctx.restore();
+    return;
+  }
+
   if (mat === 'grass' || mat === 'village') {
     const folder = mat === 'village' ? 'village' : 'forest';
     const bodyA = getTerrainImg(folder, '', 'ground_body_a');
@@ -687,17 +752,19 @@ function drawStructuralWall(a, drawX, drawY) {
     const topMid = getTerrainImg(folder, '', 'middle_a');
     const singleSmall = getTerrainImg(folder, '', 'single_small');
 
-    // Classify junction type for bottom corner anchoring
+    // Classify junction type for bottom corner anchoring (uses actual supporting thin platform's `y`!)
     const isFootOnGround = (a.y + a.h >= 575 && a.y < 580);
     if (a._isOnThinPlat === undefined || a._platLenTag !== platforms.length) {
       a._platLenTag = platforms.length;
-      a._isOnThinPlat = (typeof platforms !== 'undefined' && platforms.some(pl =>
+      a._thinPlatRef = (typeof platforms !== 'undefined') ? platforms.find(pl =>
         pl !== a && pl.thin && !pl.wall && a.x < pl.x + pl.w + 8 && a.x + a.w > pl.x - 8 && Math.abs((a.y + a.h) - pl.y) <= 22
-      ));
+      ) : null;
+      a._isOnThinPlat = Boolean(a._thinPlatRef);
     }
     const isOnThinPlatform = a._isOnThinPlat;
+    const platY = a._thinPlatRef ? a._thinPlatRef.y : 370;
     const extendBottom = isFootOnGround ? 14 : 0;
-    const bodyH = isOnThinPlatform ? Math.max(24, 372 - drawY) : (a.h + extendBottom);
+    const bodyH = isOnThinPlatform ? Math.max(24, (platY + 18) - drawY) : (a.h + extendBottom);
     const bottomRadii = (isFootOnGround || isOnThinPlatform || a.y + a.h >= 850) ? 0 : 10;
 
     ctx.save();
@@ -709,8 +776,8 @@ function drawStructuralWall(a, drawX, drawY) {
     ctx.fillRect(drawX, drawY, a.w, bodyH);
     if (bodyA) {
       const s = 0.45;
-      const bw = Math.round(bodyA.width * s);  // 126px
-      const bh = Math.round(bodyA.height * s); // 72px (ratio = 1.00)
+      const bw = Math.round(bodyA.width * s);
+      const bh = Math.round(bodyA.height * s);
       let rIdx = 0;
       for (let gy = drawY; gy < drawY + bodyH; gy += bh - 1, rIdx++) {
         let cIdx = 0;
@@ -721,7 +788,6 @@ function drawStructuralWall(a, drawX, drawY) {
       }
     }
 
-    // Natural vertical earthen rock bevels along left & right sides (no green grass tufts mid-shaft!)
     ctx.fillStyle = 'rgba(128, 96, 62, 0.28)';
     ctx.fillRect(drawX + 2, drawY + 8, 7, bodyH - 8);
     ctx.fillStyle = 'rgba(48, 34, 20, 0.34)';
@@ -732,13 +798,10 @@ function drawStructuralWall(a, drawX, drawY) {
     ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, bodyH - 2);
     ctx.restore();
 
-    // If `isOnThinPlatform` (`F-DROP-BARRIER` at x=3080..3134, y=180..385 on `F-DROP-01` at x=2760..3100, y=370),
-    // blend the lower root body seamlessly into the right end of `F-DROP-01` (`y=360..428`) using `topRight` root cap!
-    if (isOnThinPlatform && topRight) {
+    if (isOnThinPlatform && topRight && (typeof gameMode === 'undefined' || gameMode !== 'world')) {
       const sRoot = 0.50;
-      const rw = Math.round(topRight.width * sRoot);  // 71px
-      const rh = Math.round(topRight.height * sRoot); // 81px
-      const platY = 370;
+      const rw = Math.round(topRight.width * sRoot);
+      const rh = Math.round(topRight.height * sRoot);
       const rTopY = Math.round(platY - 42 * sRoot);
       ctx.save();
       ctx.beginPath();
@@ -865,6 +928,24 @@ function classifyGroundJoint(a, side) {
     }
   }
 
+  // 1B. [v7 §2.2 & §3.4]: Check adjacent stepped ground platforms (`Math.abs(b.y - a.y) > 4`) that share an X boundary
+  for (const b of platforms) {
+    if (b === a || !b.groundTile || Math.abs(b.y - a.y) <= 4) continue;
+    const bMat = b.visual?.material || b.skin || 'grass';
+    const touchLeft = (side === 'left' && Math.abs((b.x + b.w) - edgeX) <= 4);
+    const touchRight = (side === 'right' && Math.abs(b.x - edgeX) <= 4);
+    if (touchLeft || touchRight) {
+      const res = {
+        kind: b.y < a.y ? 'step_up_join' : 'step_down_join',
+        neighbor: b,
+        neighborMat: bMat
+      };
+      a._jointCacheLen = platforms.length;
+      a[cacheProp] = res;
+      return res;
+    }
+  }
+
   // 2. Check if this ground edge abuts a vertical wall of the same material (e.g. F-GND-02A & F-GND-02B meeting F-CLIFF-02)
   for (const b of platforms) {
     if (b === a || !b.wall || b.ceiling) continue;
@@ -980,8 +1061,8 @@ function drawGroundVisual(a, drawX, drawY) {
   const leftJoint = classifyGroundJoint(a, 'left');
   const rightJoint = classifyGroundJoint(a, 'right');
 
-  const showCliffLeft = (leftJoint.kind === 'open_edge' && Boolean(cl));
-  const showCliffRight = (rightJoint.kind === 'open_edge' && Boolean(cr));
+  const showCliffLeft = ((leftJoint.kind === 'open_edge' || leftJoint.kind === 'step_down_join') && Boolean(cl));
+  const showCliffRight = ((rightJoint.kind === 'open_edge' || rightJoint.kind === 'step_down_join') && Boolean(cr));
 
   const topY = Math.round(drawY - spec.groundWalk * s);
   const topH = Math.round(topA.height * s);
@@ -994,14 +1075,20 @@ function drawGroundVisual(a, drawX, drawY) {
   const bottomY = Math.max(drawY + a.h, Math.ceil(rCamY + (H / zoomNow) + 80));
   const bodyStartY = mat === 'home' ? (topY + topH - 8) : (topY + Math.round(spec.bodyTopOffset * s));
 
-  // For `same_material_join`, `material_transition`, or `wall_butt_join`, extend the lower ground body
-  // all the way to `drawX` / `drawX + a.w` (plus a 4px overlap into wall_butt_join) so there is ZERO vertical hole!
+  // [v7 §2.2 & §2.3]:
+  // - For `forest` (`grass`) and `village`, `ground_cliff_left/right` (150x295) has its opaque dirt shaft at cols 12..138 (0.09 inset, NOT 0.36!).
+  // - On `step_up_join`, extend the lower step's dirt body 22px into the higher step so there is zero vertical seam between steps!
+  const cliffInsetRatio = (mat === 'grass' || mat === 'village') ? 0.09 : 0.36;
   const bodyX1 = leftJoint.kind === 'wall_butt_join'
     ? (drawX - 6)
-    : (showCliffLeft ? (drawX + Math.round(clW * 0.36)) : drawX);
+    : (leftJoint.kind === 'step_up_join'
+      ? (drawX - 22)
+      : (showCliffLeft ? (drawX + Math.round(clW * cliffInsetRatio)) : drawX));
   const bodyX2 = rightJoint.kind === 'wall_butt_join'
     ? (drawX + a.w + 6)
-    : (showCliffRight ? (drawX + a.w - Math.round(crW * 0.36)) : (drawX + a.w));
+    : (rightJoint.kind === 'step_up_join'
+      ? (drawX + a.w + 22)
+      : (showCliffRight ? (drawX + a.w - Math.round(crW * cliffInsetRatio)) : (drawX + a.w)));
 
   const viewLeft = rCam - 96;
   const viewRight = rCam + (W / zoomNow) + 96;
@@ -1030,17 +1117,66 @@ function drawGroundVisual(a, drawX, drawY) {
     }
   }
 
+  // [v7 §2.3 & §3.4]: Continuous full-height cliff edge for `open_edge` and clean riser termination for `step_down_join`
   if (showCliffLeft && cl && drawX + clW >= viewLeft && drawX <= viewRight) {
-    ctx.drawImage(cl, drawX, topY, clW, clH);
+    if (leftJoint.kind === 'step_down_join' && leftJoint.neighbor) {
+      const riserBottomY = Math.round(leftJoint.neighbor.y + 16);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(drawX - 4, topY - 8, clW + 8, Math.max(24, riserBottomY - (topY - 8)));
+      ctx.clip();
+      ctx.drawImage(cl, drawX, topY, clW, clH);
+      ctx.restore();
+    } else {
+      ctx.drawImage(cl, drawX, topY, clW, clH);
+      if ((mat === 'grass' || mat === 'village') && bottomY > topY + clH - 12) {
+        const sy = 142, sh = 128;
+        const segH = Math.max(24, Math.round(sh * s));
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(drawX - 2, topY + Math.round(sy * s), clW + 4, bottomY - (topY + Math.round(sy * s)));
+        ctx.clip();
+        for (let gy = topY + Math.round(sy * s); gy < bottomY; gy += segH - 4) {
+          ctx.drawImage(cl, 0, sy, cl.width, sh, drawX, gy, clW, segH);
+        }
+        ctx.restore();
+      }
+    }
   }
   if (showCliffRight && cr && drawX + a.w >= viewLeft && drawX + a.w - crW <= viewRight) {
-    ctx.drawImage(cr, drawX + a.w - crW, topY, crW, crH);
+    if (rightJoint.kind === 'step_down_join' && rightJoint.neighbor) {
+      const riserBottomY = Math.round(rightJoint.neighbor.y + 16);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(drawX + a.w - crW - 4, topY - 8, crW + 8, Math.max(24, riserBottomY - (topY - 8)));
+      ctx.clip();
+      ctx.drawImage(cr, drawX + a.w - crW, topY, crW, crH);
+      ctx.restore();
+    } else {
+      ctx.drawImage(cr, drawX + a.w - crW, topY, crW, crH);
+      if ((mat === 'grass' || mat === 'village') && bottomY > topY + crH - 12) {
+        const sy = 142, sh = 128;
+        const segH = Math.max(24, Math.round(sh * s));
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(drawX + a.w - crW - 2, topY + Math.round(sy * s), crW + 4, bottomY - (topY + Math.round(sy * s)));
+        ctx.clip();
+        for (let gy = topY + Math.round(sy * s); gy < bottomY; gy += segH - 4) {
+          ctx.drawImage(cr, 0, sy, cr.width, sh, drawX + a.w - crW, gy, crW, segH);
+        }
+        ctx.restore();
+      }
+    }
   }
 
   // Top surface span (`midX1 .. midX2`):
-  // On `wall_butt_join`, overlap 4px into the vertical wall so zero gap appears at the corner (`F-CLIFF-02`).
-  const midX1 = leftJoint.kind === 'wall_butt_join' ? (drawX - 4) : (drawX + clW);
-  const midX2 = rightJoint.kind === 'wall_butt_join' ? (drawX + a.w + 4) : (drawX + a.w - crW);
+  // On `wall_butt_join` or `step_up_join`, extend into the adjacent wall/step so zero grass gap appears at the corner.
+  const midX1 = leftJoint.kind === 'wall_butt_join'
+    ? (drawX - 4)
+    : (leftJoint.kind === 'step_up_join' ? (drawX - 16) : (drawX + clW));
+  const midX2 = rightJoint.kind === 'wall_butt_join'
+    ? (drawX + a.w + 4)
+    : (rightJoint.kind === 'step_up_join' ? (drawX + a.w + 16) : (drawX + a.w - crW));
   const midSpan = midX2 - midX1;
 
   if (midSpan > 2) {
@@ -1247,14 +1383,27 @@ function drawThinPlatformVisual(a, drawX, drawY) {
     return;
   }
 
-  // For non-stone small perches (or explicitly flagged `useSmallVisual`), allow `single_small` when scale is natural
+  // [v7 §2.4]: Strictly uniform aspect ratio (`xScale === yScale`).
+  // - If `117 <= a.w <= 184`, `uS = a.w / smallImg.width` is in `[0.36, 0.57]`, so `single_small` renders at exact 1:1 uniform scale `uS`.
+  // - If `200 <= a.w <= 308`, `uM = a.w / medImg.width` is in `[0.36, 0.56]`, so `single_medium` renders at exact 1:1 uniform scale `uM`.
+  // - If `a.w < 117` (e.g. `48~96px` precision perches in 1-2, 1-3, 1-4), it falls through to the 1:1 uniform-cropped `leftImg + rightImg` (`a.w <= lw + rw`) below!
   const smallImg = getTerrainImg(spec.folder, spec.prefix, 'single_small');
-  if (smallImg && (a.useSmallVisual || (mat !== 'stone' && a.w <= 140))) {
+  const medImg = getTerrainImg(spec.folder, spec.prefix, 'single_medium');
+  if (smallImg && (a.useSmallVisual || (mat !== 'stone' && a.w >= 117 && a.w <= 184))) {
     const uS = a.w / smallImg.width;
     if (uS >= 0.36 && uS <= 0.58) {
       const drawH = Math.round(smallImg.height * uS);
       const topY = Math.round(drawY - spec.smallWalk * uS);
       ctx.drawImage(smallImg, drawX, topY, a.w, drawH);
+      return;
+    }
+  }
+  if (typeof gameMode !== 'undefined' && gameMode === 'world' && (mat === 'grass' || mat === 'village') && medImg && a.w >= 200 && a.w <= 308) {
+    const uM = a.w / medImg.width;
+    if (uM >= 0.36 && uM <= 0.56) {
+      const drawH = Math.round(medImg.height * uM);
+      const topY = Math.round(drawY - spec.medWalk * uM);
+      ctx.drawImage(medImg, drawX, topY, a.w, drawH);
       return;
     }
   }
@@ -1297,24 +1446,34 @@ function drawThinPlatformVisual(a, drawX, drawY) {
   // 1. Left complete cap
   ctx.drawImage(leftImg, drawX, topY, lw, drawH);
 
-  // 2. Sliver-free middle assembly: `neutralLeft` + `plan.count` complete middle tiles + optional `halfCount` 1-arch bay + `neutralRight`
   let curX = drawX + lw;
-  if (plan.neutralLeft > 0) {
-    drawNeutralStripCrop(innerStrip, s, curX, topY, plan.neutralLeft, drawH, 0.5);
-    curX += plan.neutralLeft;
-  }
-  for (let i = 0; i < plan.count; i++) {
-    const mImg = mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3];
-    ctx.drawImage(mImg, curX, topY, nomW, drawH);
-    curX += nomW;
-  }
-  if (plan.halfCount === 1) {
-    // Draw a single complete 1-arch bay (`sx=0, sw=130, sh=216`) from `midA` at exact 1:1 scale (`62x104`)
-    ctx.drawImage(midA, 0, 0, halfBayW / (drawH / midA.height), midA.height, curX, topY, halfBayW, drawH);
-    curX += halfBayW;
-  }
-  if (plan.neutralRight > 0) {
-    drawNeutralStripCrop(innerStrip, s, curX, topY, plan.neutralRight, drawH, 0.5);
+  if (typeof gameMode !== 'undefined' && gameMode === 'world' && (mat === 'grass' || mat === 'village')) {
+    const innerSpan = Math.max(1, a.w - lw - rw);
+    const tileCount = Math.max(1, Math.round(innerSpan / nomW));
+    const tileW = innerSpan / tileCount;
+    for (let i = 0; i < tileCount; i++) {
+      const mImg = mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3];
+      const tx = Math.round(drawX + lw + i * tileW);
+      const tw = Math.round(drawX + lw + (i + 1) * tileW) - tx;
+      ctx.drawImage(mImg, tx - 1, topY, tw + 2, drawH);
+    }
+  } else {
+    if (plan.neutralLeft > 0) {
+      drawNeutralStripCrop(innerStrip, s, curX, topY, plan.neutralLeft, drawH, 0.5);
+      curX += plan.neutralLeft;
+    }
+    for (let i = 0; i < plan.count; i++) {
+      const mImg = mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3];
+      ctx.drawImage(mImg, curX, topY, nomW, drawH);
+      curX += nomW;
+    }
+    if (plan.halfCount === 1) {
+      ctx.drawImage(midA, 0, 0, halfBayW / (drawH / midA.height), midA.height, curX, topY, halfBayW, drawH);
+      curX += halfBayW;
+    }
+    if (plan.neutralRight > 0) {
+      drawNeutralStripCrop(innerStrip, s, curX, topY, plan.neutralRight, drawH, 0.5);
+    }
   }
 
   // 3. Right complete cap
@@ -1416,7 +1575,8 @@ function drawPlatform(a) {
   const drawX = Math.round((a.prevX ?? a.x) + (a.x - (a.prevX ?? a.x)) * renderAlpha);
   const drawY = Math.round((a.prevY ?? a.y) + (a.y - (a.prevY ?? a.y)) * renderAlpha);
 
-  if (a.motion) {
+  const isWorldMode = (typeof gameMode !== 'undefined' && gameMode === 'world');
+  if (a.motion && !isWorldMode) {
     ctx.save();
     ctx.strokeStyle = 'rgba(210, 225, 245, 0.45)';
     ctx.lineWidth = 3.5;
@@ -1462,7 +1622,7 @@ function drawPlatform(a) {
     const shakeX = (a.blinkState === 'warning' && !a.silentBlink) ? Math.round(Math.sin(time * 55) * 2) : 0;
     ctx.globalAlpha = a.blinkAlpha ?? 1;
     drawThinPlatformVisual(a, drawX + shakeX, drawY);
-    if (!a.silentBlink) {
+    if (!a.silentBlink && !isWorldMode) {
       if (a.ultraFastBlink && a.blinkState === 'on') {
         ctx.strokeStyle = '#ff922bcc';
         ctx.lineWidth = 2.2;
@@ -1490,7 +1650,7 @@ function drawPlatform(a) {
     if (a.rooftop || a.customDecorations) drawPlatformDecorations(a, drawX, drawY);
   }
 
-  if (a.motion) {
+  if (a.motion && !isWorldMode) {
     ctx.save();
     ctx.strokeStyle = a.fastMoving ? '#ffbe4d' : '#93e8dd';
     ctx.lineWidth = 3;
@@ -1641,10 +1801,18 @@ function draw() {
   drawMonatiumBArchitecture();
   drawErpienAArchitecture();
 
-  for (const a of platforms) {
-    if (!a.groundTile) continue;
-    if (a.x + a.w < rCam - 120 || a.x > rCam + viewW + 120) continue;
-    drawPlatform(a);
+  if (typeof gameMode !== 'undefined' && gameMode === 'world') {
+    const visGrounds = platforms.filter(a => a.groundTile && a.x + a.w >= rCam - 120 && a.x <= rCam + viewW + 120);
+    visGrounds.sort((a, b) => b.y - a.y);
+    for (const a of visGrounds) {
+      drawPlatform(a);
+    }
+  } else {
+    for (const a of platforms) {
+      if (!a.groundTile) continue;
+      if (a.x + a.w < rCam - 120 || a.x > rCam + viewW + 120) continue;
+      drawPlatform(a);
+    }
   }
   drawStageProps('background');
   drawStageProps('midground');
@@ -1660,6 +1828,8 @@ function draw() {
 
   if (typeof gameMode !== 'undefined' && gameMode === 'challenge') {
     if (typeof drawChallengeHazards === 'function') drawChallengeHazards();
+  } else if (typeof gameMode !== 'undefined' && gameMode === 'world') {
+    if (typeof drawWorld1TentaclesAndSlots === 'function') drawWorld1TentaclesAndSlots();
   } else {
     drawActors();
     drawBombs();
@@ -1713,8 +1883,8 @@ function draw() {
     }
   }
   const activeLv = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
-  const goal = activeLv ? activeLv.goal : null;
-  if (goal) {
+  const allGoals = activeLv ? [activeLv.goal, ...(activeLv.alternateGoals || [])].filter(Boolean) : [];
+  for (const goal of allGoals) {
     ctx.fillStyle = '#80634d';
     ctx.beginPath();
     ctx.roundRect(goal.x, goal.y - goal.h, goal.w, goal.h, [70, 70, 0, 0]);
@@ -1724,10 +1894,12 @@ function draw() {
     ctx.roundRect(goal.x + 12, goal.y - goal.h + 12, goal.w - 24, goal.h - 12, [60, 60, 0, 0]);
     ctx.fill();
     ellipse(goal.x + goal.w - 30, goal.y - 65, 5, 5, '#aa7e46');
-    ctx.font = 'bold 18px "Malgun Gothic"';
-    ctx.fillStyle = '#6c5742';
-    ctx.textAlign = 'center';
-    ctx.fillText(goal.label || '엄마의 방', goal.x + goal.w / 2, goal.y - goal.h - 18);
+    if (typeof gameMode === 'undefined' || gameMode !== 'world') {
+      ctx.font = 'bold 18px "Malgun Gothic"';
+      ctx.fillStyle = '#6c5742';
+      ctx.textAlign = 'center';
+      ctx.fillText(goal.label || '엄마의 방', goal.x + goal.w / 2, goal.y - goal.h - 18);
+    }
   }
   for (const t of trail) {
     ctx.save();

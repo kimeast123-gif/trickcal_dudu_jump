@@ -2,19 +2,35 @@
 const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),$=s=>document.getElementById(s);const W=1280,H=720,STEP=1/120;let END=7400,gameMode='story';
 let state='loading',time=0,cam=0,look=.42,acc=0,last=0,animTime=0,spin=0,land=0,toastTime=0,muted=false,audio,checkpoint=0,deaths=0,camY=0;
 
-// TEST29.2: Saved, global volume for BGM / speech / synthesized effects.
-// The sound button remains a separate mute switch. 70% is the new default.
+// [v6 B2]: Common Game Options sound volume with 1-time migration from DUDU_SOUND_PREFS_V1 -> dudu_master_volume_v1
 const SOUND_VOLUME_STORAGE_KEY='dudu_master_volume_v1';
+const LEGACY_SOUND_PREFS_KEY='DUDU_SOUND_PREFS_V1';
 const DEFAULT_MASTER_SOUND_VOLUME=0.70;
 function loadMasterSoundVolume(){
  try{
   const raw=localStorage.getItem(SOUND_VOLUME_STORAGE_KEY);
-  if(raw!==null){const v=Number(raw);if(Number.isFinite(v)&&v>=0&&v<=1)return v;}
- }catch(e){} // Browsers with storage disabled still work at the default volume.
+  if(raw!==null&&raw!==''){
+   const v=Number(raw);
+   if(Number.isFinite(v)&&v>=0&&v<=1)return v;
+  }
+  const legacyRaw=localStorage.getItem(LEGACY_SOUND_PREFS_KEY);
+  if(legacyRaw){
+   const parsed=JSON.parse(legacyRaw);
+   if(parsed&&typeof parsed.volume==='number'&&Number.isFinite(parsed.volume)&&parsed.volume>=0&&parsed.volume<=1){
+    if(typeof parsed.muted==='boolean')muted=parsed.muted;
+    localStorage.setItem(SOUND_VOLUME_STORAGE_KEY,String(parsed.volume));
+    return parsed.volume;
+   }
+  }
+ }catch(e){}
  return DEFAULT_MASTER_SOUND_VOLUME;
 }
 let masterSoundVolume=loadMasterSoundVolume();
 let lastAudibleSoundVolume=masterSoundVolume>0?masterSoundVolume:DEFAULT_MASTER_SOUND_VOLUME;
+Object.defineProperty(window,'masterVolume',{
+ get(){return masterSoundVolume;},
+ set(v){if(typeof v==='number'&&Number.isFinite(v)){setMasterSoundVolume(Math.round(v*100));}}
+});
 function getEffectiveSoundVolume(){return muted?0:masterSoundVolume;}
 function syncSoundVolumeUi(){
  const slider=$('soundVolumeSlider'),label=$('soundVolumeValue'),button=$('sound');
@@ -36,10 +52,11 @@ function setMasterSoundVolume(percent){
  const n=Number(percent);
  if(!Number.isFinite(n))return;
  masterSoundVolume=Math.min(1,Math.max(0,n/100));
- if(masterSoundVolume>0){lastAudibleSoundVolume=masterSoundVolume;muted=false;}
+ if(masterSoundVolume>0){lastAudibleSoundVolume=masterSoundVolume;muted=false;}else{muted=true;}
  try{localStorage.setItem(SOUND_VOLUME_STORAGE_KEY,String(masterSoundVolume));}catch(e){}
  syncSoundVolumeUi();refreshLiveSoundVolumes();
 }
+window.setMasterSoundVolume=setMasterSoundVolume;
 function toggleSound(){
  if(muted||masterSoundVolume<=0){
   muted=false;
@@ -50,13 +67,13 @@ function toggleSound(){
  }else{muted=true;}
  syncSoundVolumeUi();refreshLiveSoundVolumes();
 }
+window.toggleSound=toggleSound;
 let lastSoundPreviewAt=-1000;
 function setupSoundVolumeSlider(){
  const slider=$('soundVolumeSlider');
  if(slider){
   slider.addEventListener('input',()=>{
    setMasterSoundVolume(slider.value);
-   // Short audible preview while the game is paused behind the options dialog.
    const now=typeof performance!=='undefined'?performance.now():Date.now();
    if(getEffectiveSoundVolume()>0&&now-lastSoundPreviewAt>220){
     lastSoundPreviewAt=now;
@@ -66,7 +83,6 @@ function setupSoundVolumeSlider(){
  }
  syncSoundVolumeUi();
 }
-
 let prevCam=0,prevCamY=0,camZoom=1,prevCamZoom=1,renderAlpha=1,rCam=0,rCamY=0,rCamZoom=1,rPx=150,rPy=580;
 let lookDownHold=0,lookDownOffset=0,monatiumBTower3ExitAuthorized=false,monatiumBTower3Cleared=false,monatiumBTower3LastResetWallId=null;
 const MB_T3_DANGER_WALLS=new Set(['MB-T3-WALL-L-TOP','MB-T3-WALL-L-BOT','MB-T3-WALL-R-TOP']);
@@ -85,7 +101,7 @@ const SPRITE_ANCHORS={
 };
 
 const debugMetrics={
- enabled:false /* TEST29.2 RELEASE: debug overlay disabled */,
+ enabled:!(window.DUDU_RELEASE && window.DUDU_RELEASE.releaseMode === true) && new URLSearchParams(location.search).get('debug')==='1',
  physicsUpdates:0,renderFrames:0,fps:60,fpsAccum:0,fpsCount:0,
  camDelta:0,maxCamDelta:0,playerDrawDelta:0,maxPlayerDrawDelta:0,
  lastDrawPx:150,lastDrawCam:0,cameraProfile:'general'
@@ -305,19 +321,34 @@ function renderCharacter(){
 function restBlend(){if(!rest.clip)return 0;const duration=meta[rest.clip].frames/meta[rest.clip].fps*2;
  const t=Math.max(0,Math.min(1,rest.elapsed/.22,(duration-rest.elapsed)/.22));return t*t*(3-2*t);}
 
-// TEST29.1: Story-mode player HP. Death/fall resets refill HP; challenge remains unchanged.
+const platforms=[];
+function add(x,y,w,h=20,thin=true,extra={}){
+ const a={x,y,w,h,thin,baseX:x,baseY:y,prevX:x,prevY:y,dx:0,dy:0,collidable:true,blinkState:'on',blinkAlpha:1,...extra};
+ platforms.push(a);return a;
+}
+const flags=[],sections=[];const completed=[false,false,false,false];let dashRequest=false,trail=[];
 const PLAYER_MAX_HEALTH=5;
-let playerHealth=PLAYER_MAX_HEALTH;
+const p={
+ x:150,y:580,prevX:150,prevY:580,vx:0,vy:0,ground:true,on:platforms[0],
+ jumps:0,coyote:.1,buffer:0,drop:null,face:1,hold:0,jumpHeld:false,jumpCut:false,
+ jumpOrigin:580,jumpHeight:0,dash:0,dashCooldown:0,airDashUsed:false,dashDir:1,
+ knock:0,knockVX:0,guardStun:0,guardKnock:0,invulnerable:0,hp:PLAYER_MAX_HEALTH,maxHp:PLAYER_MAX_HEALTH
+};
+Object.defineProperty(window,'playerHealth',{
+ get(){return p.hp;},
+ set(v){p.hp=Math.max(0,Math.min(p.maxHp||PLAYER_MAX_HEALTH,Number(v)||0));updatePlayerHealthHud();}
+});
 function updatePlayerHealthHud(){
  const hud=$('playerHealthHud');
  if(!hud)return;
- const storyActive=gameMode!=='challenge';
- hud.hidden=!storyActive;
- if(!storyActive)return;
- const value=Math.max(0,Math.min(PLAYER_MAX_HEALTH,playerHealth));
+ const storyOrWorldActive=(gameMode!=='challenge');
+ hud.hidden=!storyOrWorldActive;
+ if(!storyOrWorldActive)return;
+ const maxHp=p.maxHp||PLAYER_MAX_HEALTH;
+ const value=Math.max(0,Math.min(maxHp,typeof p.hp==='number'?p.hp:maxHp));
  const count=$('playerHealthCount');
- if(count)count.textContent=`${value}/${PLAYER_MAX_HEALTH}`;
- hud.setAttribute('aria-label',`두두 체력 ${value}/${PLAYER_MAX_HEALTH}`);
+ if(count)count.textContent=`${value}/${maxHp}`;
+ hud.setAttribute('aria-label',`두두 체력 ${value}/${maxHp}`);
  const icons=$('playerHealthIcons');
  if(icons){
   for(let i=0;i<icons.children.length;i++){
@@ -326,38 +357,16 @@ function updatePlayerHealthHud(){
   }
  }
 }
-function registerPlayerDamage(sourceKind='generic'){
- if(gameMode==='challenge'||state!=='playing')return false;
- playerHealth=Math.max(0,playerHealth-1);
- updatePlayerHealthHud();
- if(playerHealth>0)return false;
- // Fifth valid enemy hit follows the same checkpoint reset path as a fall.
- deaths++;
- reset(false);
- // Give the freshly respawned Dudu brief immunity against a spawn-camp double hit.
- p.invulnerable=Math.max(p.invulnerable,1.2);
- notify('체력이 모두 소진되어 체크포인트로 돌아왔어요!');
- return true;
-}
-window.__duduHealthDebug=()=>({hp:playerHealth,max:PLAYER_MAX_HEALTH,mode:gameMode});
-
-const platforms=[];
-function add(x,y,w,h=20,thin=true,extra={}){
- const a={x,y,w,h,thin,baseX:x,baseY:y,prevX:x,prevY:y,dx:0,dy:0,collidable:true,blinkState:'on',blinkAlpha:1,...extra};
- platforms.push(a);return a;
-}
-const flags=[],sections=[];const completed=[false,false,false,false];let dashRequest=false,trail=[];
-const p={
- x:150,y:580,prevX:150,prevY:580,vx:0,vy:0,ground:true,on:platforms[0],
- jumps:0,coyote:.1,buffer:0,drop:null,face:1,hold:0,jumpHeld:false,jumpCut:false,
- jumpOrigin:580,jumpHeight:0,dash:0,dashCooldown:0,airDashUsed:false,dashDir:1,
- knock:0,knockVX:0,guardStun:0,guardKnock:0,invulnerable:0
-};
+window.updatePlayerHealthHud=updatePlayerHealthHud;
+window.__duduHealthDebug=()=>({hp:p.hp,max:p.maxHp||PLAYER_MAX_HEALTH,mode:gameMode});
 
 function getCameraProfile(px=p.x,py=p.y){
  if(typeof gameMode!=='undefined'&&gameMode==='challenge'&&typeof challengeLevels!=='undefined'){
   const clv=challengeLevels[challengeStageIndex];
   return (clv&&clv.cameraProfile)||'challenge_vertical';
+ }
+ if(typeof gameMode!=='undefined'&&gameMode==='world'){
+  return (typeof world1Stages !== 'undefined' && world1Stages[activeWorldStageIndex]?.cameraProfile) || 'world1_standard';
  }
  const curLevelId = levels[levelIndex]?.id;
  if(curLevelId==='monatium_a'&&typeof STAGE_ANCHORS!=='undefined'){
@@ -409,9 +418,12 @@ function computeInitialCameraForPoint(px,py){
   targetX=Math.max(0,Math.min(END-W,px-W*0.42));
   targetY=Math.min(140,Math.max(-2950,py-430));
   return {cam:targetX,camY:targetY,zoom:1.0,profile:prof};
- }else if(prof==='erpien_a_vertical'){
+ }else if(prof==='erpien_a_vertical'||prof==='world1_standard'||prof==='world1_village'){
   targetX=Math.max(0,Math.min(END-W,px-W*0.42));
-  targetY=Math.min(140,Math.max(-1250,py-380));
+  const actLv=(typeof getActiveLevel==='function')?getActiveLevel():null;
+  const minCY=(actLv&&typeof actLv.minCamY==='number')?actLv.minCamY:-1250;
+  const maxCY=(actLv&&typeof actLv.maxCamY==='number')?actLv.maxCamY:140;
+  targetY=Math.min(maxCY,Math.max(minCY,py-(prof==='world1_village'?555:380)));
   return {cam:targetX,camY:targetY,zoom:1.0,profile:prof};
  }else if(prof==='erpien_boss_zoom'){
   const z=0.88;
@@ -441,7 +453,10 @@ function platformStep(){
    const b=a.blink;
    const onDur=b.on??2.0,warnDur=b.warning??0.55,offDur=b.off??0.95;
    const cycle=onDur+warnDur+offDur;
-   const t=((levelClock+(b.phase||0))%cycle+cycle)%cycle;
+   const waveClock=(typeof gameMode!=='undefined' && gameMode==='world' && typeof b.waveDelay==='number')
+     ? levelClock-b.waveDelay : null;
+   const t=(waveClock!==null && waveClock<0) ? 0 :
+     (((waveClock!==null ? waveClock : levelClock+(b.phase||0))%cycle+cycle)%cycle);
    if(t<onDur){
     a.collidable=true;
     a.blinkState='on';
@@ -477,7 +492,7 @@ function chooseSection(n){
  coins.forEach(c=>{if(c.got)saved.add(c.id);});
  reset();
  if(state!=='loading'){state='playing';$('overlay').hidden=true;canvas.focus();}
- if(sections[n]&&sections[n].hint)notify(sections[n].hint);
+ if((typeof gameMode==='undefined'||gameMode!=='world')&&sections[n]&&sections[n].hint)notify(sections[n].hint);
 }
 function tone(freq,dur=.1,type='sine',gain=.04){if(getEffectiveSoundVolume()<=0)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);o.frequency.exponentialRampToValueAtTime(freq*.7,audio.currentTime+dur);g.gain.setValueAtTime(gain*getEffectiveSoundVolume(),audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur);}catch{}}
 function notify(s){if(!s)return;$('toast').textContent=s;toastTime=2.2;}
@@ -497,8 +512,11 @@ function reset(full=false){
   if(typeof resetChallengePlayer==='function')resetChallengePlayer(full);
   return;
  }
+ if(typeof gameMode!=='undefined'&&gameMode==='world'){
+  if(typeof resetWorld1PlayerToCheckpoint==='function')resetWorld1PlayerToCheckpoint();
+  return;
+ }
  if(full){resetJourney();checkpoint=0;saved.clear();deaths=0;completed.fill(false);}
- playerHealth=PLAYER_MAX_HEALTH; // Any story checkpoint respawn begins with five full HP.
  resetPlatforms();
  if(typeof resetPendingSpecialCoins==='function')resetPendingSpecialCoins();
  const isPlazaSpawn = !!(levels[levelIndex]?.id==='monatium_b' && sections[checkpoint] && sections[checkpoint].x >= STAGE_ANCHORS.monatium_b.plazaStart);
@@ -509,7 +527,7 @@ function reset(full=false){
   x:dest.x,y:dest.y,prevX:dest.x,prevY:dest.y,vx:0,vy:0,ground:true,
   jumps:0,coyote:.1,buffer:0,drop:null,hold:0,jumpHeld:false,jumpCut:false,
   dash:0,dashCooldown:0,airDashUsed:false,jumpHeight:0,jumpOrigin:dest.y,
-  knock:0,knockVX:0,guardStun:0,guardKnock:0,invulnerable:0
+  knock:0,knockVX:0,guardStun:0,guardKnock:0,invulnerable:0,hp:PLAYER_MAX_HEALTH,maxHp:PLAYER_MAX_HEALTH
  });
  p.on=platforms.find(a=>a.collidable!==false&&!a.ceiling&&!a.wall&&dest.x>=a.x&&dest.x<=a.x+a.w&&Math.abs(a.y-dest.y)<6);
  lookDownHold=0;lookDownOffset=0;
@@ -523,6 +541,21 @@ function reset(full=false){
  spin=0;particles=[];trail=[];if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();dashRequest=false;cancelRest();shadow.y=p.y+3;shadow.alpha=.13;shadow.width=25;visual.reset=true;resetHazards();updateHud();
 }
 function updateHud(){
+ const worldMode=(typeof gameMode!=='undefined' && gameMode==='world');
+ const candyPill=$('score')?.closest('.coins');
+ if(candyPill) candyPill.hidden=!!worldMode;
+ if(worldMode && typeof loadWorldMapSave==='function' && typeof world1Stages!=='undefined'){
+  const save=loadWorldMapSave();
+  const stageRecords=save?.worlds?.world1_beastforest?.stages||{};
+  const count=world1Stages.filter(stg=>Array.isArray(stageRecords[stg.stageCode]?.collectibles) &&
+    stageRecords[stg.stageCode].collectibles.some(id=>stg.collectibleDefs.some(col=>col.id===id))).length;
+  if($('specialScore')) $('specialScore').textContent=String(count);
+  if($('specialTotal')) $('specialTotal').textContent='/ 5';
+  if($('specialPending')) $('specialPending').textContent='';
+  $('specialPill')?.classList.remove('pending');
+  updatePlayerHealthHud();
+  return;
+ }
  const totalC=typeof totalRegularCandyCount==='function'?totalRegularCandyCount():coins.length;
  const gotC=typeof collectedRegularCandyCount==='function'?collectedRegularCandyCount():coins.filter(c=>c.got).length;
  $('score').textContent=gotC;
@@ -543,7 +576,7 @@ function start(){if(state==='loading')return;if(window.__mobileUIState&&window._
 $('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=toggleSound;setupSoundVolumeSlider();$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
 window.addEventListener('keydown',e=>{
  if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code))e.preventDefault();
- if(e.code==='F3'&&!e.repeat){return;} // TEST29.2 RELEASE: debug shortcut disabled
+ if(e.code==='F3'&&!e.repeat){debugMetrics.enabled=!debugMetrics.enabled;$('debugHud').hidden=!debugMetrics.enabled;return;}
  if(typeof pressInput==='function'){
   // Map WASD to Arrow keys as alternative controls
   let logicalCode=e.code;
@@ -597,7 +630,7 @@ function beginDash(){
 }
 function update(dt){
  debugMetrics.physicsUpdates++;
- p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom; // TEST29.1 camera stabilization.
+ p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom;
  time+=dt;levelClock+=dt;animTime+=dt;spin=Math.max(0,spin-dt);land=Math.max(0,land-dt);toastTime=Math.max(0,toastTime-dt);
  const nextToastOp=toastTime>0?'1':'0';
  if(_hudDomCache.toastOp!==nextToastOp){_hudDomCache.toastOp=nextToastOp;$('toast').style.opacity=nextToastOp;}
@@ -747,6 +780,10 @@ function update(dt){
    challengeState.deaths++;
    challengeState.stageDeaths[challengeStageIndex]=(challengeState.stageDeaths[challengeStageIndex]||0)+1;
    reset(false);
+  }else if(typeof gameMode!=='undefined'&&gameMode==='world'){
+   deaths++;
+   if(typeof retryWorld1StageCheckpoint==='function')retryWorld1StageCheckpoint();
+   else reset(false);
   }else{
    deaths++;reset();
   }
@@ -769,7 +806,7 @@ function update(dt){
   if(i+1>checkpoint&&Math.abs(p.x-f.x)<45&&p.ground&&Math.abs(p.y-f.y)<4){
    checkpoint=i+1;
    coins.forEach(c=>{if(c.got){saved.add(c.id);collectedByLevel[levelIndex].add(c.id);}});
-   if(sections[checkpoint]&&sections[checkpoint].hint)notify(sections[checkpoint].hint);
+   if((typeof gameMode==='undefined'||gameMode!=='world')&&sections[checkpoint]&&sections[checkpoint].hint)notify(sections[checkpoint].hint);
    tone(900,.15);
   }
  });
@@ -817,7 +854,7 @@ function update(dt){
   cam+=dzX*(1-Math.exp(-dt*7.2));
   const roofTargetY=Math.min(0,Math.max(-2180,p.y-430+lookDownOffset));
   camY+=(roofTargetY-camY)*(1-Math.exp(-dt*6.0));
- }else if(camProfile==='erpien_a_vertical'){
+ }else if(camProfile==='erpien_a_vertical'||camProfile==='world1_standard'||camProfile==='world1_village'){
   // [P0-E 해결]: 수직 데드존(화면 중앙 210~510px 구간 = 300px 폭) 기반 카메라!
   // 점프/낙하 속도(p.vy)에 따라 목표가 105px씩 급변하던 로직을 전면 제거하고,
   // 플레이어가 화면 중앙 데드존 안에 있을 때는 카메라 Y를 고정하여 상하 흔들림(멀미)을 원천 차단!
@@ -843,10 +880,12 @@ function update(dt){
   const baseCamY = camY - lookDownOffset;
   const screenY = p.y - baseCamY;
   let desiredBaseY = baseCamY;
-  if(screenY < 210){
-   desiredBaseY = p.y - 210;
-  }else if(screenY > 510){
-   desiredBaseY = p.y - 510;
+  const lowerDeadzone = (camProfile === 'world1_village') ? 570 : (camProfile === 'world1_standard' ? 350 : 510);
+  const upperDeadzone = (camProfile === 'world1_village') ? 235 : 210;
+  if(screenY < upperDeadzone){
+   desiredBaseY = p.y - upperDeadzone;
+  }else if(screenY > lowerDeadzone){
+   desiredBaseY = p.y - lowerDeadzone;
   }
   const targetCamY = Math.min(maxCY, Math.max(minCY, desiredBaseY + lookDownOffset));
   camY += (targetCamY - camY) * (1 - Math.exp(-dt * 5.8));
@@ -927,7 +966,7 @@ function update(dt){
  }
 
  let progPct=0;
- if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
+ if(typeof gameMode!=='undefined'&&(gameMode==='challenge'||gameMode==='world')){
   progPct=Math.max(0,Math.min(100,(p.x/Math.max(1,END))*100));
  }else{
   let prefixW=0,totalW=0;
@@ -976,7 +1015,7 @@ function flower(x,y,s=1){line(x,y,x,y-30*s,'#9eaf81',2);ellipse(x-7*s,y-10*s,9*s
 function label(text,x,y){ctx.font='bold 16px Arial, "Malgun Gothic"';ctx.textAlign='center';ctx.fillStyle='#7b9074';ctx.fillText(text,x,y);}
 function frame(now){
  const hpHud=$('playerHealthHud');
- if(hpHud && hpHud.hidden !== (gameMode==='challenge'))updatePlayerHealthHud();
+ if(hpHud&&hpHud.hidden!==(gameMode==='challenge'))updatePlayerHealthHud();
  if(!last)last=now;
  const dt=Math.min(.1,(now-last)/1000);
  last=now;

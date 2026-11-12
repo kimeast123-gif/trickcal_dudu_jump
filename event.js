@@ -1,6 +1,6 @@
 'use strict';
 // TEST12 Event & BGM Loop Controller:
-// - Gate G1-3: Updates special ending text from `별동전/특수코인` to `황금 크레파스` while preserving `TOTAL_SPECIAL_COINS = 12` and all ending conditions.
+// - Gate G1-3: Updates special ending text from `별동전/특수코인` to `황금 크레파스` while preserving `TOTAL_SPECIAL_COINS = 9` and all ending conditions.
 // - Gate G6-2: Eliminates 1.6~2.2s trailing silence gaps in BGM MP3 loops using measured `BGM_LOOP_BOUNDS` (`loopStartSec` / `loopEndSec` verified via ffmpeg silencedetect).
 let eventMode=false,eventElapsed=0,eventLast=0,sceneElapsed=0,typed=0,storyLine='',scenePaused=false,musicStage=-1;
 let storySessionId=0,activeStoryKind=null;
@@ -59,7 +59,6 @@ function musicTick(dt){
   else if(i===musicSelected&&audible&&!halted&&a.paused)a.play().catch(()=>{});
  });
 }
-// Keep the slider and mute button synchronized even while an audio track is active.
 function refreshMusicMasterVolume(){
  tracks.forEach((a,i)=>{a.volume=Math.max(0,Math.min(1,gains[i]*getEffectiveSoundVolume()));});
  if(getEffectiveSoundVolume()<=0){tracks.forEach(a=>a.pause());}
@@ -67,13 +66,14 @@ function refreshMusicMasterVolume(){
   const a=tracks[musicSelected];if(a.paused)a.play().catch(()=>{});
  }
 }
+window.refreshMusicMasterVolume=refreshMusicMasterVolume;
 $('sound').onclick=toggleSound;
 syncSoundVolumeUi();
 
 const lines={
  opening:'두두~ 오늘 저녁 맛있는 거 해 줄 테니 너무 늦게까지 놀지 말고 일찍 돌아오렴',
  success:'신나게 놀고 왔니 두두? 이제 코~ 잘 시간이로구나.',
- special:'신나게 놀고 왔니 두두? 모나티엄의 반짝이는 황금 크레파스 12개를 전부 모아왔구나! 이제 코~ 잘 시간이로구나.',
+ special:'신나게 놀고 왔니 두두? 모나티엄의 반짝이는 황금 크레파스 9개를 전부 모아왔구나! 이제 코~ 잘 시간이로구나.',
  late:'두두~ 요 개구쟁이 녀석. 늦은 시간까지 그렇게 돌아다니면 못써요. 얼른 씻고 자야지.'
 };
 
@@ -231,12 +231,24 @@ function finishStoryModal(){
  const candyTotal=typeof totalRegularCandyCount==='function'?totalRegularCandyCount():0;
  hideAllCutsceneLayers();
  state='eventDone';
+ const wmUnlocked=(typeof isWorldMapUnlocked==='function')&&isWorldMapUnlocked();
  modal(
   wasSpecial?'황금 크레파스 올 컬렉션 달성!':wasCandy?'왕사탕 올 컬렉션 달성!':'산책 이야기 끝',
   wasLate?'조금 늦어버렸어요':wasSpecial?'두두, 모든 황금 크레파스를 선물하러 가요!':wasCandy?'두두, 왕사탕을 하나도 놓치지 않았어요!':'두두, 무사히 집에 도착!',
-  `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>다시 시작하면 새로운 25분 산책이 시작됩니다.`,
-  '다시 산책하기 →'
+  `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wmUnlocked?'✨ <b>월드맵이 영구 해금되었습니다!</b> 월드맵으로 이동하거나 스토리를 다시 즐길 수 있어요.':'시간 초과(late)로 인해 월드맵이 해금되지 않았습니다. 제한 시간 안에 엄마의 방에 도착해 보세요!'}`,
+  wmUnlocked?'🗺️ 월드맵으로 가기':'다시 산책하기 →'
  );
+ if(wmUnlocked){
+  $('start').onclick=()=>{openWorldMapMenu();};
+  $('restart').hidden=false;
+  $('restart').textContent='스토리 다시하기 →';
+  $('restart').onclick=()=>{ $('start').onclick=()=>start(); beginEvent(); };
+ }else{
+  $('start').onclick=()=>start();
+  $('restart').hidden=false;
+  $('restart').textContent='처음부터 다시';
+  $('restart').onclick=beginEvent;
+ }
 }
 
 function storyAdvance(){
@@ -276,7 +288,7 @@ function beginEvent(){
  scenePaused=false;
  musicStage=-1;
  keys.clear();
- // Preserve the player's audio preference when starting or restarting a story.
+ gameMode='story';
  syncSoundVolumeUi();
  stopMusic();
  playTrack(3,true);
@@ -302,6 +314,10 @@ $('retry').onclick=()=>{
   if(typeof retryChallengeStage==='function')retryChallengeStage();
   return;
  }
+ if(typeof gameMode!=='undefined'&&gameMode==='world'){
+  if(typeof retryWorld1StageCheckpoint==='function')retryWorld1StageCheckpoint();
+  return;
+ }
  if(state==='playing'||state==='paused')normalChoose(checkpoint);
 };
 
@@ -314,6 +330,9 @@ function finishEvent(success){
  const totalCandy=typeof totalRegularCandyCount==='function'?totalRegularCandyCount():0;
  const allCandy=totalCandy>0&&typeof collectedRegularCandyCount==='function'&&collectedRegularCandyCount()===totalCandy;
  journeyResult=!onTime?'late':allSpecialSecured?'special':allCandy?'candy':'success';
+ if(onTime&&typeof confirmStoryGoalClearForWorldMap==='function'){
+  confirmStoryGoalClearForWorldMap(journeyResult);
+ }
  keys.clear();
  p.vx=p.vy=0;
  sceneElapsed=0;
@@ -337,6 +356,15 @@ function eventTick(now){
  if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
   if(typeof challengeTick==='function')challengeTick(dt);
   musicTick(Math.min(dt,.1));
+  return;
+ }
+ if(typeof gameMode!=='undefined'&&gameMode==='world'){
+  if(state==='playing'&&!scenePaused&&typeof worldStageElapsed==='number'){
+   worldStageElapsed+=dt;
+  }
+  musicTick(Math.min(dt,.1));
+  const wClockTxt=typeof clockText==='function'?clockText(worldStageElapsed||0):'00:00';
+  if(window.__lastClockTxt!==wClockTxt){window.__lastClockTxt=wClockTxt;$('eventClock').textContent=wClockTxt;}
   return;
  }
  if(state==='regionTransition'){

@@ -83,12 +83,9 @@ body.mobile-game-landscape .game{
 
 .game:fullscreen .gameViewport,
 body.mobile-game-landscape .game .gameViewport{
-  /* 1280x720 canvas, letterboxed inside the *visible* browser viewport.
-     Both axes reserve iOS/Android safe areas (notch / home indicator). */
-  width:min(calc(var(--vvw, 100vw) - var(--safe-left) - var(--safe-right)), calc((var(--vvh, 100dvh) - var(--safe-top) - var(--safe-bottom)) * 16 / 9));
-  height:min(calc(var(--vvh, 100dvh) - var(--safe-top) - var(--safe-bottom)), calc((var(--vvw, 100vw) - var(--safe-left) - var(--safe-right)) * 9 / 16));
+  width:min(calc(var(--vvw, 100vw) - var(--safe-left) - var(--safe-right)), calc(var(--vvh, 100dvh) * 16 / 9));
+  height:min(var(--vvh, 100dvh), calc((var(--vvw, 100vw) - var(--safe-left) - var(--safe-right)) * 9 / 16));
   aspect-ratio:16/9;
-  flex:0 0 auto;
 }
 
 /* Only lock html/body scroll while in GAME_LANDSCAPE */
@@ -124,21 +121,9 @@ body.mobile-web-portrait .game{
   display:none;
 }
 
-@media(pointer:coarse), (hover:none), (max-width:1024px){
-  .mobileControls{
-    display:block;
-  }
-  .mobileOptBtn,
-  .mobileOptModalBtn,
-  .landscapeStartBtn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .below .keys{
-    display:none;
-  }
-}
+/* Controls are enabled by a real mobile/tablet device flag only, not viewport size. */
+.mobileOptBtn,.mobileOptModalBtn{display:inline-flex;align-items:center;justify-content:center}
+body.is-mobile-device .below .keys{display:none}
 
 /* Explicit override class when mobile mode is active */
 body.is-mobile-device .mobileControls{
@@ -574,13 +559,30 @@ body.is-mobile-device .landscapeStartBtn{
 @media(prefers-reduced-motion:reduce){.story.hasVideo .storyVideo{display:block}}
 
 
-/* TEST30.2 MOBILE HOTFIX: remove legacy mobile webpage-mode override.
-   In landscape, #game must stay fixed to the visual viewport and scrolling
-   must stay locked only while the game is in landscape focus mode.
-   The previous override returned #game to position:relative; height:auto,
-   making the bottom half unreachable in short mobile landscape viewports. */
+html.mobile-landscape-lock, body.mobile-game-landscape {
+  overflow: auto !important;
+  height: auto !important;
+  position: static !important;
+}
+body.mobile-game-landscape main {
+  max-width: 1480px !important;
+  padding: 20px 4% !important;
+}
+body.mobile-game-landscape #game {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9 !important;
+  border-radius: 22px !important;
+}
+body.mobile-game-landscape .practiceNav,
+body.mobile-game-landscape .encounterNav {
+  display: flex !important;
+}
 
-/* TEST29.1 — Story health: five NeonSaurus icons below the existing top-right HUD. */
+
+/* TEST29.1 / v6 B1 — Story & World 1 health: five NeonSaurus icons below top-right HUD */
 .playerHealthHud{position:absolute;z-index:6;top:70px;right:22px;display:flex;align-items:center;gap:10px;pointer-events:none;padding:5px 10px;background:#fffdf0eb;border:1px solid #fffcf1;border-radius:13px;box-shadow:0 3px 0 #999c7920;white-space:nowrap}
 .playerHealthHud[hidden]{display:none!important}
 .playerHealthIcons{display:flex;align-items:center;gap:2px}
@@ -590,10 +592,8 @@ body.is-mobile-device .landscapeStartBtn{
 @media(max-width:960px),(max-height:520px){.playerHealthHud{top:43px;right:10px;padding:3px 8px;gap:5px;border-radius:10px}.playerHealthIcons img{width:23px;height:23px}#playerHealthCount{font-size:11px}}
 @media(max-width:580px){.playerHealthHud{top:42px;right:8px;gap:4px;padding:2px 6px}.playerHealthIcons img{width:18px;height:18px}.playerHealthIcons{gap:0}#playerHealthCount{font-size:10px}}
 
-
-/* TEST29.2: The game options button is available to PC and mobile users. */
-.mobileOptBtn,.mobileOptModalBtn{display:inline-flex;align-items:center;justify-content:center}
-/* Sound is a universal option; mobile-controller settings remain available below it. */
+/* TEST29.2 / v6 B2: Common Game Options button available to PC and mobile users */
+.mobileOptBtn,.mobileOptModalBtn{display:inline-flex !important;align-items:center;justify-content:center}
 .soundVolumeGroup{gap:9px;padding:7px 1px 5px}
 .soundVolumeGroup .mobileSettingLabel{display:flex;align-items:center;justify-content:space-between;font-size:13px}
 .soundVolumeGroup #soundVolumeValue{font-variant-numeric:tabular-nums;color:#3e7952;font-size:14px}
@@ -603,15 +603,88 @@ body.is-mobile-device .landscapeStartBtn{
 .soundSettingDivider{height:1px;width:100%;background:#e9ecdf}
 .mobileControlSectionTitle{font-size:12px;color:#596f58}
 
-/* TEST29.2 RELEASE: no developer / direct-entry / practice UI in production.
-   Must outrank landscape mobile rules that previously set display:flex!important. */
+/* TEST31 v6: 7-Card World Map Overlay */
+.worldmapPrimary { background:linear-gradient(135deg,#3b6e52,#264a37); color:#fffdf7; border:2px solid #8ce99a; border-radius:999px; padding:11px 18px; font-weight:800; cursor:pointer; font-size:14.5px; box-shadow:0 4px 12px rgba(24,52,36,0.22); }
+.worldmapPrimary.unlocked { background:linear-gradient(135deg,#2b8a3e,#1b5e20); border-color:#ffd43b; }
+
+.worldmapOverlay { position:absolute; inset:0; z-index:45; background:rgba(16,24,20,0.86); backdrop-filter:blur(5px); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
+.worldmapOverlay[hidden] { display:none !important; }
+.wmPanel { width:100%; max-width:1180px; max-height:100%; background:#f9f5eb; border:3px solid #6b8e6e; border-radius:22px; padding:16px 20px; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; overflow-y:auto; color:#2f3e33; box-shadow:0 18px 42px rgba(0,0,0,0.42); }
+.wmHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1.5px solid rgba(107,142,110,0.28); padding-bottom:8px; }
+.wmEyebrow { font-size:11px; font-weight:800; letter-spacing:0.08em; color:#5c8060; display:block; }
+.wmHeader h2 { margin:2px 0 0; font-size:20px; color:#253829; }
+.wmHeaderActions { display:flex; align-items:center; gap:6px; }
+.wmCarouselBtn { background:#e7efe6; border:1.5px solid #7fa382; color:#2b4430; border-radius:10px; padding:6px 10px; font-weight:800; cursor:pointer; }
+.wmBackBtn { background:#3a4f3e; color:#fff; border:none; border-radius:12px; padding:8px 14px; font-weight:700; cursor:pointer; font-size:13px; }
+.wmStorageWarn { background:#fff3bf; border:1.5px solid #f59f00; color:#7c4d00; padding:6px 12px; border-radius:10px; font-size:12px; font-weight:700; }
+.wmNoticeBanner { background:#ffe8cc; border:1.5px solid #fd7e14; color:#862e08; padding:7px 12px; border-radius:10px; font-size:13px; font-weight:700; text-align:center; }
+
+.wmCardGrid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px; overflow-y:auto; padding:2px; }
+.wmCard { display:flex; flex-direction:column; text-align:left; background:#fffdf9; border:2px solid #c5d4c2; border-radius:14px; overflow:hidden; padding:0; cursor:pointer; transition:transform 0.12s ease, box-shadow 0.12s ease; }
+.wmCard.playable { border-color:#529460; box-shadow:0 4px 12px rgba(46,96,58,0.14); }
+.wmCard.playable:hover { transform:translateY(-2px); box-shadow:0 8px 18px rgba(46,96,58,0.24); }
+.wmCard.comingSoon { opacity:0.86; border-style:dashed; border-color:#9aa89c; background:#f1f3f0; }
+.wmCardThumbWrap { position:relative; width:100%; aspect-ratio:16 / 9; max-height:112px; background:#233028; overflow:hidden; }
+.wmCardThumb { width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
+.wmCardBadge { position:absolute; top:6px; right:6px; font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:999px; }
+.badgePlay { background:#2b8a3e; color:#fff; }
+.badgeSoon { background:rgba(33,37,41,0.82); color:#ffd43b; }
+.wmCardBody { padding:8px 10px; display:flex; flex-direction:column; gap:3px; }
+.wmCardTitle { font-size:13.5px; color:#1f2e22; line-height:1.25; }
+.wmCardSub { font-size:11px; color:#556659; margin:0; line-height:1.3; }
+.wmCardMeta { font-size:10.5px; font-weight:700; color:#2b6cb0; margin-top:2px; }
+
+.wmStageGrid { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; }
+.wmStageCard { background:#fffdf9; border:2px solid #b8cbb8; border-radius:14px; padding:11px; display:flex; flex-direction:column; justify-content:space-between; gap:8px; }
+.wmStageCard.unlocked { border-color:#40916c; }
+.wmStageCard.cleared { border-color:#2b8a3e; background:#f2fbf4; }
+.wmStageCard.locked { opacity:0.75; background:#f1f3f2; }
+.wmStageTop { display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:800; }
+.wmStageCode { color:#2d6a4f; }
+.wmStageStatus { color:#495057; }
+.wmStageName { font-size:14px; color:#1b4332; }
+.wmStageDesc { font-size:11.5px; color:#526358; margin:0; line-height:1.35; }
+.wmStageStats { display:flex; flex-direction:column; gap:2px; font-size:11px; color:#37473c; background:rgba(0,0,0,0.04); padding:6px 8px; border-radius:8px; }
+.wmStageBtnRow { display:flex; flex-direction:column; gap:4px; }
+.wmStagePlayBtn { background:#2d6a4f; color:#fff; border:none; border-radius:10px; padding:8px 10px; font-weight:800; cursor:pointer; font-size:12.5px; }
+.wmStagePlayBtn:disabled { background:#adb5bd; cursor:not-allowed; }
+.wmStageDevBtn { background:#fff3bf; border:1px solid #f08c00; color:#7c4d00; border-radius:8px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer; }
+
+.wmClearPanel { max-width:680px; text-align:center; }
+.wmClearSummary { font-size:14px; line-height:1.6; color:#2b3d30; margin:6px 0; }
+.wmClearBtnRow { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:8px; }
+
+/* Mobile Landscape Carousel Adaptation (WM-019: 740x320, 844x390) */
+@media (max-height: 440px), (max-width: 920px) {
+  .worldmapOverlay { padding:6px; }
+  .wmPanel { padding:8px 12px; gap:6px; border-radius:14px; }
+  .wmHeader h2 { font-size:15px; }
+  .wmCardGrid { display:flex; flex-direction:row; overflow-x:auto; overflow-y:hidden; gap:8px; scroll-snap-type:x mandatory; padding-bottom:4px; }
+  .wmCard { min-width:210px; max-width:220px; flex:0 0 auto; scroll-snap-align:start; }
+  .wmCardThumbWrap { max-height:74px; }
+  .wmStageGrid { display:flex; flex-direction:row; overflow-x:auto; gap:8px; }
+  .wmStageCard { min-width:195px; flex:0 0 auto; padding:8px; }
+}
+
+/* TEST31.3: independent jump/dash control sizing (joystick unaffected) */
+.mobileControls[data-action-size="small"] .vbtn-action{width:56px;height:56px;font-size:13px}
+.mobileControls[data-action-size="medium"] .vbtn-action{width:70px;height:70px;font-size:16px}
+.mobileControls[data-action-size="large"] .vbtn-action{width:86px;height:86px;font-size:18px}
+
+
+/* TEST31.4 RELEASE: all developer-only practice, HUD and QA panels are hidden.
+   Keep DOM nodes for legacy JS element lookups; only presentation is suppressed. */
 html body .practiceNav,
 html body .encounterNav,
 html body .practiceHUD,
+html body #debugHud,
 html body.mobile-game-landscape .practiceNav,
 html body.mobile-game-landscape .encounterNav,
 html body.mobile-game-landscape .practiceHUD,
 html body.is-mobile-device .practiceNav,
 html body.is-mobile-device .encounterNav,
-html body.is-mobile-device .practiceHUD,
-html body #debugHud { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+html body.is-mobile-device .practiceHUD {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

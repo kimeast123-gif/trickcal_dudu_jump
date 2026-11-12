@@ -109,7 +109,7 @@ let levelIndex = 0, levelClock = 0, transition = null, journeyResult = null;
 const collectedByLevel = [new Set(), new Set(), new Set(), new Set(), new Set(), new Set()];
 const visited = [true, false, false, false, false, false];
 const routeDone = [false, false, false, false, false, false];
-const worldImages = {}, worldFiles = ['forest-bg', 'village-bg', 'city-bg', 'erpien-gate', 'erpien-city', 'erpien-home'];
+const worldImages = {}, worldFiles = ['forest-bg', 'village-bg', 'city-bg', 'erpien-gate', 'erpien-city', 'erpien-home', 'w1-meadow-bg', 'w1-forest-bg', 'w1-deep-forest-bg', 'w1-tree-interior-placeholder', 'w1-forest-exit-bg'];
 const collectibleImages = {};
 const transitionFrames = []; const TRANSITION_FRAME_COUNT = 20; let transitionSessionId = 0;
 
@@ -119,9 +119,12 @@ const securedSpecialPractice = new Set();
 // All 12 golden crayons, including MB-SPEC-01/02 and EA-SPECIAL-01, are official collectibles.
 let specialCoins = [];
 
-function getActiveLevel() {
- if (typeof gameMode !== 'undefined' && gameMode === 'challenge' && typeof challengeLevels !== 'undefined' && challengeLevels[challengeStageIndex]) {
+function getActiveLevel(){
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'&&typeof challengeLevels!=='undefined'){
   return challengeLevels[challengeStageIndex];
+ }
+ if(typeof gameMode!=='undefined'&&gameMode==='world'&&typeof world1Stages!=='undefined'){
+  return world1Stages[activeWorldStageIndex]||world1Stages[0];
  }
  return levels[levelIndex];
 }
@@ -740,7 +743,7 @@ surface(monatium_b, 2235, -780, 165, 'steel', {
 surface(monatium_b, 2630, -745, 175, 'steel', { id: 'MB-ARCH1-P02', routeOrder: 14, prevId: 'MB-ARCH1-B01', nextId: 'MB-T2-BASE' });
 
 // --- 3. TOWER 2 (x = 3000 .. 4100, y = 580 .. -2180) ---
-// TEST29.1: Tower 2 fall shaft MUST remain open: no MB-T2-GND collision floor.
+// [REG-002]: MB-T2-GND removed so falling in Monatium B Tower 2 resets cleanly instead of trapping the player at y=580.
 wall(monatium_b, 3000, -2180, 64, 1240, 'steel', { id: 'MB-T2-WALL-L-TOP', wallSide: 'left', noTopLand: true, portalBottom: true });
 wall(monatium_b, 3000, -660, 64, 1240, 'steel', { id: 'MB-T2-WALL-L-BOT', wallSide: 'left', noTopLand: true });
 wall(monatium_b, 3000, -2180, 1100, 36, 'steel', { id: 'MB-T2-ROOF', ceiling: true, noTopLand: true });
@@ -1236,8 +1239,6 @@ function getKillY(x){
  if (curId === 'monatium_b') {
   const mb = STAGE_ANCHORS.monatium_b;
   if (x >= mb.summitStart && x < mb.summitEnd) return -1350;
-  // TEST29.1: Tower 2 open fall shaft reset before falling below the viewport.
-  if (x >= 3000 && x <= 4100) return 650;
   return 780;
  }
  if (curId === 'erpien_b' || curId === 'erpien') {
@@ -1523,6 +1524,10 @@ function checkJourney() {
  // Challenge mode has its own level goals and must not use story scene transitions.
  if (typeof gameMode !== 'undefined' && gameMode === 'challenge') {
   if (typeof checkChallengeJourney === 'function') checkChallengeJourney();
+  return;
+ }
+ if (typeof gameMode !== 'undefined' && gameMode === 'world') {
+  if (typeof checkWorld1Journey === 'function') checkWorld1Journey();
   return;
  }
  if (transition || journeyResult) return;

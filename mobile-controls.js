@@ -23,7 +23,8 @@ const MOBILE_PREFS_KEY = 'dudu_mobile_ctrl_prefs_v1';
 const mobilePrefs = {
   stickPosition: 'bottom', // 'bottom' | 'top'
   buttonSwap: 'normal',    // 'normal' | 'swapped'
-  stickSize: 'medium'      // 'small' | 'medium' | 'large'
+  stickSize: 'medium',     // 'small' | 'medium' | 'large'
+  actionSize: 'medium'     // jump/dash buttons independently sized
 };
 
 const mobileUIState = {
@@ -188,6 +189,7 @@ function loadMobilePrefs() {
       if (parsed && (parsed.stickSize === 'small' || parsed.stickSize === 'medium' || parsed.stickSize === 'large')) {
         mobilePrefs.stickSize = parsed.stickSize;
       }
+      if (parsed && ['small','medium','large'].includes(parsed.actionSize)) mobilePrefs.actionSize=parsed.actionSize;
     }
   } catch (e) {
     // Ignore storage errors in private mode
@@ -210,6 +212,7 @@ function applyMobilePrefsToDOM() {
     ctrlEl.setAttribute('data-stick-pos', mobilePrefs.stickPosition);
     ctrlEl.setAttribute('data-btn-swap', mobilePrefs.buttonSwap);
     ctrlEl.setAttribute('data-stick-size', mobilePrefs.stickSize);
+    ctrlEl.setAttribute('data-action-size', mobilePrefs.actionSize);
   }
   // Update button labels in settings dialog so '상단/하단' reflects current left/right side clearly
   const isSwapped = mobilePrefs.buttonSwap === 'swapped';
@@ -227,6 +230,9 @@ function applyMobilePrefsToDOM() {
   document.querySelectorAll('[data-opt-stick-size]').forEach(btn => {
     btn.classList.toggle('selected', btn.getAttribute('data-opt-stick-size') === mobilePrefs.stickSize);
   });
+  document.querySelectorAll('[data-opt-action-size]').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-opt-action-size') === mobilePrefs.actionSize);
+  });
 }
 
 function setMobilePref(key, value) {
@@ -236,6 +242,8 @@ function setMobilePref(key, value) {
     mobilePrefs.buttonSwap = value;
   } else if (key === 'stickSize' && (value === 'small' || value === 'medium' || value === 'large')) {
     mobilePrefs.stickSize = value;
+  } else if (key === 'actionSize' && ['small','medium','large'].includes(value)) {
+    mobilePrefs.actionSize = value;
   }
   saveMobilePrefs();
 }
@@ -243,15 +251,13 @@ window.setMobilePref = setMobilePref;
 
 // Detect whether current viewport is a mobile/tablet environment
 function isMobileOrTabletViewport() {
-  const w = window.innerWidth || document.documentElement.clientWidth || 1280;
-  const h = window.innerHeight || document.documentElement.clientHeight || 720;
-  // TEST30.1 release: a narrow desktop viewport is not evidence of a phone.
-  // Only a mobile/tablet user agent or an actual touch+coarse pointer qualifies.
-  const coarse = Boolean(window.matchMedia && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches));
-  const touchCapable = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const ua = navigator.userAgent || '';
-  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle/i.test(ua);
-  return Boolean(mobileUA || (touchCapable && coarse));
+  // Device classification is independent of resizable browser window dimensions.
+  // Desktop Chrome in a narrow window (or with DevTools open) must retain PC controls.
+  const ua=navigator.userAgent||'';
+  const uaMobile=Boolean(navigator.userAgentData?.mobile);
+  const nativeMobile=/Android|iPhone|iPad|iPod|Mobile|Windows Phone|Silk|Kindle|PlayBook/i.test(ua);
+  const ipadDesktopUA=navigator.platform==='MacIntel' && (navigator.maxTouchPoints||0)>1;
+  return Boolean(uaMobile || nativeMobile || ipadDesktopUA);
 }
 
 function updateVisualViewportVars() {
@@ -623,6 +629,12 @@ function setupMobileControls() {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       setMobilePref('stickSize', btn.getAttribute('data-opt-stick-size'));
+    });
+  });
+  document.querySelectorAll('[data-opt-action-size]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      setMobilePref('actionSize', btn.getAttribute('data-opt-action-size'));
     });
   });
 
