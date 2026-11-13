@@ -3,7 +3,7 @@
 .practiceHUD{position:absolute;bottom:20px;left:23px;display:flex;flex-direction:column;gap:5px;padding:10px 14px;background:#fffdefe8;border-radius:12px;color:#75866b;font-size:11px;pointer-events:none;z-index:5}.practiceHUD>span:first-child{font-weight:800}.holdTrack{height:4px;background:#dfe5cc;width:170px;border-radius:3px;overflow:hidden}.holdTrack i{display:block;height:100%;background:#d2ab61;width:0}.debugHud{position:absolute;top:76px;left:22px;padding:8px 12px;background:#1d2620cc;color:#e8f5e9;border-radius:10px;font:11px/1.45 monospace;pointer-events:none;z-index:15;white-space:pre}.practiceNav{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:16px 0 0}.practiceNav>span{font-size:11px;color:#8c967b;margin-right:5px}.practiceNav button{padding:9px 12px;cursor:pointer;font-size:11px;border:1px solid #e0e3d2}.practiceNav button:hover{background:#e5edd9}.badges{display:flex;gap:12px;font-size:10px;color:#82976f;margin-left:auto}.practiceNav button:focus-visible{outline:2px solid #83a577;outline-offset:2px}@media(max-width:800px){.practiceHUD{bottom:10px;left:10px;padding:6px 9px;font-size:9px}.practiceNav{gap:6px}.badges{margin-left:0;width:100%}.practiceNav button{padding:8px;font-size:10px}.holdTrack{width:120px}}
 .eventClock{height:44px;font-variant-numeric:tabular-nums;font-weight:800;min-width:78px;justify-content:center;text-align:center}.eventClock.urgent{color:#b65a49;background:#fff0db}.story{position:absolute;inset:0;z-index:12;cursor:pointer;outline:none;background:#f5edda;overflow:hidden}.story>img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none}.story .storyMotion{-webkit-mask-image:linear-gradient(black 52%,transparent 70%);mask-image:linear-gradient(black 52%,transparent 70%);animation:cartoonRock .32s steps(2,end) infinite alternate;transform-origin:50% 72%;scale:1.003}.storyText{position:absolute;left:20.7%;top:81.3%;width:59%;height:10.5%;background:linear-gradient(#f7f7f7,#fafafa);display:flex;align-items:center;justify-content:flex-start;padding:0 1%;font-family:'ONE Mobile POP','Malgun Gothic',sans-serif;font-size:clamp(10px,1.45vw,24px);font-weight:400;font-synthesis:none;line-height:1.5;text-align:left;color:#303030;word-break:keep-all;border-radius:12px}.storyHint{position:absolute;bottom:1%;left:0;right:0;text-align:center;font-size:clamp(9px,.8vw,13px);color:#fff;text-shadow:0 1px 4px #333;background:#35334399;width:max-content;max-width:90%;margin:auto;padding:4px 12px;border-radius:20px}#launchScene{position:absolute;inset:0;z-index:11;background:#f9f3dd35;display:grid;place-items:center;cursor:pointer}#launchScene img{width:94%;animation:popIn .45s cubic-bezier(.2,1.5,.4,1) both}#launchWord{position:absolute;top:14%;font-size:clamp(20px,5vw,70px);color:#fff9d8;text-shadow:3px 4px #769b66,-2px -2px #769b66;font-weight:1000}.starting #launchWord{animation:popIn .3s both}@keyframes cartoonRock{from{transform:translateX(-1.2px) rotate(-.15deg)}to{transform:translateX(1.2px) rotate(.15deg)}}@keyframes popIn{from{opacity:0;transform:scale(.25) translateY(50px)}to{opacity:1;transform:scale(1) translateY(0)}}.game:fullscreen .story,.game:fullscreen #launchScene,.game:fullscreen #regionTransition{inset:auto;left:50%;top:50%;width:min(100vw,177.7778vh);height:min(100vh,56.25vw);transform:translate(-50%,-50%)}@media(prefers-reduced-motion:reduce){.story .storyMotion{animation:none}#launchScene img{animation:none}}@media(max-width:800px){.eventClock{height:30px;min-width:50px}.hudRight{gap:4px}}
 
-@font-face{font-family:'ONE Mobile POP';src:local('ONE Mobile POP'),local('ONE Mobile POP OTF'),local('Malgun Gothic'),local('Apple SD Gothic Neo'),local('Noto Sans CJK KR');font-weight:400;font-style:normal;font-display:swap}
+/* Legacy fake @font-face removed; genuine ONE-Mobile-POP.ttf @font-face defined in UI/UX v1.0 block below */
 
 #regionTransition{position:absolute;inset:0;z-index:10;background:transparent;display:grid;place-items:center;pointer-events:auto;overflow:hidden}#transitionCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.transitionCaption{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#54694b;background:#fffdf6e6;padding:22px 42px;border-radius:28px;box-shadow:0 10px 32px #4e634824;opacity:0;transform:scale(.96);transition:opacity .18s ease,transform .18s ease;pointer-events:none}.transitionCaption.visible{opacity:1;transform:scale(1)}#transitionName{font-size:clamp(24px,4vw,54px);font-family:'ONE Mobile POP',sans-serif}#regionTransition span{font-size:12px;letter-spacing:4px}#regionTransition small{font-size:14px}.hud .pill:first-child{max-width:55%}.hud #zoneTitle{font-size:clamp(10px,1vw,15px)}
 
@@ -672,19 +672,847 @@ body.mobile-game-landscape .encounterNav {
 .mobileControls[data-action-size="large"] .vbtn-action{width:86px;height:86px;font-size:18px}
 
 
-/* TEST31.4 RELEASE: all developer-only practice, HUD and QA panels are hidden.
-   Keep DOM nodes for legacy JS element lookups; only presentation is suppressed. */
-html body .practiceNav,
-html body .encounterNav,
-html body .practiceHUD,
-html body #debugHud,
-html body.mobile-game-landscape .practiceNav,
-html body.mobile-game-landscape .encounterNav,
-html body.mobile-game-landscape .practiceHUD,
-html body.is-mobile-device .practiceNav,
-html body.is-mobile-device .encounterNav,
-html body.is-mobile-device .practiceHUD {
+/* ============================================================================
+   TEST31.5 UI/UX MASTER REDESIGN v1.0 (Fairy-Tale Trickcal Style & Genuine ONE Mobile POP)
+   - Genuine `@font-face` using `./assets/fonts/ONE-Mobile-POP.ttf` (zero fake local fallbacks!)
+   - Asymmetric, high-readability Corner Floating HUD (Ribbon + Medallion + Leaf Health Tray)
+   - Open Storybook Title Screen (Dudu & Suin Forest background remain the hero; zero giant PPT boards!)
+   - Separated Pause Card (`data-modal-kind="pause"`) vs. Title Dock (`data-modal-kind="title"`)
+   - Atmospheric 7-Region Expedition World Map & Compact Non-Occluding Clear/Settings Modals
+   ============================================================================ */
+
+@font-face {
+  font-family: 'ONE Mobile POP';
+  src: url('./assets/fonts/ONE-Mobile-POP.ttf') format('truetype'),
+       url('./ONE Mobile POP.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-game: 'ONE Mobile POP', sans-serif;
+  --ui-forest-glass: rgba(22, 38, 28, 0.78);
+  --ui-forest-deep: rgba(15, 26, 20, 0.86);
+  --ui-cream-pill: rgba(255, 253, 244, 0.94);
+  --ui-leaf-primary: #58a64e;
+  --ui-leaf-shadow: #356b2f;
+  --ui-crayon-gold: #f5b82e;
+  --ui-crayon-shadow: #b87412;
+  --ui-pine-teal: #3d8067;
+  --ui-pine-shadow: #234d3d;
+  --ui-ink-dark: #243627;
+  --ui-ink-muted: #5a6e5c;
+  --ui-cream-text: #fffdf5;
+}
+
+/* Apply genuine ONE Mobile POP across all game UI layers without fake bold synthesis */
+body,
+.gameViewport,
+.gameViewport button,
+.gameViewport input,
+.gameViewport select,
+.hud,
+.pill,
+.playerHealthHud,
+#playerHealthCount,
+.practiceHUD,
+.overlay,
+.intro,
+.worldmapOverlay,
+.wmPanel,
+.mobileSettingsModal,
+.portraitWarning,
+#toast,
+#encounterStatus,
+.practiceNav,
+.challengeNav,
+.encounterNav {
+  font-family: var(--font-game) !important;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ----------------------------------------------------------------------------
+   1. In-Game HUD Hierarchy (Corner Floating Ribbon + Clock Medallion + Capsules)
+   ---------------------------------------------------------------------------- */
+.hud {
+  top: 14px;
+  left: 16px;
+  right: 16px;
+  align-items: center;
+  z-index: 6;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+/* Hide gameplay HUD cleanly during fullscreen story cutscenes / region transitions */
+body[data-game-state="opening"] .hud,
+body[data-game-state="ending"] .hud,
+body[data-game-state="cutscene"] .hud,
+body[data-game-state="opening"] .playerHealthHud,
+body[data-game-state="ending"] .playerHealthHud,
+body[data-game-state="cutscene"] .playerHealthHud,
+body[data-game-state="opening"] .practiceHUD,
+body[data-game-state="ending"] .practiceHUD,
+body[data-game-state="cutscene"] .practiceHUD {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* In 1-5 Suin Village, softly dim secondary top HUD when conversing with an NPC (§4-4) */
+body[data-world-stage="1-5"].npc-talking .hud {
+  opacity: 0.52;
+}
+
+/* Top-Left Stage Ribbon Badge (`.hudZonePill`) — distinct from white counter pills! */
+.hud .hudZonePill {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 9px !important;
+  padding: 5px 15px 5px 7px !important;
+  height: 38px;
+  background: var(--ui-forest-glass) !important;
+  border: 1.5px solid rgba(216, 243, 205, 0.55) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 12px rgba(10, 20, 14, 0.28) !important;
+  color: var(--ui-cream-text) !important;
+  backdrop-filter: blur(4px);
+}
+
+.hud .hudZonePill .tiny:not([hidden]) {
+  display: inline-flex !important;
+  align-items: center;
+  padding: 3px 9px;
+  background: linear-gradient(180deg, #ffd966 0%, #f0a824 100%);
+  color: #243627 !important;
+  border-radius: 999px;
+  font-size: 10.5px !important;
+  letter-spacing: 0.4px !important;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.hud .hudZonePill #zoneTitle {
+  font-size: 14.5px !important;
+  font-weight: 400 !important;
+  color: #fffdf6 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.2px;
+}
+
+@keyframes stagePulseAnim {
+  0% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(245, 184, 46, 0.7); }
+  50% { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(245, 184, 46, 0); }
+  100% { transform: scale(1); box-shadow: 0 4px 12px rgba(10, 20, 14, 0.28); }
+}
+.hud .hudZonePill.stage-enter-pulse {
+  animation: stagePulseAnim 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Top-Right Cluster (`.hudRight`) */
+.hudRight {
+  align-items: center !important;
+  gap: 7px !important;
+}
+
+/* Primary Timer Medallion (`.eventClock`) */
+.hud .eventClock:not([hidden]) {
+  height: 38px !important;
+  min-width: 76px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  background: var(--ui-cream-pill) !important;
+  border: 2px solid #e6b44c !important;
+  box-shadow: 0 3px 0 rgba(156, 108, 24, 0.32), 0 4px 10px rgba(0, 0, 0, 0.16) !important;
+  color: #273b29 !important;
+  font-size: 17.5px !important;
+  font-weight: 400 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.hud .eventClock.urgent {
+  background: #fff0ed !important;
+  border-color: #e05243 !important;
+  color: #c93326 !important;
+}
+
+/* Collectible Capsules (`#specialPill`, `.coins`) */
+.hud .specialCoins,
+.hud .coins {
+  height: 36px !important;
+  padding: 0 12px 0 9px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 252, 242, 0.90) !important;
+  border: 1.5px solid rgba(235, 198, 122, 0.85) !important;
+  box-shadow: 0 3px 0 rgba(120, 92, 34, 0.22) !important;
+  font-size: 15.5px !important;
+  font-weight: 400 !important;
+  gap: 5px !important;
+}
+
+.hud .specialCoins {
+  color: #c75b16 !important;
+}
+
+.hud .coins {
+  color: #b83d56 !important;
+  border-color: rgba(232, 150, 166, 0.85) !important;
+}
+
+.hud .specialCoins span,
+.hud .coins span {
+  font-size: 12px !important;
+  color: #6c7865 !important;
+}
+
+/* Utility Icon Buttons (`⚙️`, `♪`, `Ⅱ`, `⛶`) — Compact Circular Medallions */
+.hudRight button:not([hidden]) {
+  height: 36px !important;
+  min-width: 36px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  background: var(--ui-forest-glass) !important;
+  border: 1.5px solid rgba(232, 246, 224, 0.55) !important;
+  box-shadow: 0 3px 0 rgba(14, 24, 18, 0.35) !important;
+  color: #fffdf5 !important;
+  font-size: 13.5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.08s ease, background 0.12s ease;
+}
+
+.hudRight button:hover {
+  background: rgba(42, 68, 50, 0.92) !important;
+  transform: translateY(-1px);
+}
+
+.hudRight button:active {
+  transform: translateY(1px);
+}
+
+/* Neonsaurus 5-Icon Health Tray (`#playerHealthHud`) — High-Contrast Forest Leaf Tray */
+.playerHealthHud {
+  top: 58px !important;
+  right: 16px !important;
+  padding: 4px 12px 4px 9px !important;
+  gap: 8px !important;
+  background: rgba(20, 36, 26, 0.76) !important;
+  border: 1.5px solid rgba(182, 232, 168, 0.62) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 12px rgba(10, 20, 14, 0.28) !important;
+  backdrop-filter: blur(4px);
+}
+
+.playerHealthIcons {
+  gap: 3px !important;
+}
+
+.playerHealthIcons img {
+  width: 28px !important;
+  height: 28px !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.playerHealthIcons img.lost {
+  filter: grayscale(1) brightness(0.65) !important;
+  opacity: 0.28 !important;
+}
+
+#playerHealthCount {
+  font-family: var(--font-game) !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  color: #e9f7e1 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Bottom-Left Situational Action Indicator (`.practiceHUD`) — Compact & Non-Occluding */
+.practiceHUD {
+  bottom: 12px !important;
+  left: 16px !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 5px 12px !important;
+  background: rgba(20, 34, 25, 0.62) !important;
+  border: 1px solid rgba(210, 235, 200, 0.35) !important;
+  border-radius: 999px !important;
+  color: #e8f5e2 !important;
+  font-size: 11px !important;
+  backdrop-filter: blur(3px);
+}
+
+.practiceHUD #jumpInfo {
   display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
+}
+
+.practiceHUD .holdTrack {
+  width: 64px !important;
+  height: 5px !important;
+  background: rgba(255, 255, 255, 0.24) !important;
+}
+
+.practiceHUD .holdTrack i {
+  background: #ffd43b !important;
+}
+
+/* Hide keyboard practiceHUD on touch mobile devices */
+body.is-mobile-device .practiceHUD {
+  display: none !important;
+}
+
+/* Toast & Encounter Banner */
+#toast {
+  top: 104px !important;
+  font-size: 16px !important;
+  color: #fffdf4 !important;
+  text-shadow: 0 2px 6px rgba(15, 28, 18, 0.85), 0 0 2px rgba(15, 28, 18, 0.95) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   2. Title Screen / Pause Menu / Story Clear Overlay (`#overlay`)
+   - ZERO Giant Brown/Ivory PPT Boards!
+   - When `data-modal-kind="title"`, Dudu & Suin Forest canvas shine on the left/center
+     while the title logo and 3 mode buttons float as an adventure dock!
+   ---------------------------------------------------------------------------- */
+.overlay {
+  background: radial-gradient(circle at 34% 54%, rgba(18, 30, 22, 0.04) 0%, rgba(14, 24, 18, 0.42) 100%) !important;
+  backdrop-filter: none !important;
+  padding: 20px 26px !important;
+}
+
+/* Title Mode (`#overlay[data-modal-kind="title"]`): Split Hero Layout */
+.overlay[data-modal-kind="title"]:not([hidden]) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+}
+
+.overlay[data-modal-kind="title"] .intro {
+  width: min(410px, 46%) !important;
+  max-width: 420px !important;
+  background: rgba(22, 38, 28, 0.80) !important;
+  border: 2px solid rgba(215, 242, 202, 0.55) !important;
+  border-radius: 26px !important;
+  padding: 22px 24px 18px !important;
+  text-align: left !important;
+  color: #fffdf5 !important;
+  box-shadow: 0 18px 42px rgba(8, 16, 11, 0.44) !important;
+  backdrop-filter: blur(6px);
+}
+
+.overlay[data-modal-kind="title"] .intro .eyebrow {
+  display: inline-block;
+  padding: 4px 11px;
+  background: rgba(245, 184, 46, 0.22);
+  border: 1px solid rgba(245, 184, 46, 0.65);
+  border-radius: 999px;
+  color: #ffe07d !important;
+  font-size: 11px !important;
+  letter-spacing: 1px !important;
+}
+
+.overlay[data-modal-kind="title"] .intro h2 {
+  font-size: clamp(22px, 2.3vw, 29px) !important;
+  margin: 10px 0 8px !important;
+  color: #fffdf5 !important;
+  text-shadow: 0 2px 0 #1b3022, 0 4px 10px rgba(0, 0, 0, 0.35);
+  line-height: 1.2;
+}
+
+.overlay[data-modal-kind="title"] .intro p {
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  color: rgba(238, 247, 234, 0.90) !important;
+  margin-bottom: 4px !important;
+}
+
+.overlay[data-modal-kind="title"] .modeBtnRow {
+  flex-direction: column !important;
+  gap: 9px !important;
+  margin: 14px 0 12px !important;
+}
+
+.overlay[data-modal-kind="title"] .modeBtnRow > button:not([hidden]) {
+  flex: none !important;
+  width: 100% !important;
+  padding: 12px 16px !important;
+  border-radius: 16px !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  transition: transform 0.1s ease, filter 0.12s ease;
+}
+
+.overlay[data-modal-kind="title"] .modeBtnRow > button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+/* 1) Primary Story Button */
+.overlay .primary {
+  background: linear-gradient(180deg, #68b85e 0%, #468e3d 100%) !important;
+  color: #fffdf6 !important;
+  border: 2px solid #c9f2be !important;
+  box-shadow: 0 4px 0 #2b5c25, 0 6px 14px rgba(0, 0, 0, 0.24) !important;
+  border-radius: 16px !important;
+  font-weight: 400 !important;
+}
+
+/* 2) World Map Expedition Button */
+.overlay .worldmapPrimary {
+  background: linear-gradient(180deg, #4b6955 0%, #314739 100%) !important;
+  color: #e9f2eb !important;
+  border: 2px solid rgba(185, 214, 192, 0.55) !important;
+  box-shadow: 0 4px 0 #1d2b22, 0 6px 14px rgba(0, 0, 0, 0.22) !important;
+  border-radius: 16px !important;
+  font-weight: 400 !important;
+}
+
+.overlay .worldmapPrimary.unlocked {
+  background: linear-gradient(180deg, #f5b638 0%, #d48315 100%) !important;
+  color: #231806 !important;
+  border-color: #fff0b3 !important;
+  box-shadow: 0 4px 0 #8c5206, 0 6px 14px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 3) Challenge Forest Button */
+.overlay .challengePrimary {
+  background: linear-gradient(180deg, #44856c 0%, #2a5c48 100%) !important;
+  color: #fffdf6 !important;
+  border: 2px solid #a8e0c9 !important;
+  box-shadow: 0 4px 0 #193b2e, 0 6px 14px rgba(0, 0, 0, 0.22) !important;
+  border-radius: 16px !important;
+  font-weight: 400 !important;
+}
+
+.overlay .modalSubBtnRow {
+  justify-content: flex-start !important;
+  gap: 7px !important;
+  margin-bottom: 8px !important;
+}
+
+.overlay .modalSubBtnRow .secondary {
+  background: rgba(255, 253, 244, 0.14) !important;
+  border: 1.5px solid rgba(230, 245, 224, 0.42) !important;
+  color: #fffdf5 !important;
+  border-radius: 999px !important;
+  padding: 6px 13px !important;
+  font-size: 12px !important;
+  box-shadow: none !important;
+}
+
+.overlay .modalSubBtnRow .secondary:hover {
+  background: rgba(255, 253, 244, 0.26) !important;
+}
+
+.overlay[data-modal-kind="title"] .modalKeys {
+  font-size: 10.5px !important;
+  color: rgba(215, 232, 210, 0.78) !important;
+  letter-spacing: 0.3px !important;
+  border-top: 1px solid rgba(215, 232, 210, 0.18);
+  padding-top: 8px;
+}
+
+/* Pause Mode (`#overlay[data-modal-kind="pause"]`): Compact Focused Pause Card (§6-3) */
+.overlay[data-modal-kind="pause"]:not([hidden]),
+.overlay[data-modal-kind="result"]:not([hidden]) {
+  display: grid !important;
+  place-items: center !important;
+  background: rgba(14, 24, 18, 0.52) !important;
+  backdrop-filter: blur(3px) !important;
+}
+
+.overlay[data-modal-kind="pause"] .intro,
+.overlay[data-modal-kind="result"] .intro {
+  width: min(430px, 92%) !important;
+  background: rgba(255, 253, 245, 0.96) !important;
+  border: 2.5px solid #6b965e !important;
+  border-radius: 26px !important;
+  padding: 24px 28px 20px !important;
+  text-align: center !important;
+  color: #243627 !important;
+  box-shadow: 0 18px 44px rgba(10, 20, 14, 0.38) !important;
+}
+
+/* Hide World Map & Challenge launch buttons when inside Pause Menu so Pause stays clean and focused! */
+.overlay[data-modal-kind="pause"] #openWorldMapBtn,
+.overlay[data-modal-kind="pause"] #startChallengeBtn {
+  display: none !important;
+}
+
+.overlay[data-modal-kind="pause"] .intro .eyebrow,
+.overlay[data-modal-kind="result"] .intro .eyebrow {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #e6f2e2;
+  color: #386632 !important;
+  border-radius: 999px;
+  font-size: 11px !important;
+}
+
+.overlay[data-modal-kind="pause"] .intro h2,
+.overlay[data-modal-kind="result"] .intro h2 {
+  color: #233827 !important;
+  font-size: 25px !important;
+  margin: 10px 0 8px !important;
+}
+
+.overlay[data-modal-kind="pause"] .intro p,
+.overlay[data-modal-kind="result"] .intro p {
+  color: #495e4c !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+}
+
+.overlay[data-modal-kind="pause"] .modalSubBtnRow,
+.overlay[data-modal-kind="result"] .modalSubBtnRow {
+  justify-content: center !important;
+}
+
+.overlay[data-modal-kind="pause"] .modalSubBtnRow .secondary,
+.overlay[data-modal-kind="result"] .modalSubBtnRow .secondary {
+  background: #f0f5ec !important;
+  border: 1.5px solid #bdd4b5 !important;
+  color: #2f4a33 !important;
+}
+
+/* ----------------------------------------------------------------------------
+   3. World Map 7-Region Expedition UI (`#worldmapOverlay`, §6-2)
+   - Replaces the opaque #f9f5eb brown/ivory sheet with an atmospheric forest-glass
+     expedition map where region artwork is the hero!
+   ---------------------------------------------------------------------------- */
+.worldmapOverlay {
+  background: rgba(12, 22, 16, 0.68) !important;
+  backdrop-filter: blur(5px) !important;
+  padding: 14px 18px !important;
+}
+
+.wmPanel {
+  background: rgba(22, 36, 27, 0.84) !important;
+  border: 2px solid rgba(176, 218, 168, 0.48) !important;
+  border-radius: 24px !important;
+  padding: 14px 18px !important;
+  color: #fffdf5 !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.48) !important;
+}
+
+.wmHeader {
+  border-bottom: 1px solid rgba(185, 220, 180, 0.24) !important;
+  padding-bottom: 8px !important;
+}
+
+.wmEyebrow {
+  color: #ffd966 !important;
+  font-size: 10.5px !important;
+  letter-spacing: 1px !important;
+}
+
+.wmHeader h2 {
+  color: #fffdf5 !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.wmCarouselBtn {
+  background: rgba(255, 253, 244, 0.14) !important;
+  border: 1.5px solid rgba(210, 238, 202, 0.45) !important;
+  color: #fffdf5 !important;
+  border-radius: 999px !important;
+}
+
+.wmBackBtn {
+  background: linear-gradient(180deg, #589e50 0%, #3d7536 100%) !important;
+  border: 1.5px solid #c5edb8 !important;
+  color: #fffdf5 !important;
+  border-radius: 999px !important;
+  padding: 7px 15px !important;
+  font-weight: 400 !important;
+  box-shadow: 0 3px 0 #254d20 !important;
+}
+
+.wmCard {
+  background: rgba(30, 48, 36, 0.90) !important;
+  border: 2px solid rgba(162, 204, 156, 0.42) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.wmCard.playable {
+  border-color: #ffd43b !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 212, 59, 0.35) !important;
+}
+
+.wmCard.comingSoon {
+  opacity: 0.84 !important;
+  border-style: solid !important;
+  border-color: rgba(140, 165, 145, 0.32) !important;
+  background: rgba(20, 30, 24, 0.82) !important;
+}
+
+.wmCardThumbWrap {
+  max-height: 118px !important;
+}
+
+.wmCardThumbScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 18, 13, 0.35) 0%, transparent 40%, rgba(12, 22, 16, 0.82) 100%);
+  pointer-events: none;
+}
+
+.wmRegionIndex {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  font-size: 9.5px;
+  color: #ffe082;
+  background: rgba(14, 24, 18, 0.72);
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.4px;
+}
+
+.wmCardBody {
+  padding: 9px 11px 10px !important;
+  color: #fffdf5 !important;
+}
+
+.wmCardTitle {
+  color: #fffdf5 !important;
+  font-size: 14.5px !important;
+  font-weight: 400 !important;
+}
+
+.wmCardSub {
+  color: rgba(220, 236, 218, 0.84) !important;
+  font-size: 11px !important;
+}
+
+.wmCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px !important;
+}
+
+.wmMetaPill {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 253, 244, 0.14);
+  color: #e6f4e2;
+}
+
+.wmMetaGold {
+  background: rgba(245, 184, 46, 0.24);
+  color: #ffe07d;
+}
+
+.wmMetaClear {
+  background: rgba(88, 166, 78, 0.35);
+  color: #b7f5a8;
+}
+
+.wmMetaLocked {
+  background: rgba(255, 255, 255, 0.08);
+  color: #adbdb0;
+}
+
+/* World 1 Stage Select Cards (`.wmStageCard`) */
+.wmStageCard {
+  background: rgba(255, 253, 246, 0.95) !important;
+  border: 2px solid #8ab882 !important;
+  border-radius: 16px !important;
+  color: #243627 !important;
+}
+
+.wmStageCard.cleared {
+  border-color: #f5b82e !important;
+  background: #fffdf2 !important;
+}
+
+.wmStageName {
+  font-size: 14.5px !important;
+  font-weight: 400 !important;
+  color: #1f3624 !important;
+}
+
+.wmStagePlayBtn {
+  background: linear-gradient(180deg, #58a64e 0%, #3d7d35 100%) !important;
+  border-radius: 12px !important;
+  font-weight: 400 !important;
+  box-shadow: 0 3px 0 #265220 !important;
+}
+
+/* World 1 Clear Modal (`.wmClearPanel`) — Compact Celebratory Banner Card (§6-4) */
+.wmPanel.wmClearPanel {
+  max-width: 500px !important;
+  background: rgba(255, 253, 245, 0.96) !important;
+  border: 3px solid #f5b82e !important;
+  border-radius: 26px !important;
+  padding: 22px 26px !important;
+  color: #243627 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
+}
+
+.wmPanel.wmClearPanel .wmHeader {
+  border-bottom-color: rgba(107, 150, 94, 0.25) !important;
+  justify-content: center !important;
+}
+
+.wmPanel.wmClearPanel .wmEyebrow {
+  color: #d48315 !important;
+}
+
+.wmPanel.wmClearPanel .wmHeader h2 {
+  color: #243627 !important;
+  text-shadow: none !important;
+  font-size: 23px !important;
+}
+
+.wmPanel.wmClearPanel .wmClearSummary {
+  color: #3c5240 !important;
+  font-size: 13.5px !important;
+}
+
+.wmPanel.wmClearPanel .secondary {
+  background: #eef5ea !important;
+  border: 1.5px solid #bdd4b5 !important;
+  color: #2c4730 !important;
+  border-radius: 999px !important;
+  padding: 8px 15px !important;
+}
+
+/* ----------------------------------------------------------------------------
+   4. Common Game Options Modal (`#mobileSettingsModal`, §6-3)
+   ---------------------------------------------------------------------------- */
+.mobileSettingsCard {
+  background: rgba(255, 253, 246, 0.97) !important;
+  border: 2.5px solid #7aa370 !important;
+  border-radius: 24px !important;
+  width: min(440px, 94%) !important;
+  padding: 18px 22px !important;
+  box-shadow: 0 18px 44px rgba(10, 20, 14, 0.42) !important;
+}
+
+.mobileSettingsHeader strong {
+  font-size: 17px !important;
+  font-weight: 400 !important;
+  color: #243627 !important;
+}
+
+.mobileControlSectionTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #edf5e8;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: #355439 !important;
+}
+
+body:not(.is-mobile-device) .mobileControlSectionTitle::after {
+  content: '터치 기기 접속 시 자동 표시';
+  font-size: 10px;
+  color: #6b806c;
+}
+
+/* Strictly guarantee mobile virtual controls NEVER appear on PC windowed mode (§7) */
+body:not(.is-mobile-device) #mobileControls {
+  display: none !important;
+}
+
+/* Responsive adaptation for mobile landscape (844x390 / 740x320) */
+@media (max-height: 500px), (max-width: 920px) {
+  .overlay[data-modal-kind="title"] .intro {
+    width: min(350px, 54%) !important;
+    padding: 12px 16px !important;
+    border-radius: 18px !important;
+  }
+  .overlay[data-modal-kind="title"] .intro h2 {
+    font-size: 18px !important;
+    margin: 4px 0 !important;
+  }
+  .overlay[data-modal-kind="title"] .intro p {
+    font-size: 10.5px !important;
+    line-height: 1.35 !important;
+  }
+  .overlay[data-modal-kind="title"] .modeBtnRow {
+    gap: 5px !important;
+    margin: 8px 0 !important;
+  }
+  .overlay[data-modal-kind="title"] .modeBtnRow > button {
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+    border-radius: 11px !important;
+  }
+  .hud .hudZonePill {
+    height: 28px !important;
+    padding: 3px 10px 3px 5px !important;
+  }
+  .hud .hudZonePill .tiny {
+    font-size: 8.5px !important;
+    padding: 2px 6px !important;
+  }
+  .hud .hudZonePill #zoneTitle {
+    font-size: 11px !important;
+  }
+  .hud .eventClock,
+  .hud .specialCoins,
+  .hud .coins,
+  .hudRight button {
+    height: 28px !important;
+    font-size: 11.5px !important;
+  }
+  .playerHealthHud {
+    top: 40px !important;
+    right: 10px !important;
+    padding: 2px 8px !important;
+  }
+  .playerHealthIcons img {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  #playerHealthCount {
+    font-size: 11px !important;
+  }
+}
+
+/* Strict [hidden] attribute enforcement — guarantees any hidden element is unconditionally display: none */
+[hidden],
+.overlay[hidden],
+.overlay[data-modal-kind][hidden],
+.overlay[data-modal-kind="title"][hidden],
+.overlay[data-modal-kind="pause"][hidden],
+.overlay[data-modal-kind="result"][hidden],
+.story[hidden],
+#launchScene[hidden],
+#regionTransition[hidden],
+.debugHud[hidden],
+.mobileSettingsModal[hidden],
+.challengeHud[hidden],
+.challengeNav[hidden],
+.eventClock[hidden],
+.hud .eventClock[hidden],
+.specialCoins[hidden],
+.hud .specialCoins[hidden],
+.coins[hidden],
+.hud .coins[hidden],
+.practiceNav[hidden],
+.encounterNav[hidden],
+.backStoryModalBtn[hidden],
+.portraitWarning[hidden],
+.playerHealthHud[hidden],
+.worldmapOverlay[hidden],
+.wmNoticeBanner[hidden],
+#restart[hidden] {
+  display: none !important;
 }
