@@ -51,6 +51,15 @@
   let _lastZoneTitle = '';
   let _zoneHighlightTimer = 0;
 
+  // Challenge clear/completion must use the result card, not the title lobby.
+  // Keep one state classifier for both the per-frame sync and modal() wrapper.
+  function resolveOverlayModalKind(st) {
+    if (st === 'paused') return 'pause';
+    if (st === 'eventDone' || st === 'won' ||
+        st === 'challengeStageClear' || st === 'challengeComplete') return 'result';
+    return 'title';
+  }
+
   function syncUiModeAttributes() {
     const body = document.body;
     if (!body) return;
@@ -70,7 +79,7 @@
       if (st === 'playing' || st === 'opening' || st === 'ending' || st === 'popup' || (wmOv && !wmOv.hidden)) {
         if (!ov.hidden) ov.hidden = true;
       }
-      const kind = (st === 'paused') ? 'pause' : ((st === 'eventDone' || st === 'won') ? 'result' : 'title');
+      const kind = resolveOverlayModalKind(st);
       if (ov.dataset.modalKind !== kind) {
         ov.dataset.modalKind = kind;
       }
@@ -167,12 +176,7 @@
     const ov = $id('overlay');
     if (!ov) return;
     const st = (typeof state !== 'undefined') ? state : 'ready';
-    let kind = 'title';
-    if (st === 'paused') {
-      kind = 'pause';
-    } else if (st === 'eventDone' || st === 'won') {
-      kind = 'result';
-    }
+    const kind = resolveOverlayModalKind(st);
     ov.dataset.modalKind = kind;
     syncUiModeAttributes();
   }

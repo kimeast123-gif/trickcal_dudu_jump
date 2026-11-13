@@ -1567,3 +1567,9 @@ main {
     border-radius: 12px !important;
   }
 }
+
+/* CHFIX1: Keep challenge result/next-stage action focused; no mode-launchers. */
+body[data-game-mode="challenge"] #overlay[data-modal-kind="result"] #openWorldMapBtn,
+body[data-game-mode="challenge"] #overlay[data-modal-kind="result"] #startChallengeBtn {
+  display: none !important;
+}
