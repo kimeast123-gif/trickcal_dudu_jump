@@ -129,6 +129,7 @@
   function mountTitleLobbyDOM() {
     const overlay = $id('overlay');
     if (!overlay || $id('duduTitleLobby')) return;
+    if (!overlay.dataset.modalKind) overlay.dataset.modalKind = 'title';
 
     const lobbyEl = document.createElement('div');
     lobbyEl.className = 'titleLobby';
@@ -914,7 +915,7 @@
       }
 
       const gameSt = (typeof state !== 'undefined') ? state : 'ready';
-      if (!document.hidden && !_isTransitioning && gameSt !== 'loading') {
+      if (!document.hidden && !_isTransitioning) {
         if (!isSubModalOpen() && _lobbyState === 'titleModal') {
           _lobbyState = lobby?.classList.contains('is-night') ? 'titleDark' : 'titleReady';
         }

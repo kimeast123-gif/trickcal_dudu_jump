@@ -245,13 +245,13 @@ body[data-game-state="ready"] .practiceHUD {
    into sparse diagonal margins to the LEFT of the menu buttons. No waterfall. */
 /* v5 §0-4 & §4.2 (L08): 4 Diagonal Lanes inside safe right region (never clipped by diagonal divider),
    18.5s ~ 23.2s cycle (within 16~24s spec), drifting smoothly top-left -> bottom-right (+X, +Y). */
-.stickerTrackA { --lane-x: 68.2%; --lane-y: 2%;  --lane-duration: 18.5s; --lane-delay: -3.5s; }
-.stickerTrackB { --lane-x: 63.4%; --lane-y: 22%; --lane-duration: 21.6s; --lane-delay: -11.2s; }
-.stickerTrackC { --lane-x: 59.0%; --lane-y: 44%; --lane-duration: 19.8s; --lane-delay: -7.4s; }
-.stickerTrackD { --lane-x: 54.8%; --lane-y: 66%; --lane-duration: 23.2s; --lane-delay: -15.6s; }
+.stickerTrackA { --lane-x: 67.5%; --lane-y: 0%;  --lane-duration: 16.5s; --lane-delay: -2.0s; }
+.stickerTrackB { --lane-x: 62.8%; --lane-y: 20%; --lane-duration: 19.2s; --lane-delay: -9.5s; }
+.stickerTrackC { --lane-x: 58.2%; --lane-y: 42%; --lane-duration: 17.8s; --lane-delay: -5.8s; }
+.stickerTrackD { --lane-x: 54.0%; --lane-y: 63%; --lane-duration: 20.6s; --lane-delay: -13.4s; }
 .stickerMotion {
   position: absolute;
-  left: calc(var(--lane-x) + var(--slot, 0) * 3.6%);
+  left: calc(var(--lane-x) + var(--slot, 0) * 3.8%);
   top: calc(var(--lane-y) + var(--slot, 0) * 9.5%);
   width: clamp(44px, 4.8vw, 64px);
   height: clamp(44px, 4.8vw, 64px);
@@ -264,13 +264,13 @@ body[data-game-state="ready"] .practiceHUD {
   animation-delay: calc(var(--lane-delay) + var(--sticker-delay, 0s));
   will-change: transform, opacity;
 }
-/* Pure top-left -> bottom-right (+X, +Y) drift so stickers never cross left into the diagonal seam */
+/* Visible, smooth top-left -> bottom-right (+X, +Y) diagonal drift */
 @keyframes lobbyStickerDriftV42 {
-  0%   { transform: translate3d(0px, 0px, 0); opacity: 0; }
-  12%  { opacity: 0.84; }
-  74%  { opacity: 0.84; }
-  92%  { opacity: 0.10; }
-  100% { transform: translate3d(44px, 88px, 0); opacity: 0; }
+  0%   { transform: translate3d(0px, -14px, 0) rotate(-6deg); opacity: 0; }
+  10%  { opacity: 0.92; }
+  50%  { transform: translate3d(52px, 80px, 0) rotate(6deg); opacity: 0.95; }
+  88%  { opacity: 0.88; }
+  100% { transform: translate3d(104px, 172px, 0) rotate(-4deg); opacity: 0; }
 }
 
 .lobbyStickerItem {
@@ -441,20 +441,19 @@ body[data-game-state="ready"] .practiceHUD {
   width: 100%;
   height: 100%;
   transform-origin: 50% 93%;
-  animation: heroMasterCuteWobbleV5 3.2s steps(1, end) infinite;
+  animation: heroMasterCuteWobbleV5 2.8s steps(1, end) infinite;
   will-change: transform;
 }
 
-/* [v5 §0-7 & §4.1 L07] Low-FPS (steps) cute left-right wobble anchored at feet (50% 93%):
-   rotate -1.2deg <-> +1.2deg, translateX ±3.5px, translateY 0 ~ -1.2px, 3.2s period */
+/* [v5 §0-7 & §4.1 L07] Crisp 6-step low-FPS (steps) cute left-right wobble anchored at feet (50% 93%) */
 @keyframes heroMasterCuteWobbleV5 {
-  0%      { transform: translate3d(0px, 0px, 0) rotate(0deg); }
-  16.67%  { transform: translate3d(-3.5px, -1.2px, 0) rotate(-1.2deg); }
-  33.33%  { transform: translate3d(-1.5px, 0px, 0) rotate(-0.5deg); }
-  50.00%  { transform: translate3d(0px, -1.0px, 0) rotate(0deg); }
-  66.67%  { transform: translate3d(3.5px, -1.2px, 0) rotate(1.2deg); }
-  83.33%  { transform: translate3d(1.5px, 0px, 0) rotate(0.5deg); }
-  100%    { transform: translate3d(0px, 0px, 0) rotate(0deg); }
+  0%      { transform: translate3d(-4px, 0px, 0) rotate(-1.5deg); }
+  16.67%  { transform: translate3d(-2px, -2px, 0) rotate(-0.6deg) scale(1.008); }
+  33.33%  { transform: translate3d(0px, -2.5px, 0) rotate(0deg) scale(1.012); }
+  50.00%  { transform: translate3d(4px, 0px, 0) rotate(1.5deg); }
+  66.67%  { transform: translate3d(2px, -2px, 0) rotate(0.6deg) scale(1.008); }
+  83.33%  { transform: translate3d(0px, -1.5px, 0) rotate(0deg) scale(1.005); }
+  100%    { transform: translate3d(-4px, 0px, 0) rotate(-1.5deg); }
 }
 
 /* `.heroGlowLayer`: Cloned identical-alpha silhouette behind `.heroBodyLayer` for Night Glow (§3-4, §4-2) */
@@ -1174,47 +1173,17 @@ body[data-game-state="ready"] .practiceHUD {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .titleLobby,
-  .lobbyHero,
-  .lobbyHeroBreathWrap,
-  .lobbyKwangBadge,
-  .lobbyLogo,
-  .stickerTrackA,
-  .stickerTrackB,
-  .stickerTrackC,
-  .stickerTrackD,
-  .stickerMotion,
-  .lobbySparkleNode,
-  .lobbyDiagonalDivider,
-  .lobbyMenuBtnWrap,
-  .lobbySlideLayer {
-    animation: none !important;
-    transition: none !important;
-  }
-  .lobbyMenuBtnWrap,
-  .stickerMotion {
-    opacity: 0.82 !important;
-    transform: none !important;
-  }
-}
-
 .returnLobbyOptBtn[hidden],
 .returnLobbyConfirmModal[hidden],
 .lobbyPanelHost[hidden] {
   display: none !important;
 }
 
-/* V4.1: An image-to-image dissolve is not physical movement.
-   Keep a calm crossfade for accessibility users while disabling zoom and
-   decorative motion through the reduced-motion rules above. */
+/* [v5 §4.3 & §4.4 L14] Keep lobby animations, 7-scene cross-dissolve, and 35s Day/Night transitions
+   active even when Windows OS "Show animations in Windows" is turned off (prefers-reduced-motion: reduce),
+   only toning down fast exit/entry scale jumps. */
 @media (prefers-reduced-motion: reduce) {
   .lobbySlideLayer {
-    animation: none !important;
-    transform: none !important;
     transition: opacity var(--lobby-slide-dissolve-ms) ease-in-out !important;
-  }
-  .lobbySlideLayer.is-visible {
-    transform: none !important;
   }
 }
