@@ -1452,6 +1452,9 @@ function drawCloudTransitionFrame(progress,phase){
  }
 }
 function beginRegionTransition(target,back=false){
+ if (levels[target] && typeof ensureWorldRegionAssets === 'function') {
+  ensureWorldRegionAssets(levels[target].id);
+ }
  if(state!=='playing'||transition||journeyResult)return;
  resetPendingSpecialCoins();
  routeDone[levelIndex]=!back||routeDone[levelIndex];
@@ -1573,16 +1576,95 @@ function practiceRegion(n){
  }
  state='playing';updateRegionHud();keys.clear();canvas.focus();
 }
+const _worldAssetPromises = new Map();
+function _loadSingleWorldImg(store, key, url, failSoft = true) {
+ if (store[key]) return Promise.resolve(store[key]);
+ if (_worldAssetPromises.has(url)) return _worldAssetPromises.get(url);
+ const p = new Promise((ok, no) => {
+  const im = new Image();
+  im.onload = async () => {
+   try { if (im.decode) await im.decode(); } catch (e) {}
+   store[key] = im;
+   ok(im);
+  };
+  im.onerror = (err) => {
+   if (failSoft) { console.warn('[AssetLoader] Soft-fail on:', url); ok(null); }
+   else no(err);
+  };
+  im.src = url;
+ });
+ _worldAssetPromises.set(url, p);
+ return p;
+}
+
+const REGION_WORLD_BG_MAP = {
+ forest: ['forest-bg'],
+ village: ['village-bg'],
+ monatium_a: ['city-bg'],
+ monatium_b: ['city-bg'],
+ erpien_a: ['erpien-gate', 'erpien-city'],
+ erpien_b: ['erpien-city', 'erpien-home'],
+ world1: ['w1-meadow-bg', 'w1-forest-bg', 'w1-tree-interior-placeholder', 'w1-deep-forest-bg', 'w1-forest-exit-bg', 'village-bg']
+};
+
+const REGION_TERRAIN_PREFIX_MAP = {
+ forest: ['forest/'],
+ village: ['village/', 'forest/'],
+ monatium_a: ['monatium/'],
+ monatium_b: ['monatium/'],
+ erpien_a: ['erpien/'],
+ erpien_b: ['erpien/'],
+ world1: ['forest/', 'village/']
+};
+
+function ensureWorldRegionAssets(regionId) {
+ const bgs = REGION_WORLD_BG_MAP[regionId] || worldFiles;
+ const prefixes = REGION_TERRAIN_PREFIX_MAP[regionId] || ['forest/', 'village/', 'monatium/', 'erpien/'];
+ const tasks = [];
+ for (const bg of bgs) {
+  tasks.push(_loadSingleWorldImg(worldImages, bg, 'assets/world/' + bg + '.webp?v=30', true));
+ }
+ for (const k of TERRAIN_ASSET_LIST) {
+  if (prefixes.some(pf => k.startsWith(pf))) {
+   tasks.push(_loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=30', true));
+  }
+ }
+ if (regionId === 'monatium_a' || regionId === 'monatium_b') {
+  for (const s of STRUCTURE_ASSET_LIST) {
+   tasks.push(_loadSingleWorldImg(structureImages, s, 'assets/structure/' + s + '.webp?v=30', true));
+  }
+ }
+ if (typeof ensureNpcRegionAssets === 'function') {
+  tasks.push(ensureNpcRegionAssets(regionId));
+ }
+ return Promise.all(tasks);
+}
+window.ensureWorldRegionAssets = ensureWorldRegionAssets;
+
+function preloadRemainingWorldAssetsInBackground() {
+ const schedule = ['village', 'monatium_a', 'erpien_a', 'erpien_b', 'world1'];
+ schedule.forEach((reg, idx) => {
+  setTimeout(() => { ensureWorldRegionAssets(reg); }, 180 + idx * 220);
+ });
+ setTimeout(() => {
+  for (let i = 0; i < TRANSITION_FRAME_COUNT; i++) {
+   _loadSingleWorldImg(transitionFrames, i, `assets/transition/cloud_${String(i).padStart(2,'0')}.webp?v=16`, true);
+  }
+  for (const s of STRUCTURE_ASSET_LIST) {
+   _loadSingleWorldImg(structureImages, s, 'assets/structure/' + s + '.webp?v=30', true);
+  }
+  for (const bg of worldFiles) {
+   _loadSingleWorldImg(worldImages, bg, 'assets/world/' + bg + '.webp?v=30', true);
+  }
+  for (const k of TERRAIN_ASSET_LIST) {
+   _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=30', true);
+  }
+ }, 400);
+}
+window.preloadRemainingWorldAssetsInBackground = preloadRemainingWorldAssetsInBackground;
+
 async function loadWorldImages(){
- const bgLoads=worldFiles.map(n=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{worldImages[n]=im;ok();};im.onerror=no;im.src='assets/world/'+n+'.webp?v=30';}));
- const terrainLoads=TERRAIN_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{terrainImages[k]=im;ok();};im.onerror=no;im.src='assets/terrain/'+k+'.webp?v=30';}));
- const structureLoads=STRUCTURE_ASSET_LIST.map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{structureImages[k]=im;ok();};im.onerror=no;im.src='assets/structure/'+k+'.webp?v=30';}));
- const colLoads=['king_candy','golden_crayon'].map(k=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{collectibleImages[k]=im;ok();};im.onerror=no;im.src='assets/collectibles/'+k+'.png?v=16';}));
- const cloudLoads=Array.from({length:TRANSITION_FRAME_COUNT},(_,i)=>new Promise(ok=>{
-  const im=new Image();
-  im.onload=()=>{transitionFrames[i]=im;ok();};
-  im.onerror=()=>ok();
-  im.src=`assets/transition/cloud_${String(i).padStart(2,'0')}.webp?v=16`;
- }));
- await Promise.all([...bgLoads,...terrainLoads,...structureLoads,...colLoads,...cloudLoads]);
+ // Tier 1 (Boot): Load collectibles + Stage 1 (forest) background & forest terrain tiles first
+ const colLoads = ['king_candy','golden_crayon'].map(k => _loadSingleWorldImg(collectibleImages, k, 'assets/collectibles/' + k + '.png?v=16', false));
+ await Promise.all([...colLoads, ensureWorldRegionAssets('forest')]);
 }

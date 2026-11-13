@@ -5,7 +5,8 @@
 */
 'use strict';
 const DuduAnalytics = (() => {
-  const conf = window.DUDU_RELEASE_CONFIG || {};
+  const conf = window.DUDU_RELEASE || window.DUDU_RELEASE_CONFIG || {};
+  if (conf.analyticsEnabled !== true) return Object.freeze({prepareRun(){},runStart(){},stageComplete(){},stageEnter(){},fall(){},retry(){},hit(){},special(){},end(){}});
   const token = String(conf.posthogProjectToken || '').trim();
   const host = String(conf.posthogHost || 'https://us.i.posthog.com').replace(/\/+$/, '');
   const active = token.startsWith('phc_') && /^https:\/\/(us|eu)\.i\.posthog\.com$/.test(host);
@@ -41,7 +42,7 @@ const DuduAnalytics = (() => {
   function prepareRun(){run=null;stageStart=null;stageIndex=0;Object.keys(stageTimes).forEach(k=>delete stageTimes[k]);counters.falls=0;counters.retries=0;counters.hits=0;}
   function runStart(){
     run=genId(); stageIndex=0; stageStart=(typeof eventElapsed!=='undefined'?eventElapsed:0);
-    emit('game_started',{limit_seconds:900});
+    emit('game_started',{limit_seconds:1500});
     emit('stage_entered',{stage:stages[0],stage_index:0});
   }
   function stageComplete(index){

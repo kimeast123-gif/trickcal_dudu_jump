@@ -1516,3 +1516,54 @@ body:not(.is-mobile-device) #mobileControls {
 #restart[hidden] {
   display: none !important;
 }
+
+
+/* ============================================================================
+   [DUDU-AUDIT-261113] UI-01 Lobby-First Viewport Fit & CFG-01 Release Mode Guard
+   - Ensures the full 16:9 #game frame and all 5 lobby buttons fit 100% inside
+     initial 1280x720, 800x450, and 844x390 viewports without vertical clipping.
+   - Hides developer practice/jump bars (.practiceNav, .encounterNav) when
+     `data-release-mode="true"` is active on html/body.
+   ============================================================================ */
+html[data-release-mode="true"] .practiceNav,
+html[data-release-mode="true"] .encounterNav,
+body[data-release-mode="true"] .practiceNav,
+body[data-release-mode="true"] .encounterNav {
+  display: none !important;
+}
+
+header {
+  height: 34px !important;
+  padding: 0 2.5% !important;
+}
+
+main {
+  padding: 6px 2% 10px !important;
+  max-width: 1440px !important;
+}
+
+.heading {
+  display: none !important;
+}
+
+.game {
+  width: min(100%, calc((100dvh - 52px) * 16 / 9)) !important;
+  max-height: calc(100dvh - 52px) !important;
+  margin: 0 auto !important;
+  border-width: 3px !important;
+}
+
+@media (max-height: 520px) {
+  header {
+    display: none !important;
+  }
+  main {
+    padding: 2px 1% !important;
+  }
+  .game {
+    width: min(100%, calc((100dvh - 6px) * 16 / 9)) !important;
+    max-height: calc(100dvh - 6px) !important;
+    border-width: 2px !important;
+    border-radius: 12px !important;
+  }
+}

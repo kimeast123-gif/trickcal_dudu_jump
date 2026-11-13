@@ -4,9 +4,7 @@
     local('ONE Mobile POP'),
     local('ONE Mobile POP OTF'),
     local('ONEMobilePOP'),
-    url('assets/fonts/ONE-Mobile-POP.woff2') format('woff2'),
-    url('assets/fonts/ONE-Mobile-POP.ttf') format('truetype'),
-    url('ONE Mobile POP.ttf') format('truetype');
+    url('assets/fonts/ONE-Mobile-POP.ttf') format('truetype');
   font-weight: 400 800;
   font-style: normal;
   font-display: swap;

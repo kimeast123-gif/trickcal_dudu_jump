@@ -34,7 +34,7 @@
       }
       if(mode==='story'&&playing&&typeof securedSpecialEvent!=='undefined'){
         const count=securedSpecialEvent.size;
-        if(count>lastCrayons)capture('special_items_secured',{count,total:9});
+        if(count>lastCrayons)capture('special_items_secured',{count,total:(typeof TOTAL_SPECIAL_COINS==='number'&&TOTAL_SPECIAL_COINS>0)?TOTAL_SPECIAL_COINS:12});
         lastCrayons=count;
       }
       if(mode==='story'&&typeof journeyResult==='string'&&journeyResult&&journeyResult!==lastEnd){

@@ -573,7 +573,13 @@ function updateHud(){
 function modal(tag,title,text,button){$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;$('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';}
 function pause(){if(state==='playing'){if(typeof ensurePaused==='function')ensurePaused('manual');else{state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}}else if(state==='paused'){if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;start();}}
 function start(){if(state==='loading')return;if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;if(state==='won')reset(true);state='playing';if(window.__mobileUIState){window.__mobileUIState.pausedByPortrait=false;window.__mobileUIState.lastPauseReason=null;}$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();if(typeof syncMobileViewMode==='function')syncMobileViewMode();last=performance.now();acc=0;}
-$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};$('retry').onclick=()=>chooseSection(checkpoint);for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=toggleSound;setupSoundVolumeSlider();$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
+$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};function triggerActiveModeRetry(){
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'&&typeof retryChallengeStage==='function'){retryChallengeStage();return;}
+ if(typeof gameMode!=='undefined'&&gameMode==='world'&&typeof retryWorld1StageCheckpoint==='function'){retryWorld1StageCheckpoint();return;}
+ chooseSection(checkpoint);
+}
+window.triggerActiveModeRetry=triggerActiveModeRetry;
+$('retry').onclick=()=>triggerActiveModeRetry();for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=toggleSound;setupSoundVolumeSlider();$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
 window.addEventListener('keydown',e=>{
  if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code))e.preventDefault();
  if(e.code==='F3'&&!e.repeat){debugMetrics.enabled=!debugMetrics.enabled;$('debugHud').hidden=!debugMetrics.enabled;return;}
@@ -588,7 +594,7 @@ window.addEventListener('keydown',e=>{
   return;
  }
  if(e.code==='Escape'&&!e.repeat){pause();return;}if(state!=='playing')return;
- if(e.code==='KeyR'&&!e.repeat){chooseSection(checkpoint);return;}
+ if(e.code==='KeyR'&&!e.repeat){triggerActiveModeRetry();return;}
  keys.add(e.code);
  if(p.guardStun>0)return;
  if(e.code==='Space'&&!e.repeat){
@@ -1054,7 +1060,16 @@ function frame(now){
   if(dh){dh.hidden=false;dh.textContent=`FPS: ${debugMetrics.fps} | physSteps: ${debugMetrics.physicsUpdates} | pos: (${Math.round(p.x)}, ${Math.round(p.y)})
 cam: (${Math.round(rCam)}, ${Math.round(rCamY)}) | prof: ${debugMetrics.cameraProfile} | candy(lvl): ${lvlCandy} | crayon: ${activeSpecialSet().size}/${TOTAL_SPECIAL_COINS}`;}
  }
- draw();
+ const lobbyCovering = (state==='ready' || state==='loading') && typeof window.__isDuduLobbyCoveringCanvas === 'function' && window.__isDuduLobbyCoveringCanvas();
+ if (!lobbyCovering) {
+  window.__readyCanvasDrawnOnce = false;
+  window.__canvasActualDraws = (window.__canvasActualDraws || 0) + 1;
+  draw();
+ } else if (!window.__readyCanvasDrawnOnce && state==='ready') {
+  window.__readyCanvasDrawnOnce = true;
+  window.__canvasActualDraws = (window.__canvasActualDraws || 0) + 1;
+  draw();
+ }
  requestAnimationFrame(frame);
 }
 async function load(){try{Object.assign(meta,{
@@ -1071,4 +1086,11 @@ async function load(){try{Object.assign(meta,{
   "rest_happy_1": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
   "rest_happy_2": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
   "rest_happy_8": {"frames": 33, "fps": 24, "cols": 8, "facing": 1}
-});const duduLoads=Promise.all(Object.keys(meta).map(name=>new Promise((ok,no)=>{let im=new Image();im.onload=()=>{images[name]=im;ok();};im.onerror=no;im.src='assets/'+name+'.png?v=30';})));const fontLoad=(document.fonts&&document.fonts.load)?document.fonts.load('16px "ONE Mobile POP"').catch(()=>{}):Promise.resolve();await Promise.all([duduLoads,fontLoad,loadWorldImages(),loadNpcImages(),typeof preloadEventImages==='function'?preloadEventImages():Promise.resolve()]);resetJourney();initVoiceClips();state='ready';$('start').disabled=false;$('start').textContent='이벤트 시작하기  →';updateHud();}catch(e){$('start').textContent='새로고침해 다시 불러오기';$('start').disabled=false;$('start').onclick=()=>location.reload();$('modalText').textContent='두두 모션을 불러오지 못했어요. 다시 시도해 주세요.';console.error(e);}}
+});const coreDuduKeys=['idle','run','jump','spin'];
+const loadDuduKey=(name)=>new Promise((ok,no)=>{if(images[name])return ok(images[name]);let im=new Image();im.onload=()=>{images[name]=im;ok(im);};im.onerror=no;im.src='assets/'+name+'.png?v=30';});
+const duduCoreLoads=Promise.all(coreDuduKeys.map(loadDuduKey));
+const fontLoad=(document.fonts&&document.fonts.load)?document.fonts.load('16px "ONE Mobile POP"').catch(()=>{}):Promise.resolve();
+await Promise.all([duduCoreLoads,fontLoad,loadWorldImages(),loadNpcImages(),typeof preloadEventImages==='function'?preloadEventImages():Promise.resolve()]);
+resetJourney();initVoiceClips();state='ready';$('start').disabled=false;$('start').textContent='이벤트 시작하기  →';updateHud();
+if(typeof preloadRemainingWorldAssetsInBackground==='function')preloadRemainingWorldAssetsInBackground();
+setTimeout(()=>{Object.keys(meta).forEach(k=>{if(!images[k])loadDuduKey(k).catch(()=>{});});},250);}catch(e){$('start').textContent='새로고침해 다시 불러오기';$('start').disabled=false;$('start').onclick=()=>location.reload();$('modalText').textContent='두두 모션을 불러오지 못했어요. 다시 시도해 주세요.';console.error(e);}}

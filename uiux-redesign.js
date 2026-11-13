@@ -369,7 +369,7 @@
       const extraProgress = card.id === 'world1_beastforest'
         ? `<div class="wmCardMeta"><span class="wmMetaPill">진행 ${clearedCount}/5</span><span class="wmMetaPill wmMetaGold">황금 크레파스 ${totalCols}/2</span>${w1.regionCleared ? '<span class="wmMetaPill wmMetaClear">★완주</span>' : ''}</div>`
         : (card.id === 'story_replay'
-          ? `<div class="wmCardMeta"><span class="wmMetaPill">6개 지역</span><span class="wmMetaPill">왕사탕 135</span><span class="wmMetaPill wmMetaGold">크레파스 9</span></div>`
+          ? `<div class="wmCardMeta"><span class="wmMetaPill">6개 지역</span><span class="wmMetaPill">왕사탕 135</span><span class="wmMetaPill wmMetaGold">크레파스 12</span></div>`
           : `<div class="wmCardMeta"><span class="wmMetaPill wmMetaLocked">${card.isPlaceholderArt ? '미공개 탐험지 · 준비 중' : '준비 중'}</span></div>`);
 
       return `

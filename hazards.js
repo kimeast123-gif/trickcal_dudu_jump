@@ -2392,8 +2392,52 @@ function practiceEncounter(key){
  if(typeof syncRenderCoords==='function')syncRenderCoords();
  state='playing';updateRegionHud();keys.clear();canvas.focus();
 }
+const _npcAssetPromises = new Map();
+function _loadSingleNpcImg(name) {
+ if (npcImages[name]) return Promise.resolve(npcImages[name]);
+ if (_npcAssetPromises.has(name)) return _npcAssetPromises.get(name);
+ const p = new Promise((ok) => {
+  const im = new Image();
+  im.onload = async () => {
+   try { if (im.decode) await im.decode(); } catch (e) {}
+   npcImages[name] = im;
+   ok(im);
+  };
+  im.onerror = () => { console.warn('[NPC] Failed to load asset:', name); ok(null); };
+  im.src = 'assets/npc/' + name + '.webp?v=30';
+ });
+ _npcAssetPromises.set(name, p);
+ return p;
+}
+
+const REGION_NPC_MAP = {
+ forest: ['tentacle_idle'],
+ village: ['diana_idle', 'diana_happy', 'kommy_melong', 'kommy_happy', 'kommy_idle', 'butter_idle', 'butter_happy'],
+ monatium_a: ['guard1_idle', 'guard1_move', 'guard1_warn', 'guard2_idle', 'guard2_move', 'guard2_warn', 'president', 'vice', 'president_cutout', 'vice_cutout', 'bukgyeong_building', 'bukgyeong_door_l', 'bukgyeong_door_r'],
+ monatium_b: ['guard1_idle', 'guard1_move', 'guard1_warn', 'guard2_idle', 'guard2_move', 'guard2_warn', 'elena_idle', 'amelia_idle', 'canna_idle'],
+ erpien_a: ['fairy1_idle', 'fairy1_move', 'fairy1_warn', 'fairy2_idle', 'fairy2_move', 'fairy2_warn', 'mayo_idle', 'mayo_move', 'mayo_warn', 'mayo_attack'],
+ erpien_b: ['marie_idle', 'marie_move', 'marie_throw', 'ner_idle', 'ner_happy', 'joanne_idle', 'joanne_happy', 'skea_eat2', 'skea_panic', 'crepe_idle', 'crepe_happy', 'speaki_maid_idle', 'speaki_maid_happy'],
+ world1: ['tentacle_idle', 'diana_idle', 'diana_happy', 'kommy_idle', 'kommy_happy', 'butter_idle', 'butter_happy', 'rufo_idle', 'rufo_happy', 'tig_hero_idle', 'tig_hero_happy', 'beni_idle', 'beni_happy', 'momo_idle', 'momo_happy', 'bana_idle', 'bana_happy', 'ran_idle', 'ran_happy']
+};
+
+function ensureNpcRegionAssets(regionId) {
+ const list = REGION_NPC_MAP[regionId];
+ if (!list) {
+  const extraAssets = ['president','vice','president_cutout','vice_cutout','bukgyeong_building','bukgyeong_door_l','bukgyeong_door_r','tentacle_idle'];
+  return Promise.all([...Object.keys(npcMeta), ...extraAssets].map(_loadSingleNpcImg));
+ }
+ return Promise.all(list.map(_loadSingleNpcImg));
+}
+window.ensureNpcRegionAssets = ensureNpcRegionAssets;
+
 async function loadNpcImages(){
- const extraAssets=['president','vice','president_cutout','vice_cutout','bukgyeong_building','bukgyeong_door_l','bukgyeong_door_r','tentacle_idle'];
- await Promise.all([...Object.keys(npcMeta),...extraAssets].map(n=>new Promise((ok)=>{const im=new Image();im.onload=()=>{npcImages[n]=im;ok();};im.onerror=()=>{console.warn('[NPC] Failed to load asset:',n);ok();};im.src='assets/npc/'+n+'.webp?v=30';})));
+ // Tier 1 (Boot): Only load Stage 1 (forest) NPC/hazard sheet first; preload remaining NPCs in Tier 2 background
+ await ensureNpcRegionAssets('forest');
+ setTimeout(() => {
+  const extraAssets = ['president','vice','president_cutout','vice_cutout','bukgyeong_building','bukgyeong_door_l','bukgyeong_door_r','tentacle_idle'];
+  for (const n of [...Object.keys(npcMeta), ...extraAssets]) {
+   _loadSingleNpcImg(n);
+  }
+ }, 550);
 }
 for(const key of Object.keys(encounterPresets)){const btn=$('practice-'+key);if(btn)btn.onclick=()=>practiceEncounter(key);}

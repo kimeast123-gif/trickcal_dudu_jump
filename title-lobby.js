@@ -49,6 +49,12 @@
   let _isReturningToLobby = false;
   let _toastTimer = 0;
   let _preloadedSlideSet = new Set();
+  const _slideUseJpgFallback = new Set();
+  function getSlideBgCssUrl(sc) {
+    if (!sc) return '';
+    const src = _slideUseJpgFallback.has(sc.id) ? sc.jpg : sc.webp;
+    return `url('${src}')`;
+  }
 
   const ICONS_SVG = {
     play: `<svg viewBox="0 0 44 44" aria-hidden="true">
@@ -151,11 +157,11 @@
       <div class="lobbyDemoPanel" id="lobbyDemoPanel">
         <div class="lobbyDemo" id="lobbyDemo" data-scene-count="${DEMO_SCENES.length}">
           <div class="lobbySlideLayer is-visible" id="lobbySlideLayerA"
-               style="background-image: url('${DEMO_SCENES[0].webp}'), url('${DEMO_SCENES[0].jpg}')"
+               style="background-image: ${getSlideBgCssUrl(DEMO_SCENES[0])}"
                data-scene-id="${DEMO_SCENES[0].id}"
                data-stage-code="${DEMO_SCENES[0].stageCode}"></div>
           <div class="lobbySlideLayer" id="lobbySlideLayerB"
-               style="background-image: url('${DEMO_SCENES[1].webp}'), url('${DEMO_SCENES[1].jpg}')"
+               style="background-image: ${getSlideBgCssUrl(DEMO_SCENES[1])}"
                data-scene-id="${DEMO_SCENES[1].id}"
                data-stage-code="${DEMO_SCENES[1].stageCode}"></div>
         </div>
@@ -506,6 +512,11 @@
     if (!sc || _preloadedSlideSet.has(sc.id)) return;
     _preloadedSlideSet.add(sc.id);
     const im = new Image();
+    im.onerror = () => {
+      _slideUseJpgFallback.add(sc.id);
+      const fb = new Image();
+      fb.src = sc.jpg;
+    };
     im.src = sc.webp;
   }
 
@@ -520,7 +531,7 @@
     const incoming = (_activeSlideBuffer === 'A') ? layerB : layerA;
     const outgoing = (_activeSlideBuffer === 'A') ? layerA : layerB;
 
-    incoming.style.backgroundImage = `url('${sc.webp}'), url('${sc.jpg}')`;
+    incoming.style.backgroundImage = getSlideBgCssUrl(sc);
     incoming.setAttribute('data-scene-id', sc.id);
     incoming.setAttribute('data-stage-code', sc.stageCode);
     incoming.classList.add('is-visible');
@@ -599,6 +610,13 @@
     _visibleLobbyElapsedMs = flag ? LOBBY_CONFIG.THEME_PERIOD_MS + 100 : 0;
     _idleElapsedMs = _visibleLobbyElapsedMs;
     setLobbyNightMode(Boolean(flag));
+  };
+
+  window.__isDuduLobbyCoveringCanvas = () => {
+    const lobby = $id('duduTitleLobby');
+    if (!lobby || lobby.hidden || lobby.classList.contains('lobby-paused')) return false;
+    if (_isTransitioning || lobby.classList.contains('is-leaving') || lobby.classList.contains('is-wiping')) return false;
+    return isLobbyCurrentlyActive();
   };
 
   window.__getLobbyRuntimeState = () => ({
@@ -945,7 +963,7 @@
   function startLobbyController() {
     const checkMount = () => {
       if (_lobbyMounted) return;
-      if (typeof state !== 'undefined' && state !== 'loading') {
+      if ($id('overlay')) {
         _lobbyMounted = true;
         mountTitleLobbyDOM();
         preloadInitialAssets();

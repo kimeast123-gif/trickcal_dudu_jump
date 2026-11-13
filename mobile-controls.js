@@ -68,10 +68,14 @@ function pressInput(code, sourceId = 'touch') {
       if (state === 'playing') dashRequest = true;
     } else if (code === 'KeyR') {
       if (state !== 'playing') return;
-      if (typeof gameMode !== 'undefined' && gameMode === 'challenge') {
-        if (typeof retryChallengeStage === 'function') retryChallengeStage();
-      } else {
-        if (typeof chooseSection === 'function') chooseSection(checkpoint);
+      if (typeof triggerActiveModeRetry === 'function') {
+        triggerActiveModeRetry();
+      } else if (typeof gameMode !== 'undefined' && gameMode === 'challenge' && typeof retryChallengeStage === 'function') {
+        retryChallengeStage();
+      } else if (typeof gameMode !== 'undefined' && gameMode === 'world' && typeof retryWorld1StageCheckpoint === 'function') {
+        retryWorld1StageCheckpoint();
+      } else if (typeof chooseSection === 'function') {
+        chooseSection(checkpoint);
       }
     } else if (code === 'Escape') {
       if (typeof pause === 'function') pause();

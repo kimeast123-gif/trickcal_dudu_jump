@@ -1482,6 +1482,7 @@ function resolveStageEntrySpawn(stg, entryRoute) {
 }
 
 function loadWorld1Stage(stageIdx, opts = {}) {
+  if (typeof ensureWorldRegionAssets === 'function') ensureWorldRegionAssets('world1');
   const idx = Math.max(0, Math.min(world1Stages.length - 1, stageIdx));
   activeWorldStageIndex = idx;
   const stg = world1Stages[idx];
@@ -1743,6 +1744,7 @@ function closeWorldMapOverlayUI() {
 window.closeWorldMapOverlayUI = closeWorldMapOverlayUI;
 
 function openWorldMapMenu(opts = {}) {
+  if (typeof ensureWorldRegionAssets === 'function') ensureWorldRegionAssets('world1');
   const save = loadWorldMapSave();
   if (!save.storyClearConfirmed && ((window.DUDU_RELEASE && window.DUDU_RELEASE.releaseMode === true) || !opts.forceDevOpen)) {
     if (typeof notify === 'function') {
