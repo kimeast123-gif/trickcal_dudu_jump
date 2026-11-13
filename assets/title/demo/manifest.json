@@ -1,0 +1,86 @@
+{
+  "version": "v5.0",
+  "description": "TEST31.5 Real-Map 7-Scene Cross-Dissolve Slideshow Manifest (§2.4 P1-04)",
+  "holdMs": 4000,
+  "dissolveMs": 850,
+  "totalCycleMs": 33950,
+  "scenes": [
+    {
+      "order": 1,
+      "id": "scene-01",
+      "stageCode": "STORY-SEC-1",
+      "title": "수인숲 초입 (튜토리얼 산책길)",
+      "mode": "story",
+      "srcWebp": "assets/title/demo/scene-01.webp",
+      "srcJpg": "assets/title/demo/scene-01.jpg",
+      "holdMs": 4000,
+      "dissolveMs": 850
+    },
+    {
+      "order": 2,
+      "id": "scene-02",
+      "stageCode": "STORY-SEC-2",
+      "title": "수인마을 (다이야·코미·버터 마을 광장)",
+      "mode": "story",
+      "srcWebp": "assets/title/demo/scene-02.webp",
+      "srcJpg": "assets/title/demo/scene-02.jpg",
+      "holdMs": 4000,
+      "dissolveMs": 850
+    },
+    {
+      "order": 3,
+      "id": "scene-03",
+      "stageCode": "STORY-SEC-3",
+      "title": "모나티엄 A (엘프 첨단 연구지구)",
+      "mode": "story",
+      "srcWebp": "assets/title/demo/scene-03.webp",
+      "srcJpg": "assets/title/demo/scene-03.jpg",
+      "holdMs": 4000,
+      "dissolveMs": 850
+    },
+    {
+      "order": 4,
+      "id": "scene-04",
+      "stageCode": "STORY-SEC-4",
+      "title": "모나티엄 B (고가도로와 드론 타워)",
+      "mode": "story",
+      "srcWebp": "assets/title/demo/scene-04.webp",
+      "srcJpg": "assets/title/demo/scene-04.jpg",
+      "holdMs": 4000,
+      "dissolveMs": 850
+    },
+    {
+      "order": 5,
+      "id": "scene-05",
+      "stageCode": "STORY-SEC-5",
+      "title": "에르피엔 A (요정 왕국 정원과 분수대)",
+      "mode": "story",
+      "srcWebp": "assets/title/demo/scene-05.webp",
+      "srcJpg": "assets/title/demo/scene-05.jpg",
+      "holdMs": 4000,
+      "dissolveMs": 850
+    },
+    {
+      "order": 6,
+      "id": "scene-06",
+      "stageCode": "WORLD1-1-2",
+      "title": "월드1 수인숲 나들이 — 1-2 거목과 다리의 숲",
+      "mode": "world",
+      "srcWebp": "assets/title/demo/scene-06.webp",
+      "srcJpg": "assets/title/demo/scene-06.jpg",
+      "holdMs": 4000,
+      "dissolveMs": 850
+    },
+    {
+      "order": 7,
+      "id": "scene-07",
+      "stageCode": "WORLD1-1-3",
+      "title": "월드1 수인숲 나들이 — 1-3 깊은 숲의 갈림길",
+      "mode": "world",
+      "srcWebp": "assets/title/demo/scene-07.webp",
+      "srcJpg": "assets/title/demo/scene-07.jpg",
+      "holdMs": 4000,
+      "dissolveMs": 850
+    }
+  ]
+}

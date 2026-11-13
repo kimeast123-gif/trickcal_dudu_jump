@@ -16,7 +16,8 @@
     ASSET_VERSION: 'V4_STANDALONE',
     HERO_MASTER_DAY_SRC: 'assets/title/hero-dudu-master.png?v=V4_2_MINIMAL',
     HERO_MASTER_NIGHT_SRC: 'assets/title/hero-dudu-night-master.png?v=V4_2_MINIMAL',
-    IDLE_DARK_MS: 35000,          // 35s real inactivity -> Night Glow mode (§3-4, B04)
+    THEME_PERIOD_MS: 35000,       // v5 §0-5 & §4.4: 35s input-independent Day<->Night cycle
+    IDLE_DARK_MS: 35000,          // Legacy alias preserved for compatibility
     SLIDE_HOLD_MS: 4000,          // 4.0s full visibility hold per stage scene (C01)
     SLIDE_DISSOLVE_MS: 850,       // 0.85s cross-dissolve between scenes (C01)
     LEAVE_DURATION_MS: 600,       // 600ms menu exit + center wipe
@@ -36,7 +37,10 @@
   ];
 
   let _lobbyState = 'titleEntering';
+  let _visibleLobbyElapsedMs = 0;
   let _idleElapsedMs = 0;
+  let _themeTransitionCount = 0;
+  let _lastThemeNight = false;
   let _lastTickAt = performance.now();
   let _slideIdx = 0;
   let _slideAccumMs = 0;
@@ -114,7 +118,7 @@
   // Four distinct low-density diagonal lanes. No duplicated sequence and no vertical waterfall.
   // Each lane has three objects: Dudu sticker / star / moon, staggered in time.
   function buildDiagonalLaneHtml(seq) {
-    return seq.slice(0, 2).map((item, i) => {
+    return seq.slice(0, 3).map((item, i) => {
       const html = item === 'star' ? ICONS_SVG.starSticker
         : item === 'moon' ? ICONS_SVG.moonSticker
         : buildStickerItemHtml(item, (item % 2) ? 'st-tilt-left' : 'st-tilt-right');
@@ -133,9 +137,9 @@
     lobbyEl.setAttribute('aria-label', '두두의 폴짝폴짝 대모험 메인 타이틀 로비');
 
     const trackASeq = [1, 'star'];
-    const trackBSeq = [2, 'moon'];
-    const trackCSeq = [3, 'star'];
-    const trackDSeq = [5, 'moon'];
+    const trackBSeq = ['moon', 2];
+    const trackCSeq = [3, 'star', 4];
+    const trackDSeq = ['moon', 5];
 
     // [§4-2 B02] Target Layer Architecture:
     // `.lobbyDemoPanel` and `.lobbyRightField` hold ONLY the diagonal background clips.
@@ -576,23 +580,33 @@
   function setLobbyNightMode(enableNight) {
     const lobby = $id('duduTitleLobby');
     if (!lobby) return;
-    if (enableNight) {
+    const nextNight = Boolean(enableNight);
+    if (nextNight) {
       lobby.classList.add('is-night');
       if (_lobbyState === 'titleReady') _lobbyState = 'titleDark';
     } else {
       lobby.classList.remove('is-night');
       if (_lobbyState === 'titleDark') _lobbyState = 'titleReady';
     }
+    if (nextNight !== _lastThemeNight) {
+      _lastThemeNight = nextNight;
+      _themeTransitionCount += 1;
+    }
   }
 
   window.__setLobbyNightModeForQA = (flag) => {
-    _idleElapsedMs = flag ? LOBBY_CONFIG.IDLE_DARK_MS + 100 : 0;
+    _visibleLobbyElapsedMs = flag ? LOBBY_CONFIG.THEME_PERIOD_MS + 100 : 0;
+    _idleElapsedMs = _visibleLobbyElapsedMs;
     setLobbyNightMode(Boolean(flag));
   };
 
   window.__getLobbyRuntimeState = () => ({
     lobbyState: _lobbyState,
-    idleElapsedMs: Math.round(_idleElapsedMs),
+    visibleLobbyElapsedMs: Math.round(_visibleLobbyElapsedMs),
+    idleElapsedMs: Math.round(_visibleLobbyElapsedMs),
+    themePeriodMs: LOBBY_CONFIG.THEME_PERIOD_MS,
+    themeCycleIndex: Math.floor(_visibleLobbyElapsedMs / LOBBY_CONFIG.THEME_PERIOD_MS),
+    themeTransitionCount: _themeTransitionCount,
     heroMasterSrc: $id('lobbyHeroDayImg')?.getAttribute('src') || '',
     heroParentId: $id('lobbyHero')?.parentElement?.id || '',
     slideIdx: _slideIdx,
@@ -602,16 +616,14 @@
     isPaused: Boolean($id('duduTitleLobby')?.classList.contains('lobby-paused')),
     isActive: isLobbyCurrentlyActive(),
     nextSlideInMs: Math.max(0, Math.round(LOBBY_CONFIG.SLIDE_HOLD_MS + LOBBY_CONFIG.SLIDE_DISSOLVE_MS - _slideAccumMs)),
-    nightInMs: Math.max(0, Math.round(LOBBY_CONFIG.IDLE_DARK_MS - _idleElapsedMs)),
+    nightInMs: Math.max(0, Math.round(LOBBY_CONFIG.THEME_PERIOD_MS - (_visibleLobbyElapsedMs % LOBBY_CONFIG.THEME_PERIOD_MS))),
     prefersReducedMotion: Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   });
 
   function resetIdleTimerOnInput() {
-    _idleElapsedMs = 0;
-    const lobby = $id('duduTitleLobby');
-    if (lobby && lobby.classList.contains('is-night')) {
-      setLobbyNightMode(false);
-    }
+    // v5 Master Spec §0-5 & §4.4 (L03~L05):
+    // Mouse move, hover, button clicks, keyboard focus, and opening/closing sub-modals
+    // MUST NEVER reset or alter the 35-second periodic Day<->Night timer!
   }
 
   function openLobbyKeyHelp() {
@@ -667,7 +679,9 @@
     const lobby = $id('duduTitleLobby');
     if (!lobby) return;
     _isTransitioning = false;
+    _visibleLobbyElapsedMs = 0;
     _idleElapsedMs = 0;
+    _lastThemeNight = false;
     _lastTickAt = performance.now();
     setLobbyNightMode(false);
     lobby.classList.remove('is-leaving', 'is-wiping', 'lobby-paused');
@@ -681,18 +695,8 @@
     // Treat deliberate input as activity, but a hovering/moving mouse as night-mode wake only.
     // This preserves the original 'move to wake day mode' behavior without constantly
     // resetting the ambient timer while the user browses the lobby.
-    const activityEvents = ['pointerdown', 'touchstart', 'keydown', 'wheel'];
-    activityEvents.forEach((evName) => {
-      window.addEventListener(evName, () => {
-        if (isLobbyCurrentlyActive()) resetIdleTimerOnInput();
-      }, { passive: true, capture: true });
-    });
-    window.addEventListener('pointermove', () => {
-      const lobby = $id('duduTitleLobby');
-      if (isLobbyCurrentlyActive() && lobby?.classList.contains('is-night')) {
-        resetIdleTimerOnInput();
-      }
-    }, { passive: true, capture: true });
+    // v5 Master Spec §0-5 & §4.4: Day<->Night toggles strictly every 35,000ms of visible lobby time
+    // regardless of pointermove, hover, pointerdown, touchstart, keydown, or wheel events.
 
     const allBtns = lobbyEl.querySelectorAll('.lobbyCapsuleBtn');
     allBtns.forEach((btn) => {
@@ -872,6 +876,24 @@
     preloadSlideIndex(1);
   }
 
+  function advanceLobbyTimersBy(dt) {
+    // 1. Advance 7-Scene Real-Map Cross-Dissolve Slideshow (`4000ms` hold + `850ms` dissolve = `4850ms` step)
+    const slideStepMs = LOBBY_CONFIG.SLIDE_HOLD_MS + LOBBY_CONFIG.SLIDE_DISSOLVE_MS;
+    _slideAccumMs += dt;
+    while (_slideAccumMs >= slideStepMs) {
+      _slideAccumMs -= slideStepMs;
+      advanceDemoSlide(_slideIdx + 1);
+    }
+
+    // 2. Advance 35-second periodic Day <-> Night theme cycle (`THEME_PERIOD_MS = 35000`)
+    // Strictly independent of mouse move, hover, button clicks, keyboard focus, or sub-modal open/close!
+    _visibleLobbyElapsedMs += dt;
+    _idleElapsedMs = _visibleLobbyElapsedMs;
+    const shouldBeNight = (Math.floor(_visibleLobbyElapsedMs / LOBBY_CONFIG.THEME_PERIOD_MS) % 2) === 1;
+    setLobbyNightMode(shouldBeNight);
+  }
+  window.__advanceLobbyTimeForQA = advanceLobbyTimersBy;
+
   let _wasActiveLastFrame = false;
   function lobbyTick(now) {
     const dt = Math.min(250, Math.max(0, now - _lastTickAt));
@@ -891,34 +913,20 @@
         lobby.classList.remove('lobby-paused');
       }
 
-      // V4.1: Always advance the scene sequence while the lobby is visible.
-      // The reduced-motion setting may suppress decorative movement via CSS,
-      // but must not freeze all seven game backgrounds on the first image.
-      if (!document.hidden) {
-        // Advance 7-Scene Real-Map Cross-Dissolve Slideshow (`4000ms` hold + `850ms` dissolve = `4850ms` step)
-        const slideStepMs = LOBBY_CONFIG.SLIDE_HOLD_MS + LOBBY_CONFIG.SLIDE_DISSOLVE_MS;
-        _slideAccumMs += dt;
-        if (_slideAccumMs >= slideStepMs) {
-          _slideAccumMs %= slideStepMs;
-          advanceDemoSlide(_slideIdx + 1);
-        }
-      }
-
       const gameSt = (typeof state !== 'undefined') ? state : 'ready';
-      if (!document.hidden && !isSubModalOpen() && !_isTransitioning && gameSt !== 'loading') {
-        if (_lobbyState === 'titleModal') _lobbyState = 'titleReady';
-        _idleElapsedMs += dt;
-        if (_idleElapsedMs >= LOBBY_CONFIG.IDLE_DARK_MS && !lobby?.classList.contains('is-night')) {
-          setLobbyNightMode(true);
+      if (!document.hidden && !_isTransitioning && gameSt !== 'loading') {
+        if (!isSubModalOpen() && _lobbyState === 'titleModal') {
+          _lobbyState = lobby?.classList.contains('is-night') ? 'titleDark' : 'titleReady';
         }
-      } else {
-        _idleElapsedMs = 0;
+        advanceLobbyTimersBy(dt);
       }
     } else {
       if (_wasActiveLastFrame) {
         _wasActiveLastFrame = false;
         _lobbyState = 'titleHidden';
+        _visibleLobbyElapsedMs = 0;
         _idleElapsedMs = 0;
+        _lastThemeNight = false;
         if (lobby) {
           lobby.classList.add('lobby-paused');
           lobby.classList.remove('is-leaving', 'is-wiping', 'is-night');
