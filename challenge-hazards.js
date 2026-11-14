@@ -8,7 +8,12 @@ let challengeGuards = [];
 let challengeBarriers = [];
 let challengeTurrets = [];
 let challengeDarts = [];
+let challengeSpikes = [];
 let challengeHazardClock = 0;
+window.__challengeSpikes = () => challengeSpikes;
+window.__challengeGuards = () => challengeGuards;
+window.__challengeTurrets = () => challengeTurrets;
+window.__challengeDarts = () => challengeDarts;
 
 function chPrngUnit(runSeed, attemptIndex, seedOffset, shotIndex) {
   let h = ((runSeed * 2654435761) ^ (attemptIndex * 1013904223) ^ (seedOffset * 374761393) ^ (shotIndex * 668265263)) | 0;
@@ -28,9 +33,10 @@ function resetChallengeHazards() {
   challengeBarriers = [];
   challengeTurrets = [];
   challengeDarts = [];
+  challengeSpikes = [];
 
   if (typeof gameMode === 'undefined' || gameMode !== 'challenge') return;
-  const st = challengeLevels[challengeStageIndex];
+  const st = (typeof getActiveChallengeStage === 'function') ? getActiveChallengeStage() : challengeLevels[challengeStageIndex];
   if (!st) return;
 
   const runSeed = (typeof challengeState !== 'undefined' ? challengeState.runSeed : 101) || 101;
@@ -39,8 +45,8 @@ function resetChallengeHazards() {
   for (const gd of (st.guards || [])) {
     const pl = platforms.find(a => a.id === gd.platformId);
     const edgeMargin = gd.edgeMargin || 26;
-    const minX = pl ? (pl.x + edgeMargin) : gd.startX - 80;
-    const maxX = pl ? (pl.x + pl.w - edgeMargin) : gd.startX + 80;
+    const minX = (typeof gd.minX === 'number') ? gd.minX : (pl ? (pl.x + edgeMargin) : gd.startX - 80);
+    const maxX = (typeof gd.maxX === 'number') ? gd.maxX : (pl ? (pl.x + pl.w - edgeMargin) : gd.startX + 80);
     const y = pl ? pl.y : 420;
     challengeGuards.push({
       ...gd,
@@ -51,10 +57,31 @@ function resetChallengeHazards() {
       maxX,
       face: gd.dir || -1,
       state: 'move',
-      stateTime: 0,
+      stateTime: (typeof gd.phase === 'number') ? gd.phase : 0,
       clip: 'move',
-      anim: 0,
+      anim: (typeof gd.phase === 'number') ? gd.phase : 0,
       danger: true
+    });
+  }
+
+  for (const sd of (st.spikes || [])) {
+    const pl = platforms.find(a => a.id === sd.platformId);
+    if (!pl) continue;
+    const orient = sd.orientation === 'down' ? 'down' : 'up';
+    const sx = pl.x + (sd.localX || 0);
+    const sy = orient === 'down' ? (pl.y + 38) : pl.y;
+    challengeSpikes.push({
+      ...sd,
+      platformRef: pl,
+      orientation: orient,
+      x: sx,
+      y: sy,
+      prevX: sx,
+      prevY: sy,
+      halfW: sd.halfW || 7,
+      hitH: sd.hitH || 22,
+      displaySize: sd.displaySize || 54,
+      anim: 0
     });
   }
 
@@ -94,22 +121,24 @@ function resetChallengeHazards() {
 // and consumes air-dash & double-jump during stagger so players cannot damage-boost forward!
 // Gate G1 (Section 2.2): Story-matched guard/barrier knockback profile (~320 px/s, 1.5s stun, margin-aware,
 // preserving normal jump/air-dash recovery rules without forced p.jumps=2 or p.airDashUsed=true lockout!)
-function applyChallengeKnockback(sourceX, baseForce = 320, stunSec = 1.50, reason = 'guard', forcedDir = null) {
+function applyChallengeKnockback(sourceX, baseForce = 416, stunSec = 1.50, reason = 'guard', forcedDir = null) {
   if (p.invulnerable > 0 || state !== 'playing') return false;
-  const dir = forcedDir !== null ? forcedDir : (p.x >= sourceX ? 1 : -1);
-  let force = baseForce || 320;
-  if (p.ground && p.on) {
-    const margin = dir < 0 ? p.x - p.on.x - 26 : p.on.x + p.on.w - p.x - 26;
-    if (margin > 0) force = Math.min(force, Math.max(175, margin / 0.26));
+  let dir = forcedDir !== null ? forcedDir : (p.x >= sourceX ? 1 : -1);
+  // On narrow Floor 1 spiked platforms (w <= 160), push toward the nearest platform edge so 1st-floor hits reliably drop the player off!
+  if (forcedDir === null && p.on && p.on.w <= 160) {
+    const platCenter = p.on.x + p.on.w * 0.5;
+    dir = (p.x < platCenter) ? -1 : 1;
   }
+  // [피드백 5 반영]: 모든 장애물 피격 시 넉백 거리 30% 증가 (기존 margin 안전 클램프 제거 및 넉백 지속시간 0.26s -> 0.34s 확대)
+  let force = baseForce || 416;
   p.face = -dir;
   p.invulnerable = 2.15;
   p.guardStun = stunSec;
-  p.guardKnock = 0.26;
+  p.guardKnock = 0.34;
   p.knock = 0;
   p.knockVX = dir * force;
   p.vx = p.knockVX;
-  p.vy = -230;
+  p.vy = -245;
   p.dash = 0;
   p.buffer = 0;
   p.jumpHeld = false;
@@ -190,7 +219,7 @@ function updateChallengeHazards(dt) {
     const overlapY = (p.y >= g.y - 54) && (p.y - 56 <= g.y + 4);
     if (overlapX && overlapY && p.invulnerable <= 0) {
       const pushSourceX = (Math.abs(p.x - g.x) > 4) ? g.x : (p.x - g.face * 10);
-      applyChallengeKnockback(pushSourceX, g.knockVX || 320, 1.50, 'guard');
+      applyChallengeKnockback(pushSourceX, g.knockVX || 416, 1.50, 'guard');
     }
   }
 
@@ -213,7 +242,7 @@ function updateChallengeHazards(dt) {
       const hitX = Math.abs(p.x - b.x) < (b.width * 0.5 + 16);
       const hitY = (p.y >= b.y - b.height) && (p.y - 54 <= b.y + 4);
       if (hitX && hitY) {
-        applyChallengeKnockback(b.x + 4, b.knockVX || 320, 1.50, 'barrier');
+        applyChallengeKnockback(b.x + 4, b.knockVX || 416, 1.50, 'barrier');
       }
     }
   }
@@ -302,11 +331,55 @@ function updateChallengeHazards(dt) {
       if (hitX && hitY) {
         d.hit = true;
         const pushDir = d.vx > 0 ? 1 : -1;
-        applyChallengeKnockback(d.x, 320, 1.50, 'mayo_dart', pushDir);
+        applyChallengeKnockback(d.x, 416, 1.50, 'mayo_dart', pushDir);
       }
     }
   }
   challengeDarts = challengeDarts.filter(d => !d.hit);
+
+  // 5. Update Stage 2-2 Spikes / Thorny Sprouts (Top & Underside — never culled or reset off-camera!)
+  for (let i = 0; i < challengeSpikes.length; i++) {
+    const s = challengeSpikes[i];
+    s.anim += dt;
+    if (s.platformRef) {
+      s.prevX = s.x;
+      s.prevY = s.y;
+      s.x = s.platformRef.x + (s.localX || 0);
+      s.y = s.orientation === 'down' ? (s.platformRef.y + 38) : s.platformRef.y;
+    }
+    if (p.invulnerable > 0) continue;
+
+    if (s.orientation === 'down') {
+      const pLeft = p.x - 13, pRight = p.x + 13;
+      const sLeft = s.x - s.halfW, sRight = s.x + s.halfW;
+      if (pRight < sLeft || pLeft > sRight) continue;
+      // Underside spike hanging below platform bottom `s.y` (`s.y + 2 .. s.y + s.hitH`)
+      const pTop = p.y - 60, pBot = p.y - 14;
+      const sTop = s.y + 2, sBot = s.y + s.hitH;
+      if (p.y > s.y + 8 && pBot >= sTop && pTop <= sBot) {
+        const cfg = window.D2_2_HAZARD_CONFIG || {};
+        applyChallengeKnockback(s.x, cfg.spikeKnockForce || 416, cfg.spikeStunSec || 1.10, 'under_spike');
+      }
+    } else {
+      // [피드백 1 반영]:
+      // 1) 상면 착지/이동 판정 (`p.y <= s.y + 10`): 정밀 가시 폭(`±s.halfW`) 기준 피격
+      // 2) 하단에서 이단 점프를 높게 하여 위쪽 플랫폼 가시/뿌리 영역(`s.y - s.hitH .. s.y + 42`)에 머리가 닿는 경우에도 피격·넉백 작동!
+      const isFromBelowHighJump = (p.y > s.y + 10 && !p.ground);
+      const extraHalfW = isFromBelowHighJump ? 46 : 0;
+      const pLeft = p.x - 13, pRight = p.x + 13;
+      const sLeft = s.x - (s.halfW + extraHalfW), sRight = s.x + (s.halfW + extraHalfW);
+      if (pRight < sLeft || pLeft > sRight) continue;
+
+      const pTop = p.y - 62, pBot = p.y - 1;
+      const sTop = s.y - s.hitH;
+      const sBot = isFromBelowHighJump ? (s.y + 42) : (s.y - 2);
+      if (pBot >= sTop && pTop <= sBot) {
+        const cfg = window.D2_2_HAZARD_CONFIG || {};
+        const forcedDir = isFromBelowHighJump ? (p.vx >= 0 ? -1 : 1) : null;
+        applyChallengeKnockback(s.x, cfg.spikeKnockForce || 416, cfg.spikeStunSec || 1.10, 'spike', forcedDir);
+      }
+    }
+  }
 }
 
 // Render Challenge NPC Sprite using the exact `npcMeta` schema (`size: 256, foot, anchor, display, cols, frames, fps, facing`)
@@ -358,51 +431,152 @@ function drawChallengeNpcSprite(kind, clip, elapsedSec, x, y, face) {
 
 function drawChallengeHazards() {
   const viewW = (typeof rCamZoom === 'number' && rCamZoom > 0) ? (W / rCamZoom) : W;
-  // 1. Draw Stage 2 Knockback Shield Barriers
-  for (const b of challengeBarriers) {
-    if (b.x < rCam - 80 || b.x > rCam + viewW + 80) continue;
+  // 0. Draw Stage 2-2 Spikes / Thorny Sprouts (Top & Underside using official `tentacle_idle` asset)
+  const tentIm = (typeof npcImages !== 'undefined') ? npcImages['tentacle_idle'] : null;
+  const tMeta = (typeof TENTACLE_META !== 'undefined') ? TENTACLE_META : { frames: 41, fps: 30, cols: 8, anchorX: 128, footY: 242 };
+  for (let i = 0; i < challengeSpikes.length; i++) {
+    const s = challengeSpikes[i];
+    if (s.platformRef) {
+      const pl = s.platformRef;
+      const a = (typeof renderAlpha === 'number') ? renderAlpha : 1;
+      const px = (pl.prevX ?? pl.x) + (pl.x - (pl.prevX ?? pl.x)) * a;
+      const py = (pl.prevY ?? pl.y) + (pl.y - (pl.prevY ?? pl.y)) * a;
+      s.x = px + (s.localX || 0);
+      s.y = s.orientation === 'down' ? (py + 38) : py;
+    }
+    if (s.x < rCam - 90 || s.x > rCam + viewW + 90) continue;
     ctx.save();
-    ctx.globalAlpha = b.alpha;
-    const bx = Math.round(b.x - b.width * 0.5);
-    const by = Math.round(b.y - b.height);
-    ctx.fillStyle = '#3d4758';
-    ctx.beginPath();
-    ctx.roundRect(bx - 4, b.y - 10, b.width + 8, 10, 4);
-    ctx.fill();
-    ctx.fillStyle = b.state === 'on' ? '#ff5238cc' : (b.state === 'warn' ? '#fcc419cc' : '#748ffc55');
-    ctx.strokeStyle = b.state === 'on' ? '#fff0f0' : '#ffd43b';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.roundRect(bx, by, b.width, b.height - 8, 8);
-    ctx.fill();
-    ctx.stroke();
-    ctx.strokeStyle = '#ffffffdd';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(b.x + 5, by + 14);
-    ctx.lineTo(b.x - 5, by + 24);
-    ctx.lineTo(b.x + 5, by + 34);
-    ctx.stroke();
+    if (s.orientation === 'down') {
+      // Underside thorny spike hanging downward from `s.y`
+      ctx.fillStyle = 'rgba(28, 20, 16, 0.38)';
+      ctx.beginPath();
+      ctx.ellipse(Math.round(s.x), Math.round(s.y - 1), s.halfW + 4, 3.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (tentIm && tentIm.complete && tentIm.naturalWidth > 0) {
+        const f = Math.floor((s.anim * tMeta.fps + i * 5) % tMeta.frames);
+        const sx = (f % tMeta.cols) * 256;
+        const sy = Math.floor(f / tMeta.cols) * 256;
+        const sz = s.displaySize || 54;
+        ctx.translate(Math.round(s.x), Math.round(s.y - 2));
+        ctx.scale(1, -1);
+        ctx.drawImage(
+          tentIm, sx, sy, 256, 256,
+          -Math.round((tMeta.anchorX / 256) * sz),
+          -Math.round((tMeta.footY / 256) * sz),
+          sz, sz
+        );
+      } else {
+        ctx.fillStyle = '#c92a2a';
+        ctx.beginPath();
+        ctx.moveTo(s.x - s.halfW - 2, s.y);
+        ctx.lineTo(s.x, s.y + s.hitH + 3);
+        ctx.lineTo(s.x + s.halfW + 2, s.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else {
+      // Top surface thorny spike rooted on `s.y`
+      ctx.fillStyle = 'rgba(28, 20, 16, 0.34)';
+      ctx.beginPath();
+      ctx.ellipse(Math.round(s.x), Math.round(s.y + 1), s.halfW + 4, 3.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (tentIm && tentIm.complete && tentIm.naturalWidth > 0) {
+        const f = Math.floor((s.anim * tMeta.fps + i * 5) % tMeta.frames);
+        const sx = (f % tMeta.cols) * 256;
+        const sy = Math.floor(f / tMeta.cols) * 256;
+        const sz = s.displaySize || 54;
+        const dx = Math.round(s.x - (tMeta.anchorX / 256) * sz);
+        const dy = Math.round(s.y - (tMeta.footY / 256) * sz);
+        ctx.drawImage(tentIm, sx, sy, 256, 256, dx, dy, sz, sz);
+      } else {
+        ctx.fillStyle = '#c92a2a';
+        ctx.beginPath();
+        ctx.moveTo(s.x - s.halfW - 2, s.y);
+        ctx.lineTo(s.x, s.y - s.hitH - 3);
+        ctx.lineTo(s.x + s.halfW + 2, s.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
     ctx.restore();
   }
 
-  // 2. Draw Stage 2 Challenge Guards
+  // 2. Draw Stage 2 / 2-2 Challenge Guards (suppress patrol line when hidePatrolLine is true per 2-2 Spec §3-1)
   for (const g of challengeGuards) {
     if (g.x < rCam - 180 || g.x > rCam + viewW + 180) continue;
-    ctx.save();
-    ctx.strokeStyle = g.state === 'warn' ? 'rgba(235, 95, 70, 0.55)' : 'rgba(255, 210, 140, 0.28)';
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([6, 5]);
-    ctx.beginPath();
-    ctx.moveTo(g.minX, g.y - 2);
-    ctx.lineTo(g.maxX, g.y - 2);
-    ctx.stroke();
-    ctx.restore();
+    if (!g.hidePatrolLine) {
+      ctx.save();
+      ctx.strokeStyle = g.state === 'warn' ? 'rgba(235, 95, 70, 0.55)' : 'rgba(255, 210, 140, 0.28)';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(g.minX, g.y - 2);
+      ctx.lineTo(g.maxX, g.y - 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     ellipse(g.x, g.y + 2, 22, 4, '#24342838');
     ellipse(g.x, g.y - 2, 26, 5, g.state === 'warn' ? '#ff6b4a66' : '#d9433044');
 
     drawChallengeNpcSprite(g.kind, g.clip, g.anim, g.x, g.y, g.face);
+  }
+
+
+  // 1. Draw Stage 2 Knockback Shield Barriers ([A-3 Fix]: zero aerial ghost residue when 'off')
+  for (const b of challengeBarriers) {
+    if (b.x < rCam - 80 || b.x > rCam + viewW + 80) continue;
+    ctx.save();
+    const bx = Math.round(b.x - b.width * 0.5);
+    const by = Math.round(b.y - b.height);
+    // Grounded emitter socket on platform surface
+    ctx.fillStyle = '#324638';
+    ctx.strokeStyle = '#1d2b21';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(bx - 4, b.y - 7, b.width + 8, 7, 3.5);
+    ctx.fill();
+    ctx.stroke();
+
+    if (b.state === 'off') {
+      // Only a subtle idle indicator strip on the grounded socket; 0% aerial residue!
+      ctx.fillStyle = 'rgba(144, 224, 168, 0.65)';
+      ctx.fillRect(bx + 2, b.y - 5, Math.max(4, b.width - 4), 2.5);
+    } else if (b.state === 'warn') {
+      ctx.globalAlpha = b.alpha;
+      const wGrad = ctx.createLinearGradient(bx, by + 6, bx, b.y - 7);
+      wGrad.addColorStop(0, 'rgba(255, 212, 59, 0.22)');
+      wGrad.addColorStop(1, 'rgba(252, 196, 25, 0.85)');
+      ctx.fillStyle = wGrad;
+      ctx.strokeStyle = '#ffd43b';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.roundRect(bx + 1, by + 4, b.width - 2, b.height - 11, 7);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.globalAlpha = 1;
+      const onGrad = ctx.createLinearGradient(bx, by, bx + b.width, b.y - 7);
+      onGrad.addColorStop(0, '#ff6b52');
+      onGrad.addColorStop(0.5, '#ff8736');
+      onGrad.addColorStop(1, '#e84133');
+      ctx.fillStyle = onGrad;
+      ctx.strokeStyle = '#fff3bf';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, b.width, b.height - 7, [8, 8, 3, 3]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = '#ffffffdd';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(b.x + 5, by + 14);
+      ctx.lineTo(b.x - 5, by + 24);
+      ctx.lineTo(b.x + 5, by + 34);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   // 3. Draw Stage 3 Fixed Mayo Horizontal Turrets & Sightlines
