@@ -1568,8 +1568,194 @@ main {
   }
 }
 
-/* CHFIX1: Keep challenge result/next-stage action focused; no mode-launchers. */
-body[data-game-mode="challenge"] #overlay[data-modal-kind="result"] #openWorldMapBtn,
-body[data-game-mode="challenge"] #overlay[data-modal-kind="result"] #startChallengeBtn {
+
+/* ============================================================================
+   [v1.0 Challenge Renewal & Difficulty 2-1] Challenge Select Modal & Nav Bar
+   ============================================================================ */
+.challengeSelectModal[hidden] {
   display: none !important;
+}
+
+.challengeSelectModal {
+  position: absolute;
+  inset: 0;
+  z-index: 65;
+  display: grid;
+  place-items: center;
+  background: rgba(14, 24, 18, 0.72);
+  backdrop-filter: blur(4px);
+  padding: 16px;
+}
+
+.chSelectCard {
+  background: #fffdf5;
+  border: 3px solid #6b9e62;
+  border-radius: 26px;
+  width: min(820px, 95%);
+  max-height: 92%;
+  overflow-y: auto;
+  padding: 20px 24px 22px;
+  box-shadow: 0 22px 54px rgba(8, 16, 12, 0.48);
+  color: #243627;
+}
+
+.chSelectHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1.5px solid rgba(107, 158, 98, 0.28);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+
+.chSelectEyebrow {
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  color: #4f7d47;
+  display: block;
+}
+
+.chSelectHeader h3 {
+  margin: 3px 0 0;
+  font-size: 21px;
+  font-weight: 400;
+  color: #1f3322;
+}
+
+.chSelectCloseBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1.5px solid #bdd4b5;
+  background: #eef5ea;
+  color: #243627;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.chSelectGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.chDiffBox {
+  border-radius: 18px;
+  padding: 14px 16px;
+  border: 2px solid #c5dcc0;
+  background: #f6faf3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chDiffBoxD2 {
+  border-color: #f0b449;
+  background: #fff9eb;
+}
+
+.chDiffBadge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #dff0d8;
+  color: #285223;
+}
+
+.chDiffBadgeHard {
+  background: #ffe8b3;
+  color: #9c5708;
+}
+
+.chDiffBox h4 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 400;
+  color: #1e3121;
+}
+
+.chDiffBox p {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #4b5e4d;
+  margin: 0;
+}
+
+.chDiffRecord {
+  font-size: 11.5px;
+  color: #345937;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(107, 158, 98, 0.25);
+}
+
+.chStageBtnGroup {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chLaunchPrimaryBtn {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 13px;
+  border: none;
+  background: linear-gradient(180deg, #5cb852 0%, #43913b 100%);
+  color: #fffdf6;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #2b6325;
+}
+
+.chLaunchD2Btn {
+  background: linear-gradient(180deg, #f59f00 0%, #d97706 100%);
+  box-shadow: 0 3px 0 #92400e;
+}
+
+.chStageQuickRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.chStageMiniBtn {
+  padding: 6px 8px;
+  border-radius: 9px;
+  border: 1.5px solid #bfd6b8;
+  background: #ffffff;
+  color: #2c462f;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.chStageMiniBtn.is-locked,
+.challengeNav button:disabled {
+  opacity: 0.56 !important;
+  cursor: not-allowed !important;
+  background: #e9ecef !important;
+  color: #6c757d !important;
+  border-color: #ced4da !important;
+}
+
+.chNavDiffSwitch {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 4px;
+}
+
+.chDiffSwitchBtn.active,
+.challengeNav button.activeStage {
+  background: #4d8f46 !important;
+  color: #fffdf6 !important;
+  border-color: #2f612a !important;
+}
+
+@media (max-width: 720px) {
+  .chSelectGrid {
+    grid-template-columns: 1fr;
+  }
 }

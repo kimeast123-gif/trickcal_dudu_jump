@@ -361,8 +361,8 @@ window.updatePlayerHealthHud=updatePlayerHealthHud;
 window.__duduHealthDebug=()=>({hp:p.hp,max:p.maxHp||PLAYER_MAX_HEALTH,mode:gameMode});
 
 function getCameraProfile(px=p.x,py=p.y){
- if(typeof gameMode!=='undefined'&&gameMode==='challenge'&&typeof challengeLevels!=='undefined'){
-  const clv=challengeLevels[challengeStageIndex];
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
+  const clv=(typeof getActiveChallengeStage==='function')?getActiveChallengeStage():(typeof challengeLevels!=='undefined'?challengeLevels[challengeStageIndex]:null);
   return (clv&&clv.cameraProfile)||'challenge_vertical';
  }
  if(typeof gameMode!=='undefined'&&gameMode==='world'){

@@ -715,7 +715,7 @@ function drawStructuralWall(a, drawX, drawY) {
     const bodyB = getTerrainImg('forest', '', 'ground_body_b') || bodyA;
 
     // Horizontal under-platform earthen/root layer (`ceiling: true` on `W1-S1-WALL-UPPER-UNDER`, `W1-S1-WALL-MID-UNDER`, `W1-S3-WALL-CEIL`)
-    if (a.ceiling) {
+    if (a.ceiling || (a.noTopLand && a.w >= a.h * 2.5)) {
       ctx.save();
       ctx.beginPath();
       ctx.roundRect(drawX, drawY, a.w, a.h + 6, 8);
@@ -780,6 +780,106 @@ function drawStructuralWall(a, drawX, drawY) {
     const topMid = getTerrainImg(folder, '', 'middle_a');
     const singleSmall = getTerrainImg(folder, '', 'single_small');
 
+    if (a.overheadJumpBarrier) {
+      // [피드백 4 반영]: 3층 경비병 3명+가시 구간 상공 이단점프 차단 긴 갈색 플랫폼 (첨부파일 1 스타일)
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(drawX, drawY, a.w, a.h, 5);
+      ctx.clip();
+      const grad = ctx.createLinearGradient(0, drawY, 0, drawY + a.h);
+      grad.addColorStop(0, '#a66e40');
+      grad.addColorStop(0.5, '#8c5830');
+      grad.addColorStop(1, '#6e4220');
+      ctx.fillStyle = grad;
+      ctx.fillRect(drawX, drawY, a.w, a.h);
+      if (bodyA) {
+        const s = 0.42;
+        const bw = Math.round(bodyA.width * s);
+        const bh = Math.round(bodyA.height * s);
+        let cIdx = 0;
+        ctx.globalAlpha = 0.42;
+        for (let gx = drawX; gx < drawX + a.w; gx += bw - 1, cIdx++) {
+          const pick = (cIdx % 2 === 0) ? bodyA : bodyB;
+          ctx.drawImage(pick, gx, drawY - 10, bw, bh);
+        }
+        ctx.globalAlpha = 1.0;
+      }
+      ctx.fillStyle = 'rgba(235, 190, 140, 0.38)';
+      ctx.fillRect(drawX + 2, drawY + 2, a.w - 4, 3);
+      ctx.fillStyle = 'rgba(42, 24, 12, 0.65)';
+      ctx.fillRect(drawX + 2, drawY + a.h - 4, a.w - 4, 4);
+      ctx.strokeStyle = '#4a2c14';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
+      ctx.restore();
+      return;
+    }
+
+    if (a.underBridgeBarrier) {
+      // [D2-2 §2-D.4]: Integrated brown earthen/root anti-skip barrier fused seamlessly into the underside of D2-2-D-BRIDGE
+      const topOverlap = 14;
+      const uy = drawY - topOverlap;
+      const uh = a.h + topOverlap;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(drawX + 6, uy, a.w - 12, uh, [0, 0, 10, 10]);
+      ctx.clip();
+      const grad = ctx.createLinearGradient(0, uy, 0, uy + uh);
+      grad.addColorStop(0, '#6b4c30');
+      grad.addColorStop(0.55, '#543a22');
+      grad.addColorStop(1, '#3d2816');
+      ctx.fillStyle = grad;
+      ctx.fillRect(drawX + 6, uy, a.w - 12, uh);
+      if (bodyA) {
+        const s = 0.42;
+        const bw = Math.round(bodyA.width * s);
+        const bh = Math.round(bodyA.height * s);
+        let cIdx = 0;
+        ctx.globalAlpha = 0.65;
+        for (let gx = drawX + 6; gx < drawX + a.w - 6; gx += bw - 1, cIdx++) {
+          const pick = (cIdx % 2 === 0) ? bodyA : bodyB;
+          ctx.drawImage(pick, gx, uy - 8, bw, bh);
+        }
+        ctx.globalAlpha = 1.0;
+      }
+      // Subtle root-timber underside molding showing solid ceiling barrier
+      ctx.fillStyle = 'rgba(166, 118, 72, 0.42)';
+      ctx.fillRect(drawX + 8, uy + uh - 8, a.w - 16, 3);
+      ctx.fillStyle = 'rgba(28, 16, 8, 0.65)';
+      ctx.fillRect(drawX + 6, uy + uh - 4, a.w - 12, 4);
+      ctx.restore();
+      return;
+    }
+
+    // [A-2 / A-4 Fix]: Horizontal forest/village ceiling beam (e.g. C3-TIER1-ROOF / C3-TIER2-ROOF)
+    if (a.ceiling || (a.noTopLand && a.w >= a.h * 2.5)) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(drawX, drawY, a.w, a.h, 7);
+      ctx.clip();
+      ctx.fillStyle = '#5c4430';
+      ctx.fillRect(drawX, drawY, a.w, a.h);
+      if (bodyA) {
+        const s = 0.45;
+        const bw = Math.round(bodyA.width * s);
+        const bh = Math.round(bodyA.height * s);
+        let cIdx = 0;
+        for (let gx = drawX; gx < drawX + a.w; gx += bw - 1, cIdx++) {
+          const pick = (cIdx % 2 === 0) ? bodyA : bodyB;
+          ctx.drawImage(pick, gx, drawY - 8, bw, bh);
+        }
+      }
+      ctx.fillStyle = 'rgba(116, 166, 78, 0.48)';
+      ctx.fillRect(drawX + 2, drawY + 1, a.w - 4, 5);
+      ctx.fillStyle = 'rgba(34, 22, 12, 0.38)';
+      ctx.fillRect(drawX + 2, drawY + a.h - 5, a.w - 4, 4);
+      ctx.strokeStyle = 'rgba(54, 72, 38, 0.65)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(drawX + 1, drawY + 1, a.w - 2, a.h - 2);
+      ctx.restore();
+      return;
+    }
+
     // Classify junction type for bottom corner anchoring (uses actual supporting thin platform's `y`!)
     const isFootOnGround = (a.y + a.h >= 575 && a.y < 580);
     if (a._isOnThinPlat === undefined || a._platLenTag !== platforms.length) {
@@ -837,6 +937,17 @@ function drawStructuralWall(a, drawX, drawY) {
       ctx.clip();
       ctx.drawImage(topRight, drawX + a.w - rw, rTopY, rw, rh);
       ctx.restore();
+    }
+
+    // For vertical anti-skip baffle walls (`noTopLand: true`), render a dark bark/earth cap instead of a steppable grass crown!
+    if (a.noTopLand) {
+      ctx.save();
+      ctx.fillStyle = '#3d2b1c';
+      ctx.beginPath();
+      ctx.roundRect(drawX + 1, drawY + 1, a.w - 2, 10, [6, 6, 0, 0]);
+      ctx.fill();
+      ctx.restore();
+      return;
     }
 
     // Lush grass crown aligned with collision top `drawY` (full natural height of grass overhang, zero mid-blade cut!)
@@ -1461,12 +1572,17 @@ function drawThinPlatformVisual(a, drawX, drawY) {
   const rw = Math.round(rightImg.width * s);
 
   // Compact platforms (`a.w <= lw + rw`): join the outer `halfW` of `leftImg` and outer `a.w - halfW` of `rightImg`
-  // via 1:1 source cropping (`dw/sw === dh/sh === s`), so neither cap is distorted and no middle sliver exists!
+  // with proportional height scaling for narrow 38~96px perches and a seamless center grass/soil bridge!
   if (a.w <= lw + rw) {
+    const compactScale = (a.w < 96) ? Math.max(0.34, s * (0.68 + 0.32 * (a.w / 96))) : s;
+    const cTopY = Math.round(drawY - spec.thinWalk * compactScale);
+    const cDrawH = Math.round(leftImg.height * compactScale);
     const halfW = Math.round(a.w * 0.5);
     const rightHalfW = a.w - halfW;
-    drawNeutralStripCrop(leftImg, s, drawX, topY, halfW, drawH, 0.0);
-    drawNeutralStripCrop(rightImg, s, drawX + halfW, topY, rightHalfW, drawH, 1.0);
+    drawNeutralStripCrop(leftImg, compactScale, drawX, cTopY, halfW, cDrawH, 0.0);
+    drawNeutralStripCrop(rightImg, compactScale, drawX + halfW, cTopY, rightHalfW, cDrawH, 1.0);
+    const seamW = Math.min(10, Math.max(4, Math.round(a.w * 0.16)));
+    drawNeutralStripCrop(innerStrip, compactScale, Math.round(drawX + halfW - seamW * 0.5), cTopY, seamW, cDrawH, 0.5);
     return;
   }
 
@@ -1609,8 +1725,39 @@ function drawPlatform(a) {
   const drawX = Math.round((a.prevX ?? a.x) + (a.x - (a.prevX ?? a.x)) * renderAlpha);
   const drawY = Math.round((a.prevY ?? a.y) + (a.y - (a.prevY ?? a.y)) * renderAlpha);
 
+  // [A-4 Fix]: Distinct non-collidable turret perch pedestal (`C3-TURRET-P1/P2/P3`, `nonCollidable: true`)
+  if (a.nonCollidable) {
+    ctx.save();
+    const perchH = 26;
+    const grad = ctx.createLinearGradient(drawX, drawY, drawX, drawY + perchH);
+    grad.addColorStop(0, '#5c4b6b');
+    grad.addColorStop(0.55, '#3f324d');
+    grad.addColorStop(1, '#281e33');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(drawX + 2, drawY, a.w - 4, perchH, [6, 6, 10, 10]);
+    ctx.fill();
+    ctx.strokeStyle = '#d0bfff';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(drawX + 8, drawY + 3);
+    ctx.lineTo(drawX + a.w - 8, drawY + 3);
+    ctx.stroke();
+    // Under-bracket X-truss indicating non-landing turret mount
+    ctx.strokeStyle = 'rgba(255, 135, 135, 0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(drawX + 14, drawY + 7);
+    ctx.lineTo(drawX + a.w - 14, drawY + perchH - 4);
+    ctx.moveTo(drawX + a.w - 14, drawY + 7);
+    ctx.lineTo(drawX + 14, drawY + perchH - 4);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
   const isWorldMode = (typeof gameMode !== 'undefined' && gameMode === 'world');
-  if (a.motion && !isWorldMode) {
+  if (a.motion && !isWorldMode && !a.noGuideLine) {
     ctx.save();
     ctx.strokeStyle = 'rgba(210, 225, 245, 0.45)';
     ctx.lineWidth = 3.5;
@@ -1653,6 +1800,20 @@ function drawPlatform(a) {
       return;
     }
     ctx.save();
+    if (a.blinkState === 'off') {
+      // [A-3 Fix]: Do not draw solid dirt island sprite when 'off' (collidable === false).
+      // Render a crisp hollow dashed outline so non-collidable state is 100% unmistakable!
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = a.ultraFastBlink ? 'rgba(255, 107, 157, 0.55)' : 'rgba(180, 225, 255, 0.62)';
+      ctx.fillStyle = 'rgba(180, 225, 255, 0.08)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(drawX + 2, drawY, Math.max(8, a.w - 4), 14, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
     const shakeX = (a.blinkState === 'warning' && !a.silentBlink) ? Math.round(Math.sin(time * 55) * 2) : 0;
     ctx.globalAlpha = a.blinkAlpha ?? 1;
     drawThinPlatformVisual(a, drawX + shakeX, drawY);
@@ -1665,11 +1826,6 @@ function drawPlatform(a) {
         ctx.strokeStyle = a.ultraFastBlink ? '#ff2b5e' : (a.fastBlink ? '#ff6b4a' : '#ffcf4d');
         ctx.lineWidth = 3;
         ctx.strokeRect(drawX + shakeX + 2, drawY - 2, a.w - 4, 22);
-      } else if (a.blinkState === 'off') {
-        ctx.setLineDash([5, 6]);
-        ctx.strokeStyle = a.ultraFastBlink ? '#ff6b9d66' : '#9cc5ff55';
-        ctx.lineWidth = 1.8;
-        ctx.strokeRect(drawX + 3, drawY + 2, a.w - 6, 14);
       }
     }
     ctx.restore();
@@ -1890,6 +2046,19 @@ function draw() {
 
   drawSpecialCoins();
 
+  const curLvForStartFlag = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
+  if (curLvForStartFlag && curLvForStartFlag.startFlag) {
+    const sf = curLvForStartFlag.startFlag;
+    if (sf.x >= rCam - 100 && sf.x <= rCam + viewW + 100) {
+      line(sf.x, sf.y, sf.x, sf.y - 84, '#4e473f', 4);
+      ctx.fillStyle = '#51cf66';
+      ctx.beginPath();
+      ctx.moveTo(sf.x, sf.y - 84);
+      ctx.lineTo(sf.x + 38, sf.y - 74);
+      ctx.lineTo(sf.x, sf.y - 52);
+      ctx.fill();
+    }
+  }
   for (let i = 0; i < flags.length; i++) {
     const f = flags[i];
     if (f.x < rCam - 100 || f.x > rCam + viewW + 100) continue;

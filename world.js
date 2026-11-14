@@ -120,8 +120,9 @@ const securedSpecialPractice = new Set();
 let specialCoins = [];
 
 function getActiveLevel(){
- if(typeof gameMode!=='undefined'&&gameMode==='challenge'&&typeof challengeLevels!=='undefined'){
-  return challengeLevels[challengeStageIndex];
+ if(typeof gameMode!=='undefined'&&gameMode==='challenge'){
+  if(typeof getActiveChallengeStage==='function')return getActiveChallengeStage();
+  if(typeof challengeLevels!=='undefined')return challengeLevels[challengeStageIndex];
  }
  if(typeof gameMode!=='undefined'&&gameMode==='world'&&typeof world1Stages!=='undefined'){
   return world1Stages[activeWorldStageIndex]||world1Stages[0];

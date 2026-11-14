@@ -556,6 +556,8 @@
   }
 
   function isLobbyCurrentlyActive() {
+    if (typeof gameMode !== 'undefined' && gameMode === 'challenge') return false;
+    if (typeof state !== 'undefined' && (state === 'challengeStageClear' || state === 'challengeComplete' || state === 'playing' || state === 'paused' || state === 'eventDone' || state === 'won' || state === 'practiceDone')) return false;
     const ov = $id('overlay');
     const wmOv = $id('worldmapOverlay');
     if (!ov || ov.hidden) return false;
@@ -568,7 +570,8 @@
     const kh = $id('lobbyPanelHost');
     const opt = $id('mobileSettingsModal');
     const retC = $id('returnToLobbyConfirmModal');
-    return Boolean((kh && !kh.hidden) || (opt && !opt.hidden) || (retC && !retC.hidden));
+    const chS = $id('challengeSelectModal');
+    return Boolean((kh && !kh.hidden) || (opt && !opt.hidden) || (retC && !retC.hidden) || (chS && !chS.hidden));
   }
 
   function syncLobbyButtonStates() {
@@ -788,14 +791,14 @@
         if (_isTransitioning) return;
         btnCh.classList.add('is-pressed');
         setTimeout(() => btnCh.classList.remove('is-pressed'), 160);
-        runLeaveTransitionThen(() => {
-          const origChBtn = $id('startChallengeBtn');
-          if (origChBtn) {
-            origChBtn.click();
-          } else if (typeof startChallengeMode === 'function') {
-            startChallengeMode();
-          }
-        });
+        if (typeof openChallengeSelectModal === 'function') {
+          _lobbyState = 'titleModal';
+          openChallengeSelectModal();
+        } else {
+          runLeaveTransitionThen(() => {
+            if (typeof startChallengeMode === 'function') startChallengeMode(0);
+          });
+        }
       });
     }
 
