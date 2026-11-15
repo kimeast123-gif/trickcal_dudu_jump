@@ -346,6 +346,10 @@ function loadChallengeStage(stageIdx, { resetTotal = false, customSeed = null, d
 
   gameMode = 'challenge';
   challengeState.active = true;
+  // [P0 result buttons] Story ending / lobby return may have replaced the shared
+  // #start and #restart onclick callbacks. Reclaim them on every challenge entry.
+  $('start').onclick = dispatchPrimaryAction;
+  $('restart').onclick = dispatchRestartAction;
   if (typeof ensureWorldRegionAssets === 'function') {
     Promise.all([
       ensureWorldRegionAssets('forest'),
@@ -832,6 +836,21 @@ window.closeChallengeSelectModal = closeChallengeSelectModal;
 
   $('start').onclick = dispatchPrimaryAction;
   $('restart').onclick = dispatchRestartAction;
+  // [P0 result buttons] `event.js` and `title-lobby.js` also write to these
+  // shared onclick properties. While in challenge mode, capture the real user
+  // click before any stale story callback can run. Story/world modes are untouched.
+  $('start').addEventListener('click', (event) => {
+    if (typeof gameMode === 'undefined' || gameMode !== 'challenge') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    dispatchPrimaryAction();
+  }, true);
+  $('restart').addEventListener('click', (event) => {
+    if (typeof gameMode === 'undefined' || gameMode !== 'challenge') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    dispatchRestartAction();
+  }, true);
   const chBtn = $('startChallengeBtn');
   if (chBtn) chBtn.onclick = () => openChallengeSelectModal();
   const modalBack = $('modalBackStoryBtn');
