@@ -361,18 +361,18 @@ function updateChallengeHazards(dt) {
         applyChallengeKnockback(s.x, cfg.spikeKnockForce || 416, cfg.spikeStunSec || 1.10, 'under_spike');
       }
     } else {
-      // [피드백 1 반영]:
-      // 1) 상면 착지/이동 판정 (`p.y <= s.y + 10`): 정밀 가시 폭(`±s.halfW`) 기준 피격
-      // 2) 하단에서 이단 점프를 높게 하여 위쪽 플랫폼 가시/뿌리 영역(`s.y - s.hitH .. s.y + 42`)에 머리가 닿는 경우에도 피격·넉백 작동!
+      // [1.0 P0 collision hotfix] Both top and upward approaches must contact
+      // the SAME visible spike body. Old below-jump rule added 46px to each
+      // horizontal side and extended 42px below the platform: phantom hits.
+      // Keep the existing knockback direction for genuine underside contacts.
       const isFromBelowHighJump = (p.y > s.y + 10 && !p.ground);
-      const extraHalfW = isFromBelowHighJump ? 46 : 0;
       const pLeft = p.x - 13, pRight = p.x + 13;
-      const sLeft = s.x - (s.halfW + extraHalfW), sRight = s.x + (s.halfW + extraHalfW);
+      const sLeft = s.x - s.halfW, sRight = s.x + s.halfW;
       if (pRight < sLeft || pLeft > sRight) continue;
 
       const pTop = p.y - 62, pBot = p.y - 1;
       const sTop = s.y - s.hitH;
-      const sBot = isFromBelowHighJump ? (s.y + 42) : (s.y - 2);
+      const sBot = s.y - 2;
       if (pBot >= sTop && pTop <= sBot) {
         const cfg = window.D2_2_HAZARD_CONFIG || {};
         const forcedDir = isFromBelowHighJump ? (p.vx >= 0 ? -1 : 1) : null;
