@@ -457,30 +457,44 @@ function platformStep(){
      ? levelClock-b.waveDelay : null;
    const t=(waveClock!==null && waveClock<0) ? 0 :
      (((waveClock!==null ? waveClock : levelClock+(b.phase||0))%cycle+cycle)%cycle);
-   if(t<onDur){
-    a.collidable=true;
-    a.blinkState='on';
-    a.blinkAlpha=1.0;
-   }else if(t<onDur+warnDur){
-    a.collidable=true;
-    a.blinkState='warning';
-    if(a.silentBlink){
-     const u=(t-onDur)/Math.max(0.01,warnDur);
-     a.blinkAlpha=0.22+0.64*(1-u*0.65)*(0.55+0.45*Math.cos(u*Math.PI*3));
+    if(t<onDur){
+     a.collidable=true;
+     a.blinkState='on';
+     a.blinkAlpha=1.0;
+     a.blinkRemaining=Math.max(0,onDur-t);
+     a.blinkStateProgress=onDur>0?(t/onDur):0;
+     a.blinkImminent=false;
+    }else if(t<onDur+warnDur){
+     a.collidable=true;
+     a.blinkState='warning';
+     const warnElapsed=t-onDur;
+     a.blinkRemaining=Math.max(0,warnDur-warnElapsed);
+     a.blinkStateProgress=warnDur>0?(warnElapsed/warnDur):1;
+     a.blinkImminent=false;
+     if(a.silentBlink){
+      const u=warnElapsed/Math.max(0.01,warnDur);
+      a.blinkAlpha=0.22+0.64*(1-u*0.65)*(0.55+0.45*Math.cos(u*Math.PI*3));
+     }else{
+      const pulseHz=a.ultraFastBlink?16:(a.fastBlink?11:8);
+      a.blinkAlpha=0.42+0.48*Math.abs(Math.sin(warnElapsed*Math.PI*pulseHz));
+     }
     }else{
-     const pulseHz=a.ultraFastBlink?16:(a.fastBlink?11:8);
-     a.blinkAlpha=0.42+0.48*Math.abs(Math.sin((t-onDur)*Math.PI*pulseHz));
+     a.collidable=false;
+     a.blinkState='off';
+     const offElapsed=t-(onDur+warnDur);
+     a.blinkRemaining=Math.max(0,offDur-offElapsed);
+     a.blinkStateProgress=offDur>0?Math.max(0,Math.min(1,offElapsed/offDur)):1;
+     a.blinkImminent=(a.blinkRemaining<=0.28);
+     a.blinkAlpha=a.silentBlink?(a.blinkImminent?0.35:0.14):0.16;
     }
    }else{
-    a.collidable=false;
-    a.blinkState='off';
-    a.blinkAlpha=a.silentBlink?0.0:0.12;
+    a.collidable=!(a.nonCollidable||a.hidden);
+    a.blinkState='on';
+    a.blinkAlpha=1.0;
+    a.blinkRemaining=0;
+    a.blinkStateProgress=0;
+    a.blinkImminent=false;
    }
-  }else{
-   a.collidable=!(a.nonCollidable||a.hidden);
-   a.blinkState='on';
-   a.blinkAlpha=1.0;
-  }
   a.dx=a.x-a.prevX;
   a.dy=a.y-a.prevY;
  }
@@ -502,7 +516,7 @@ function syncRenderCoords(){
  camZoom=prof==='erpien_boss_zoom'?0.88:1.0;
  prevCamZoom=camZoom;rCamZoom=camZoom;
  p.prevX=p.x;p.prevY=p.y;prevCam=cam;prevCamY=camY;prevCamZoom=camZoom;prevCamZoom=camZoom;
- rPx=p.x;rPy=p.y;rCam=cam;rCamY=camY;
+ window.camBaseY=camY;rPx=p.x;rPy=p.y;rCam=cam;rCamY=camY;
  debugMetrics.lastDrawPx=p.x;debugMetrics.lastDrawCam=cam;
  debugMetrics.maxCamDelta=0;debugMetrics.maxPlayerDrawDelta=0;
  debugMetrics.cameraProfile=getCameraProfile(p.x,p.y);
@@ -571,8 +585,8 @@ function updateHud(){
  updatePlayerHealthHud();
 }
 function modal(tag,title,text,button){$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalText').innerHTML=text;$('start').textContent=button;$('overlay').hidden=false;$('restart').hidden=state==='ready';}
-function pause(){if(state==='playing'){if(typeof ensurePaused==='function')ensurePaused('manual');else{state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}}else if(state==='paused'){if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;start();}}
-function start(){if(state==='loading')return;if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;if(state==='won')reset(true);state='playing';if(window.__mobileUIState){window.__mobileUIState.pausedByPortrait=false;window.__mobileUIState.lastPauseReason=null;}$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();if(typeof syncMobileViewMode==='function')syncMobileViewMode();last=performance.now();acc=0;}
+function pause(){lookDownHold=0;lookDownOffset=0;if(state==='playing'){if(typeof ensurePaused==='function')ensurePaused('manual');else{state='paused';if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();modal('잠깐 쉬어가요','두두도 숨 고르는 중','아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.','계속 모험하기');}}else if(state==='paused'){if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;start();}}
+function start(){if(state==='loading')return;lookDownHold=0;lookDownOffset=0;if(window.__mobileUIState&&window.__mobileUIState.viewMode==='WEB_PORTRAIT')return;if(state==='won')reset(true);state='playing';if(window.__mobileUIState){window.__mobileUIState.pausedByPortrait=false;window.__mobileUIState.lastPauseReason=null;}$('overlay').hidden=true;canvas.focus();if(typeof releaseAllInputs==='function')releaseAllInputs();else keys.clear();if(typeof syncMobileViewMode==='function')syncMobileViewMode();last=performance.now();acc=0;}
 $('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{reset(true);start();};function triggerActiveModeRetry(){
  if(typeof gameMode!=='undefined'&&gameMode==='challenge'&&typeof retryChallengeStage==='function'){retryChallengeStage();return;}
  if(typeof gameMode!=='undefined'&&gameMode==='world'&&typeof retryWorld1StageCheckpoint==='function'){retryWorld1StageCheckpoint();return;}
@@ -580,17 +594,71 @@ $('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{rese
 }
 window.triggerActiveModeRetry=triggerActiveModeRetry;
 $('retry').onclick=()=>triggerActiveModeRetry();for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=toggleSound;setupSoundVolumeSlider();$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
+function isEditableTextTarget(el){
+ const t=el||document.activeElement;
+ if(!t||t===document.body||t===document.documentElement)return false;
+ if(t.isContentEditable||t.contentEditable==='true')return true;
+ const tag=(t.tagName||'').toUpperCase();
+ if(tag==='TEXTAREA'||tag==='SELECT')return true;
+ if(tag==='INPUT'){
+  const type=(t.type||'text').toLowerCase();
+  return !['button','checkbox','radio','range','submit','reset','file','image','color','hidden'].includes(type);
+ }
+ return false;
+}
+window.isEditableTextTarget=isEditableTextTarget;
 window.addEventListener('keydown',e=>{
- if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code))e.preventDefault();
- if(e.code==='F3'&&!e.repeat){debugMetrics.enabled=!debugMetrics.enabled;$('debugHud').hidden=!debugMetrics.enabled;return;}
+ // 1. Handle active keybind capture inside Game Options modal first
+ const optModal=$('mobileSettingsModal');
+ if(optModal&&!optModal.hidden){
+  if(typeof window.isCapturingKeybind==='function'&&window.isCapturingKeybind()){
+   e.preventDefault();
+   e.stopPropagation();
+   if(!e.repeat){
+    if(e.code==='Escape'){
+     capturingKeyAction=null;
+     keybindStatusMsg='키 변경이 취소되었습니다.';
+     if(typeof syncAllKeybindLabels==='function')syncAllKeybindLabels();
+    }else if(typeof setPcKeybind==='function'){
+     setPcKeybind(capturingKeyAction,e.code);
+    }
+   }
+   return;
+  }
+  if(e.code==='Escape'&&!e.repeat){
+   e.preventDefault();
+   if(typeof closeMobileSettingsModal==='function')closeMobileSettingsModal();
+   return;
+  }
+  return;
+ }
+ // 2. [#2 P1 Fix]: Do not intercept typing or call preventDefault when focus is inside an editable text element
+ if(isEditableTextTarget(e.target)||isEditableTextTarget(document.activeElement))return;
+ // 3. Allow Escape to close Challenge Select modal if open
+ const chModal=$('challengeSelectModal');
+ if(chModal&&!chModal.hidden){
+  if(e.code==='Escape'&&!e.repeat){
+   e.preventDefault();
+   if(typeof closeChallengeSelectModal==='function')closeChallengeSelectModal();
+  }
+  return;
+ }
+ // 4. Guard F3 debug HUD behind QA build (hidden in releaseMode: true)
+ if(e.code==='F3'&&!e.repeat){
+  if(window.DUDU_RELEASE?.releaseMode&&!window.DUDU_RELEASE?.qaBuild)return;
+  debugMetrics.enabled=!debugMetrics.enabled;$('debugHud').hidden=!debugMetrics.enabled;return;
+ }
+ if(e.ctrlKey||e.altKey||e.metaKey)return;
+ const logicalCode=(typeof resolvePhysicalKeyToLogicalCode==='function')
+  ? resolvePhysicalKeyToLogicalCode(e.code)
+  : (e.code==='KeyA'?'ArrowLeft':e.code==='KeyD'?'ArrowRight':e.code==='KeyS'?'ArrowDown':e.code==='KeyW'?'Space':e.code==='KeyP'?'Escape':e.code);
+ if(logicalCode||['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','Escape','ShiftLeft'].includes(e.code)){
+  e.preventDefault();
+ }
+ if(!logicalCode)return;
+ if((logicalCode==='Space'||logicalCode==='ShiftLeft'||logicalCode==='KeyR'||logicalCode==='Escape')&&e.repeat)return;
  if(typeof pressInput==='function'){
-  // Map WASD to Arrow keys as alternative controls
-  let logicalCode=e.code;
-  if(logicalCode==='KeyA')logicalCode='ArrowLeft';
-  else if(logicalCode==='KeyD')logicalCode='ArrowRight';
-  else if(logicalCode==='KeyS')logicalCode='ArrowDown';
-  else if(logicalCode==='KeyW')logicalCode='Space';
-  pressInput(logicalCode,'keyboard');
+  pressInput(logicalCode,`kb_${e.code}`);
   return;
  }
  if(e.code==='Escape'&&!e.repeat){pause();return;}if(state!=='playing')return;
@@ -606,13 +674,12 @@ window.addEventListener('keydown',e=>{
  if(e.code==='ShiftLeft'&&!e.repeat)dashRequest=true;
 });
 window.addEventListener('keyup',e=>{
+ if(isEditableTextTarget(e.target)||isEditableTextTarget(document.activeElement))return;
  if(typeof releaseInput==='function'){
-  let logicalCode=e.code;
-  if(logicalCode==='KeyA')logicalCode='ArrowLeft';
-  else if(logicalCode==='KeyD')logicalCode='ArrowRight';
-  else if(logicalCode==='KeyS')logicalCode='ArrowDown';
-  else if(logicalCode==='KeyW')logicalCode='Space';
-  releaseInput(logicalCode,'keyboard');
+  const logicalCode=(typeof resolvePhysicalKeyToLogicalCode==='function')
+   ? resolvePhysicalKeyToLogicalCode(e.code)
+   : (e.code==='KeyA'?'ArrowLeft':e.code==='KeyD'?'ArrowRight':e.code==='KeyS'?'ArrowDown':e.code==='KeyW'?'Space':e.code==='KeyP'?'Escape':e.code);
+  if(logicalCode)releaseInput(logicalCode,`kb_${e.code}`);
   return;
  }
  keys.delete(e.code);
@@ -883,9 +950,9 @@ function update(dt){
   const minCY=(actLv&&typeof actLv.minCamY==='number')?actLv.minCamY:-1250;
   const maxCY=(actLv&&typeof actLv.maxCamY==='number')?actLv.maxCamY:140;
   // Vertical Deadzone: keep camBaseY still while player screen Y is within [210, 510] (42% central window of 720px height)
-  const baseCamY = camY - lookDownOffset;
-  const screenY = p.y - baseCamY;
-  let desiredBaseY = baseCamY;
+  if(typeof window.camBaseY!=='number')window.camBaseY=camY;
+  const screenY = p.y - window.camBaseY;
+  let desiredBaseY = window.camBaseY;
   const lowerDeadzone = (camProfile === 'world1_village') ? 570 : (camProfile === 'world1_standard' ? 350 : 510);
   const upperDeadzone = (camProfile === 'world1_village') ? 235 : 210;
   if(screenY < upperDeadzone){
@@ -893,8 +960,11 @@ function update(dt){
   }else if(screenY > lowerDeadzone){
    desiredBaseY = p.y - lowerDeadzone;
   }
-  const targetCamY = Math.min(maxCY, Math.max(minCY, desiredBaseY + lookDownOffset));
-  camY += (targetCamY - camY) * (1 - Math.exp(-dt * 5.8));
+  window.camBaseY += (desiredBaseY - window.camBaseY) * (1 - Math.exp(-dt * 5.8));
+  window.camBaseY = Math.min(maxCY, Math.max(minCY, window.camBaseY));
+  // [#3 P1 Fix]: Strictly clamp targetCamY within [minCY, maxCY] so Look-Down never exceeds level bottom boundary
+  const targetCamY = Math.min(maxCY, Math.max(minCY, window.camBaseY + lookDownOffset));
+  camY += (targetCamY - camY) * (1 - Math.exp(-dt * 7.2));
  }else if(camProfile==='monatium_b_tall'){
   // [P0-C.1 해결]: 중복된 3개 분기를 1개로 통합하고, 제3타워 하강 구간 및 상층에서 ↓(ArrowDown) 아래보기 완벽 작동!
   const mb = STAGE_ANCHORS.monatium_b;
@@ -921,21 +991,37 @@ function update(dt){
   const targetCamY = Math.min(maxCY, Math.max(minCY, p.y - vertAnchor + lookDownOffset));
   camY += (targetCamY - camY) * (1 - Math.exp(-dt * 6.5));
  }else if(camProfile==='challenge_vertical'){
-  lookDownHold=0;lookDownOffset=0;
+  if(keys.has('ArrowDown')&&!stunned&&p.dash<=0&&Math.abs(p.vx)<220){
+   lookDownHold=Math.min(0.6,lookDownHold+dt);
+  }else{
+   lookDownHold=Math.max(0,lookDownHold-dt*3.2);
+  }
+  const lookDownTarget=lookDownHold>0.11?165:0;
+  lookDownOffset+=(lookDownTarget-lookDownOffset)*(1-Math.exp(-dt*6.5));
   camZoom=1.0;prevCamZoom=1.0;
   const actLv=(typeof getActiveLevel==='function')?getActiveLevel():null;
   const minCY=(actLv&&typeof actLv.minCamY==='number')?actLv.minCamY:-3860;
   const maxCY=(actLv&&typeof actLv.maxCamY==='number')?actLv.maxCamY:120;
   const desiredX=Math.max(0,Math.min(END-W,p.x-W*0.45));
   cam+=(desiredX-cam)*(1-Math.exp(-dt*7.5));
-  const desiredY=Math.min(maxCY,Math.max(minCY,p.y-435));
+  // [#3 P1 Fix]: Strictly clamp Challenge vertical & horizontal Look-Down to [minCY, maxCY]
+  const desiredY=Math.min(maxCY,Math.max(minCY,p.y-435+lookDownOffset));
   camY+=(desiredY-camY)*(1-Math.exp(-dt*7.0));
  }else if(camProfile==='challenge_horizontal'){
-  lookDownHold=0;lookDownOffset=0;
+  if(keys.has('ArrowDown')&&!stunned&&p.dash<=0&&Math.abs(p.vx)<220){
+   lookDownHold=Math.min(0.6,lookDownHold+dt);
+  }else{
+   lookDownHold=Math.max(0,lookDownHold-dt*3.2);
+  }
+  const lookDownTarget=lookDownHold>0.11?155:0;
+  lookDownOffset+=(lookDownTarget-lookDownOffset)*(1-Math.exp(-dt*6.5));
   camZoom+=(1.0-camZoom)*(1-Math.exp(-dt*4.5));
+  const actLv=(typeof getActiveLevel==='function')?getActiveLevel():null;
+  const minCY=(actLv&&typeof actLv.minCamY==='number')?actLv.minCamY:-450;
+  const maxCY=(actLv&&typeof actLv.maxCamY==='number')?actLv.maxCamY:100;
   const desiredX=Math.max(0,Math.min(END-W,p.x-W*0.36));
   cam+=(desiredX-cam)*(1-Math.exp(-dt*8.0));
-  const desiredY=Math.min(100,Math.max(-450,p.y-440));
+  const desiredY=Math.min(maxCY,Math.max(minCY,p.y-440+lookDownOffset));
   camY+=(desiredY-camY)*(1-Math.exp(-dt*6.5));
  }else if(camProfile==='erpien_boss_zoom'){
   lookDownHold=0;lookDownOffset=0;
@@ -944,7 +1030,6 @@ function update(dt){
   const desiredX=e.arenaOrigin||15700;
   const desiredY=-98;
   if(typeof arena!=='undefined'&&arena&&arena.entered&&(arena.phase==='combat'||arena.phase==='finale'||Math.abs(desiredX-cam)<1.2)){
-   // Gate 7 (P0): After the initial entry zoom-out, lock the arena camera 100% still with ZERO X/Y/Zoom jitter!
    camZoom=targetZoom;prevCamZoom=targetZoom;
    cam=desiredX;prevCam=desiredX;
    camY=desiredY;prevCamY=desiredY;
@@ -957,8 +1042,14 @@ function update(dt){
    if(Math.abs(desiredY-camY)<0.8)camY=desiredY;
   }
  }else{
-  lookDownHold=0;
-  lookDownOffset=0;
+  // [A-01 Fix]: Restore Look-Down (`아래보기`) in `general` camera profile (Suin Forest F1~F6, Suin Village V1~V4, etc.)!
+  if(keys.has('ArrowDown')&&!stunned&&p.dash<=0&&Math.abs(p.vx)<220){
+   lookDownHold=Math.min(0.6,lookDownHold+dt);
+  }else{
+   lookDownHold=Math.max(0,lookDownHold-dt*3.2);
+  }
+  const lookDownTarget=lookDownHold>0.11?175:0;
+  lookDownOffset+=(lookDownTarget-lookDownOffset)*(1-Math.exp(-dt*6.5));
   camZoom+=(1.0-camZoom)*(1-Math.exp(-dt*4.2));
   const viewW=W/camZoom;
   const desiredLook=dir<0?.56:dir>0?.42:look;
@@ -967,8 +1058,16 @@ function update(dt){
   const diffX=desired-cam;
   const dzX=Math.abs(diffX)<=3?0:diffX-Math.sign(diffX)*3;
   cam+=dzX*(1-Math.exp(-dt*7.2));
-  const desiredY=Math.min(140,Math.max(-650,p.y-camY<275?p.y-275:p.y-camY>595?p.y-595:camY));
-  camY+=(desiredY-camY)*(1-Math.exp(-dt*5.5));
+  const actLv=(typeof getActiveLevel==='function')?getActiveLevel():levels[levelIndex];
+  const minCY=(actLv&&typeof actLv.minCamY==='number')?actLv.minCamY:-650;
+  const maxCY=(actLv&&typeof actLv.maxCamY==='number')?actLv.maxCamY:140;
+  if(typeof window.camBaseY!=='number')window.camBaseY=camY;
+  const desiredBaseY=(p.y-window.camBaseY<275)?(p.y-275):((p.y-window.camBaseY>595)?(p.y-595):window.camBaseY);
+  window.camBaseY+=(desiredBaseY-window.camBaseY)*(1-Math.exp(-dt*5.5));
+  window.camBaseY=Math.min(maxCY,Math.max(minCY,window.camBaseY));
+  // [#3 P1 Fix]: Strictly respect level [minCY, maxCY] (maxCY=140 in Suin Forest/Village already provides +140~150px look-down from elevated platforms while preventing bottom over-scroll)
+  const desiredY=Math.min(maxCY,Math.max(minCY,window.camBaseY+lookDownOffset));
+  camY+=(desiredY-camY)*(1-Math.exp(-dt*7.2));
  }
 
  let progPct=0;
@@ -985,11 +1084,12 @@ function update(dt){
  }
  const nextProgStr=progPct.toFixed(2)+'%';
  if(_hudDomCache.progW!==nextProgStr){_hudDomCache.progW=nextProgStr;$('progress').style.width=nextProgStr;}
- const nextDashTxt=p.guardStun>0?`경직 중 (${p.guardStun.toFixed(1)}s)`:p.dash>0?'대시 중':p.airDashUsed&&!p.ground?'대시 · 착지 후 충전':p.dashCooldown>0?'대시 · 충전 중':'L SHIFT · 대시 준비';
+ const kb=(typeof getKeybindSummaryLabels==='function')?getKeybindSummaryLabels():{dash:'L SHIFT',j:'SPACE',d:'↓'};
+ const nextDashTxt=p.guardStun>0?`경직 중 (${p.guardStun.toFixed(1)}s)`:p.dash>0?'대시 중':p.airDashUsed&&!p.ground?'대시 (착지 후 충전)':p.dashCooldown>0?'대시 충전 중':`${kb.dash} · 대시 준비`;
  if(_hudDomCache.dashTxt!==nextDashTxt){_hudDomCache.dashTxt=nextDashTxt;$('dashStatus').textContent=nextDashTxt;}
  const nextJumpW=(p.jumpHeld?Math.min(100,p.hold/.24*100).toFixed(1):'0')+'%';
  if(_hudDomCache.jumpW!==nextJumpW){_hudDomCache.jumpW=nextJumpW;$('jumpMeter').style.width=nextJumpW;}
- const nextJumpTxt=lookDownHold>0.10?'↓ 아래보기 활성화 중':'SPACE · 짧게 / 길게 · ↓ 아래보기';
+ const nextJumpTxt=lookDownHold>0.10?`${kb.d} 아래쪽을 살펴보는 중`:`${kb.j} 점프 · ${kb.d} 아래보기`;
  if(_hudDomCache.jumpTxt!==nextJumpTxt){_hudDomCache.jumpTxt=nextJumpTxt;$('jumpInfo').textContent=nextJumpTxt;}
  updateRest(dt,dir);updateShadow(dt);updateAnimation(dt);
  if(dashing)trail.push({x:p.x,y:p.y,life:.13,face:p.dashDir});

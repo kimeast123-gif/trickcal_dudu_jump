@@ -1759,3 +1759,102 @@ main {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* [A-03 & D-03]: PC Keyboard Remapping UI inside Game Options Modal */
+.pcKeybindSection {
+  margin-top: 4px;
+}
+.pcKeybindHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.pcKeybindResetBtn {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffe8a3;
+  border: 1.5px solid rgba(255, 232, 163, 0.45);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pcKeybindResetBtn:hover {
+  background: rgba(255, 232, 163, 0.24);
+}
+.pcKeybindGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+}
+.pcKeybindRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 28, 22, 0.55);
+  border: 1px solid rgba(158, 240, 180, 0.25);
+  border-radius: 9px;
+  padding: 5px 9px;
+}
+.pcKeybindActionName {
+  font-size: 12.5px;
+  color: #e9f7ec;
+}
+.pcKeybindCaptureBtn {
+  min-width: 74px;
+  background: #2b5c3f;
+  color: #fff9db;
+  border: 1.5px solid #8ce99a;
+  border-radius: 7px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+.pcKeybindCaptureBtn.is-capturing {
+  background: #e67700;
+  color: #ffffff;
+  border-color: #ffd43b;
+  animation: pulseKeyCap 0.9s infinite alternate;
+}
+@keyframes pulseKeyCap {
+  from { transform: scale(0.98); }
+  to { transform: scale(1.03); }
+}
+.pcKeybindHintRow {
+  margin-top: 6px;
+}
+.pcKeybindStatusMsg {
+  display: block;
+  font-size: 11.5px;
+  color: #b2f2bb;
+}
+
+.pcKeybindSectionTitle {
+  font-size: 14px;
+  font-weight: 900;
+  color: #21432d;
+  margin-bottom: 6px;
+}
+.pcKeybindTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pcKeybindResetBtn {
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1.5px solid #5a8a52;
+  background: linear-gradient(180deg, #f4fbe9 0%, #dfeed0 100%);
+  color: #214b32;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(24, 53, 35, 0.12);
+}
+.pcKeybindResetBtn:hover {
+  background: linear-gradient(180deg, #e7f6d5 0%, #cde4b8 100%);
+}

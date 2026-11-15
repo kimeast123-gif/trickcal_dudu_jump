@@ -305,13 +305,14 @@
           </div>
           <div class="lobbyKeyGrid">
             <div class="lobbyKeySection">
-              <h4>⌨️ PC 키보드 조작</h4>
-              <div class="lobbyKeyRow"><span>좌우 이동</span><span class="lobbyKeyBadge">← / → 또는 A / D</span></div>
-              <div class="lobbyKeyRow"><span>점프 / 2단 점프</span><span class="lobbyKeyBadge">SPACE</span></div>
-              <div class="lobbyKeyRow"><span>순간 대시 (쿨타임)</span><span class="lobbyKeyBadge">L SHIFT</span></div>
-              <div class="lobbyKeyRow"><span>아래 시야 살피기</span><span class="lobbyKeyBadge">↓ 길게 누르기</span></div>
-              <div class="lobbyKeyRow"><span>통과형 발판 내려가기</span><span class="lobbyKeyBadge">↓ + SPACE</span></div>
-              <div class="lobbyKeyRow"><span>일시정지 / 메뉴</span><span class="lobbyKeyBadge">P 또는 ESC</span></div>
+              <h4>⌨️ PC 키보드 조작 (게임옵션에서 변경 가능)</h4>
+              <div class="lobbyKeyRow"><span>좌우 이동</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeMove">← / → (보조 A / D)</span></div>
+              <div class="lobbyKeyRow"><span>점프 / 2단 점프</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeJump">SPACE</span></div>
+              <div class="lobbyKeyRow"><span>순간 대시</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeDash">L SHIFT</span></div>
+              <div class="lobbyKeyRow"><span>아래쪽 살펴보기</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeLook">↓ 길게 누르기</span></div>
+              <div class="lobbyKeyRow"><span>얇은 발판 내려가기</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeDrop">↓ + SPACE</span></div>
+              <div class="lobbyKeyRow"><span>구간 다시 시작</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeRetry">R</span></div>
+              <div class="lobbyKeyRow"><span>일시정지 / 메뉴</span><span class="lobbyKeyBadge" id="lobbyKeyBadgePause">ESC / P</span></div>
             </div>
             <div class="lobbyKeySection">
               <h4>📱 모바일 터치 조작</h4>
@@ -323,8 +324,14 @@
             </div>
           </div>
           <div class="lobbyKeyFooter">
-            <span>💡 스토리 모드를 1회 완주하면 <b>월드맵(수인숲 나들이)</b>이 영구 해금됩니다!</span>
-            <button type="button" class="lobbyKeyHelpCloseBtn" id="confirmLobbyKeyHelpBtn">확인</button>
+            <div>
+              <span>💡 스토리 모드를 완주하면 <b>월드맵(수인숲 나들이)</b>이 해금됩니다.</span><br>
+              <small style="color:#b2f2bb;opacity:0.88">※ 본 게임은 에피드게임즈 〈트릭컬 리바이브〉 2차 창작 가이드라인을 준수하는 비영리 팬게임입니다.</small>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button type="button" class="lobbyKeyHelpCloseBtn" id="openKeybindFromHelpBtn">⚙️ 키 설정 열기</button>
+              <button type="button" class="lobbyKeyHelpCloseBtn" id="confirmLobbyKeyHelpBtn">확인</button>
+            </div>
           </div>
         </div>
       </div>
@@ -333,6 +340,17 @@
     overlay.appendChild(lobbyEl);
     mountReturnToLobbyOptionUI();
     bindLobbyEvents(lobbyEl);
+    const openKbBtn = $id('openKeybindFromHelpBtn');
+    if (openKbBtn) {
+      openKbBtn.addEventListener('click', () => {
+        const host = $id('lobbyPanelHost');
+        if (host) host.hidden = true;
+        if (typeof openMobileSettingsModal === 'function') {
+          openMobileSettingsModal({ fromLobbyKeyHelp: true, triggerEl: openKbBtn });
+        }
+      });
+    }
+    if (typeof syncAllKeybindLabels === 'function') syncAllKeybindLabels();
     syncLobbyButtonStates();
   }
 

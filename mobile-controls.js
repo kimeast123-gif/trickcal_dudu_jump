@@ -178,6 +178,343 @@ window.releaseInput = releaseInput;
 window.releaseAllInputs = releaseAllInputs;
 window.ensurePaused = ensurePaused;
 
+// ============================================================================
+// [A-03 & A-04]: Custom PC Keyboard Binding System (`dudu_keyboard_bindings_v1`)
+// ============================================================================
+const PC_KEYBIND_STORAGE_KEY = 'dudu_keyboard_bindings_v1';
+const DEFAULT_PC_KEYBINDS = Object.freeze({
+  version: 1,
+  MOVE_LEFT: 'ArrowLeft',
+  MOVE_RIGHT: 'ArrowRight',
+  DOWN_LOOK: 'ArrowDown',
+  JUMP: 'Space',
+  DASH: 'ShiftLeft',
+  RETRY: 'KeyR',
+  PAUSE: 'Escape'
+});
+
+const ACTION_TO_LOGICAL_CODE = Object.freeze({
+  MOVE_LEFT: 'ArrowLeft',
+  MOVE_RIGHT: 'ArrowRight',
+  DOWN_LOOK: 'ArrowDown',
+  JUMP: 'Space',
+  DASH: 'ShiftLeft',
+  RETRY: 'KeyR',
+  PAUSE: 'Escape'
+});
+
+const ACTION_LABELS_KO = Object.freeze({
+  MOVE_LEFT: '왼쪽 이동',
+  MOVE_RIGHT: '오른쪽 이동',
+  DOWN_LOOK: '아래보기 / 숙이기',
+  JUMP: '점프 / 2단 점프',
+  DASH: '순간 대시',
+  RETRY: '구간 다시 시작',
+  PAUSE: '일시정지'
+});
+
+const FORBIDDEN_KEY_CODES = new Set([
+  'Tab', 'CapsLock', 'ContextMenu', 'MetaLeft', 'MetaRight', 'AltLeft', 'AltRight',
+  'ControlLeft', 'ControlRight', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8',
+  'F9', 'F10', 'F11', 'F12', 'PrintScreen', 'ScrollLock', 'Pause', 'NumLock'
+]);
+
+const pcKeybinds = { ...DEFAULT_PC_KEYBINDS };
+let capturingKeyAction = null;
+let keybindStatusMsg = '';
+
+function formatKeyCodeLabel(code) {
+  if (!code) return '-';
+  const map = {
+    ArrowLeft: '←',
+    ArrowRight: '→',
+    ArrowUp: '↑',
+    ArrowDown: '↓',
+    Space: 'SPACE',
+    ShiftLeft: 'L SHIFT',
+    ShiftRight: 'R SHIFT',
+    Enter: 'ENTER',
+    Backspace: 'BACKSPACE',
+    Escape: 'ESC',
+     semicolon: ';',
+    Quote: "'",
+    Comma: ',',
+    Period: '.',
+    Slash: '/',
+    Backslash: '\\',
+    BracketLeft: '[',
+    BracketRight: ']',
+    Minus: '-',
+    Equal: '='
+  };
+  if (map[code]) return map[code];
+  if (code.startsWith('Key') && code.length === 4) return code.slice(3).toUpperCase();
+  if (code.startsWith('Digit') && code.length === 6) return code.slice(5);
+  if (code.startsWith('Numpad')) return 'NUM ' + code.slice(6);
+  return code.toUpperCase();
+}
+
+function isValidCustomKeyCode(code) {
+  if (!code || typeof code !== 'string') return false;
+  if (FORBIDDEN_KEY_CODES.has(code)) return false;
+  return /^(Arrow(Left|Right|Up|Down)|Space|Shift(Left|Right)|Enter|Backspace|Escape|Key[A-Z]|Digit[0-9]|Numpad[0-9A-Za-z]+|Comma|Period|Slash|Semicolon|Quote|BracketLeft|BracketRight|Minus|Equal)$/.test(code);
+}
+
+function loadPcKeybinds() {
+  Object.assign(pcKeybinds, DEFAULT_PC_KEYBINDS);
+  let repairedCorruptStorage = false;
+  try {
+    const raw = localStorage.getItem(PC_KEYBIND_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        const seen = new Set();
+        let validAll = true;
+        const temp = { version: 1 };
+        for (const act of Object.keys(ACTION_TO_LOGICAL_CODE)) {
+          const candidate = parsed[act] || DEFAULT_PC_KEYBINDS[act];
+          // [#1 P1 Fix]: Escape is strictly reserved for PAUSE and never allowed on non-PAUSE actions
+          if (!isValidCustomKeyCode(candidate) || seen.has(candidate) || (candidate === 'Escape' && act !== 'PAUSE')) {
+            validAll = false;
+            repairedCorruptStorage = true;
+            break;
+          }
+          seen.add(candidate);
+          temp[act] = candidate;
+        }
+        if (validAll) {
+          Object.assign(pcKeybinds, temp);
+        }
+      } else {
+        repairedCorruptStorage = true;
+      }
+    }
+  } catch (e) {
+    Object.assign(pcKeybinds, DEFAULT_PC_KEYBINDS);
+    repairedCorruptStorage = true;
+  }
+  if (repairedCorruptStorage) {
+    try {
+      localStorage.setItem(PC_KEYBIND_STORAGE_KEY, JSON.stringify(pcKeybinds));
+    } catch (e) {}
+  }
+  syncAllKeybindLabels();
+}
+
+function savePcKeybinds() {
+  try {
+    localStorage.setItem(PC_KEYBIND_STORAGE_KEY, JSON.stringify(pcKeybinds));
+  } catch (e) {}
+  syncAllKeybindLabels();
+}
+
+function resetPcKeybindsToDefault() {
+  releaseAllInputs('keybind_reset');
+  capturingKeyAction = null;
+  Object.assign(pcKeybinds, DEFAULT_PC_KEYBINDS);
+  keybindStatusMsg = '기본 조작키로 초기화되었습니다.';
+  savePcKeybinds();
+}
+
+function setPcKeybind(action, physicalCode) {
+  if (!ACTION_TO_LOGICAL_CODE[action]) return { ok: false, reason: 'invalid_action' };
+  // [#1 P1 Fix]: Reject Escape on any action other than PAUSE at the API level as well as UI level
+  if (physicalCode === 'Escape' && action !== 'PAUSE') {
+    keybindStatusMsg = 'ESC 키는 일시정지 전용 비상키로 예약되어 다른 행동에 지정할 수 없어요.';
+    syncAllKeybindLabels();
+    return { ok: false, reason: 'escape_reserved_for_pause' };
+  }
+  if (!isValidCustomKeyCode(physicalCode)) {
+    keybindStatusMsg = '브라우저 예약 키는 지정할 수 없어요.';
+    syncAllKeybindLabels();
+    return { ok: false, reason: 'forbidden_key' };
+  }
+  // Check duplicate across other actions
+  for (const otherAct of Object.keys(ACTION_TO_LOGICAL_CODE)) {
+    if (otherAct !== action && pcKeybinds[otherAct] === physicalCode) {
+      keybindStatusMsg = `이미 [${ACTION_LABELS_KO[otherAct]}]에 할당된 키(${formatKeyCodeLabel(physicalCode)})입니다.`;
+      syncAllKeybindLabels();
+      return { ok: false, reason: 'duplicate_key', conflictAction: otherAct };
+    }
+  }
+  releaseAllInputs('keybind_change');
+  pcKeybinds[action] = physicalCode;
+  capturingKeyAction = null;
+  keybindStatusMsg = `[${ACTION_LABELS_KO[action]}] 키가 ${formatKeyCodeLabel(physicalCode)}(으)로 변경되었습니다.`;
+  savePcKeybinds();
+  return { ok: true, action, code: physicalCode };
+}
+
+function resolvePhysicalKeyToLogicalCode(physicalCode) {
+  if (!physicalCode) return null;
+  // [#1 P1 Fix]: Escape is ALWAYS guaranteed to resolve to 'Escape' (emergency pause) regardless of PAUSE binding
+  if (physicalCode === 'Escape') return 'Escape';
+  // 1. User primary bindings take strict priority
+  for (const [act, boundCode] of Object.entries(pcKeybinds)) {
+    if (act === 'version') continue;
+    if (boundCode === physicalCode) {
+      return ACTION_TO_LOGICAL_CODE[act];
+    }
+  }
+  // 2. Non-conflicting secondary convenience aliases (WASD, ShiftRight, KeyP when PAUSE is default Escape)
+  const boundSet = new Set(Object.values(pcKeybinds));
+  if (physicalCode === 'KeyP' && pcKeybinds.PAUSE === 'Escape' && !boundSet.has('KeyP')) return 'Escape';
+  if (physicalCode === 'KeyA' && !boundSet.has('KeyA')) return 'ArrowLeft';
+  if (physicalCode === 'KeyD' && !boundSet.has('KeyD')) return 'ArrowRight';
+  if (physicalCode === 'KeyS' && !boundSet.has('KeyS')) return 'ArrowDown';
+  if (physicalCode === 'KeyW' && !boundSet.has('KeyW')) return 'Space';
+  if (physicalCode === 'ShiftRight' && !boundSet.has('ShiftRight')) return 'ShiftLeft';
+  return null;
+}
+
+function getKeybindSummaryLabels() {
+  const l = formatKeyCodeLabel(pcKeybinds.MOVE_LEFT);
+  const r = formatKeyCodeLabel(pcKeybinds.MOVE_RIGHT);
+  const d = formatKeyCodeLabel(pcKeybinds.DOWN_LOOK);
+  const j = formatKeyCodeLabel(pcKeybinds.JUMP);
+  const dash = formatKeyCodeLabel(pcKeybinds.DASH);
+  const retry = formatKeyCodeLabel(pcKeybinds.RETRY);
+  const pauseKey = formatKeyCodeLabel(pcKeybinds.PAUSE);
+  const boundSet = new Set(Object.values(pcKeybinds));
+  // [#6 P2 Fix]: Keep pauseLabel 100% consistent with whether secondary 'P' shortcut is actually active
+  let pauseLabel;
+  if (pcKeybinds.PAUSE === 'Escape') {
+    pauseLabel = boundSet.has('KeyP') ? 'ESC' : 'ESC / P';
+  } else {
+    pauseLabel = `${pauseKey} / ESC`;
+  }
+  return { l, r, d, j, dash, retry, pauseKey, pauseLabel };
+}
+
+function syncAllKeybindLabels() {
+  const k = getKeybindSummaryLabels();
+  // 1. Update Keybind Option Buttons inside #mobileSettingsModal
+  for (const act of Object.keys(ACTION_TO_LOGICAL_CODE)) {
+    const btn = document.getElementById(`keybindBtn-${act}`);
+    if (btn) {
+      const isCap = capturingKeyAction === act;
+      btn.textContent = isCap ? '키 입력 대기 중…' : formatKeyCodeLabel(pcKeybinds[act]);
+      btn.classList.toggle('is-capturing', isCap);
+    }
+  }
+  const statusEl = document.getElementById('pcKeybindStatusMsg');
+  if (statusEl) {
+    statusEl.textContent = keybindStatusMsg || '바꾸고 싶은 항목을 누른 뒤 원하는 키를 눌러 주세요. (ESC/P 일시정지 호환)';
+  }
+  // 2. Update modalKeys & below keys bar
+  const modalKeysEl = document.querySelector('.modalKeys');
+  if (modalKeysEl) {
+    modalKeysEl.innerHTML = `${k.l} ${k.r} 이동 <span>·</span> ${k.j} 점프 <span>·</span> ${k.d}+${k.j} 발판 내려가기 <span>·</span> ${k.d} 길게 아래보기 <span>·</span> ${k.dash} 대시`;
+  }
+  const belowKeysEl = document.querySelector('.below .keys');
+  if (belowKeysEl) {
+    belowKeysEl.innerHTML = `
+      <span><kbd>${k.l}</kbd><kbd>${k.r}</kbd> 이동</span>
+      <span><kbd>${k.j}</kbd> 점프 / 2단 점프</span>
+      <span><kbd>${k.d}</kbd> 길게 눌러 아래보기</span>
+      <span><kbd>${k.d}</kbd> + <kbd>${k.j}</kbd> 얇은 발판 내려가기</span>
+      <span><kbd>${k.dash}</kbd> 순간 대시</span>
+      <span><kbd>${k.retry}</kbd> 구간 다시 시작</span>
+      <span><kbd>${k.pauseLabel}</kbd> 쉬어가기</span>
+    `;
+  }
+  // 3. Update retry buttons
+  const retryBtn = document.getElementById('retry');
+  if (retryBtn) retryBtn.textContent = `↻ 현재 구간 다시 시작 (${k.retry})`;
+  const chRetryBtn = document.getElementById('chRetryBtn');
+  if (chRetryBtn) chRetryBtn.textContent = `↻ 현재 스테이지 다시 시작 (${k.retry})`;
+
+  // 4. Update Lobby Key Help Modal badges if mounted
+  const khMove = document.getElementById('lobbyKeyBadgeMove');
+  const khJump = document.getElementById('lobbyKeyBadgeJump');
+  const khDash = document.getElementById('lobbyKeyBadgeDash');
+  const khLook = document.getElementById('lobbyKeyBadgeLook');
+  const khDrop = document.getElementById('lobbyKeyBadgeDrop');
+  const khRetry = document.getElementById('lobbyKeyBadgeRetry');
+  const khPause = document.getElementById('lobbyKeyBadgePause');
+  if (khMove) khMove.textContent = `${k.l} / ${k.r} (보조 A / D)`;
+  if (khJump) khJump.textContent = `${k.j}`;
+  if (khDash) khDash.textContent = `${k.dash}`;
+  if (khLook) khLook.textContent = `${k.d} 길게 누르기`;
+  if (khDrop) khDrop.textContent = `${k.d} + ${k.j}`;
+  if (khRetry) khRetry.textContent = `${k.retry}`;
+  if (khPause) khPause.textContent = `${k.pauseLabel}`;
+}
+
+function ensurePcKeybindSettingsUI() {
+  const modalCard = document.querySelector('#mobileSettingsModal .mobileSettingsCard');
+  const footer = modalCard?.querySelector('.mobileSettingsFooter');
+  if (!modalCard || !footer || document.getElementById('pcKeybindSection')) return;
+
+  const sec = document.createElement('div');
+  sec.id = 'pcKeybindSection';
+  sec.className = 'pcKeybindSection';
+  const rowsHtml = Object.keys(ACTION_TO_LOGICAL_CODE).map(act => `
+    <div class="pcKeybindRow">
+      <span class="pcKeybindActionName">${ACTION_LABELS_KO[act]}</span>
+      <button type="button" class="pcKeybindCaptureBtn" id="keybindBtn-${act}" data-keybind-action="${act}">
+        ${formatKeyCodeLabel(pcKeybinds[act])}
+      </button>
+    </div>
+  `).join('');
+
+  sec.innerHTML = `
+    <div class="soundSettingDivider" aria-hidden="true"></div>
+    <div class="pcKeybindHeaderRow">
+      <span class="mobileSettingLabel pcKeybindSectionTitle">⌨️ PC 키보드 조작 설정</span>
+      <button type="button" class="pcKeybindResetBtn" id="resetPcKeybindsBtn">기본값 복원</button>
+    </div>
+    <div class="pcKeybindGrid" role="group" aria-label="PC 조작키 설정">
+      ${rowsHtml}
+    </div>
+    <div class="pcKeybindHintRow">
+      <span id="pcKeybindStatusMsg" class="pcKeybindStatusMsg">바꾸고 싶은 항목을 누른 뒤 원하는 키를 눌러 주세요. (통과: 아래보기+점프)</span>
+    </div>
+  `;
+  // [#6 P2 Fix]: Place PC Keybind settings right below Sound Volume on PC (above Mobile Controller section) so no scrolling is required on PC
+  const soundGroup = modalCard.querySelector('.soundVolumeGroup');
+  if (!isMobileOrTabletViewport() && soundGroup && soundGroup.nextSibling) {
+    modalCard.insertBefore(sec, soundGroup.nextSibling);
+  } else {
+    modalCard.insertBefore(sec, footer);
+  }
+
+  sec.querySelectorAll('[data-keybind-action]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const act = btn.getAttribute('data-keybind-action');
+      if (capturingKeyAction === act) {
+        capturingKeyAction = null;
+        keybindStatusMsg = '키 변경이 취소되었습니다.';
+      } else {
+        capturingKeyAction = act;
+        keybindStatusMsg = `[${ACTION_LABELS_KO[act]}]에 사용할 새 키를 눌러 주세요… (ESC: 취소)`;
+      }
+      syncAllKeybindLabels();
+    });
+  });
+
+  const resetBtn = document.getElementById('resetPcKeybindsBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      resetPcKeybindsToDefault();
+    });
+  }
+  syncAllKeybindLabels();
+}
+
+window.pcKeybinds = pcKeybinds;
+window.loadPcKeybinds = loadPcKeybinds;
+window.savePcKeybinds = savePcKeybinds;
+window.setPcKeybind = setPcKeybind;
+window.resetPcKeybindsToDefault = resetPcKeybindsToDefault;
+window.resolvePhysicalKeyToLogicalCode = resolvePhysicalKeyToLogicalCode;
+window.getKeybindSummaryLabels = getKeybindSummaryLabels;
+window.syncAllKeybindLabels = syncAllKeybindLabels;
+window.isCapturingKeybind = () => Boolean(capturingKeyAction);
+
+
 // Load & Save Controller Preferences
 function loadMobilePrefs() {
   try {
@@ -497,20 +834,74 @@ function endJoystickTracking() {
   resetJoystickVisualAndState();
 }
 
-function openMobileSettingsModal() {
+let _optionsReturnContext = { fromLobbyKeyHelp: false, triggerEl: null };
+
+function syncPcKeybindSectionOrder() {
+  const modalCard = document.querySelector('#mobileSettingsModal .mobileSettingsCard');
+  const sec = document.getElementById('pcKeybindSection');
+  const footer = modalCard?.querySelector('.mobileSettingsFooter');
+  const soundGroup = modalCard?.querySelector('.soundVolumeGroup');
+  if (!modalCard || !sec || !footer) return;
+  if (!isMobileOrTabletViewport() && soundGroup && soundGroup.nextSibling) {
+    if (sec.previousElementSibling !== soundGroup) {
+      modalCard.insertBefore(sec, soundGroup.nextSibling);
+    }
+  } else {
+    if (sec.nextElementSibling !== footer) {
+      modalCard.insertBefore(sec, footer);
+    }
+  }
+}
+
+function openMobileSettingsModal(opts = {}) {
   if (typeof state !== 'undefined' && state === 'playing') {
     ensurePaused('options');
   } else {
     releaseAllInputs('options');
   }
+  _optionsReturnContext = {
+    fromLobbyKeyHelp: Boolean(opts && opts.fromLobbyKeyHelp),
+    triggerEl: (opts && opts.triggerEl) ? opts.triggerEl : (document.activeElement || null)
+  };
+  ensurePcKeybindSettingsUI();
+  syncPcKeybindSectionOrder();
+  capturingKeyAction = null;
   applyMobilePrefsToDOM();
+  syncAllKeybindLabels();
   const modalEl = document.getElementById('mobileSettingsModal');
-  if (modalEl) modalEl.hidden = false;
+  if (modalEl) {
+    modalEl.hidden = false;
+    const card = modalEl.querySelector('.mobileSettingsCard');
+    if (card) card.scrollTop = 0;
+  }
 }
 
 function closeMobileSettingsModal() {
+  capturingKeyAction = null;
+  releaseAllInputs('close_options');
+  syncAllKeybindLabels();
   const modalEl = document.getElementById('mobileSettingsModal');
   if (modalEl) modalEl.hidden = true;
+
+  // [#6 P2 Fix]: Restore Lobby Key Help modal and focus when options was opened from Key Help
+  if (_optionsReturnContext && _optionsReturnContext.fromLobbyKeyHelp) {
+    const host = document.getElementById('lobbyPanelHost');
+    const lobby = document.getElementById('duduTitleLobby');
+    if (host && lobby && !lobby.classList.contains('is-hidden')) {
+      host.hidden = false;
+      const btn = document.getElementById('openKeybindFromHelpBtn') || _optionsReturnContext.triggerEl;
+      if (btn && typeof btn.focus === 'function') {
+        try { btn.focus(); } catch (e) {}
+      }
+      _optionsReturnContext = { fromLobbyKeyHelp: false, triggerEl: null };
+      return;
+    }
+  }
+  const prevTrigger = _optionsReturnContext?.triggerEl;
+  _optionsReturnContext = { fromLobbyKeyHelp: false, triggerEl: null };
+  if (prevTrigger && typeof prevTrigger.focus === 'function' && document.contains(prevTrigger)) {
+    try { prevTrigger.focus(); } catch (e) {}
+  }
 }
 
 window.openMobileSettingsModal = openMobileSettingsModal;
@@ -523,6 +914,8 @@ function setupMobileControls() {
   mobileControlsInitialized = true;
 
   loadMobilePrefs();
+  ensurePcKeybindSettingsUI();
+  loadPcKeybinds();
 
   // 1. Setup 360° Virtual Joystick (#vjoy-base)
   const joyBase = document.getElementById('vjoy-base');

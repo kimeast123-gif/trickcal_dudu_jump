@@ -15,3 +15,12 @@ window.DUDU_RELEASE_CONFIG = window.DUDU_RELEASE;
 try {
   document.documentElement.setAttribute('data-release-mode', window.DUDU_RELEASE.releaseMode ? 'true' : 'false');
 } catch (e) {}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.DUDU_RELEASE && window.DUDU_RELEASE.releaseMode && !window.DUDU_RELEASE.qaBuild) {
+    document.querySelectorAll('.practiceNav, .encounterNav').forEach(el => {
+      el.hidden = true;
+      el.setAttribute('aria-hidden', 'true');
+    });
+  }
+});
