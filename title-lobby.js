@@ -264,7 +264,7 @@
           <button type="button" class="lobbyCapsuleBtn btn-worldmap" id="lobbyBtnWorldMap" data-lobby-action="worldmap" data-wm-locked="true">
             <span class="lobbyBtnIcon">${ICONS_SVG.worldmap}</span>
             <span class="lobbyBtnLabel">월드맵</span>
-            <span class="lobbyWmLockBadge" id="lobbyWmLockBadge">🔒 엔딩 후</span>
+            <span class="lobbyWmLockBadge" id="lobbyWmLockBadge"></span>
           </button>
           ${ICONS_SVG.echoArcs}
         </div>
@@ -325,7 +325,7 @@
           </div>
           <div class="lobbyKeyFooter">
             <div>
-              <span>💡 스토리 모드를 완주하면 <b>월드맵(수인숲 나들이)</b>이 해금됩니다.</span><br>
+              <span>💡 <b>월드맵</b>에서 수인숲 나들이와 모나티엄의 야경을 바로 즐길 수 있어요.</span><br>
               <small style="color:#68756A">※ 본 게임은 에피드게임즈 〈트릭컬 리바이브〉 2차 창작 가이드라인을 준수하는 비영리 팬게임입니다.</small>
             </div>
             <div style="display:flex;gap:8px;align-items:center">

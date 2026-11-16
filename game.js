@@ -745,13 +745,16 @@ function update(dt){
  /* v1.2.1: a jump pressed mid-dash waits for the dash to end */if(p.dash<=0)p.buffer=Math.max(0,p.buffer-dt);p.coyote=p.ground?.10:Math.max(0,p.coyote-dt);p.dashCooldown=Math.max(0,p.dashCooldown-dt);
 
  const stunned=p.guardStun>0;
+ /* v1.5: the night map holds Dudu still for the first 2 seconds while the lead runners set off */
+ const introLock=window.__duduIntroLock>0;
+ if(introLock){p.buffer=0;dashRequest=false;}
  if(stunned){
   p.guardStun=Math.max(0,p.guardStun-dt);
   p.guardKnock=Math.max(0,p.guardKnock-dt);
   p.buffer=0;dashRequest=false;p.jumpHeld=false;p.dash=0;
  }
 
- let dir=stunned?0:((keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0));
+ let dir=(stunned||introLock)?0:((keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0));
  if(dir&&p.dash<=0){
   p.face=dir;
   if(duduVoiceState.wasStationaryIdle&&!duduVoiceState.departedInRun&&p.ground&&typeof playDuduVoice==='function'){
@@ -818,7 +821,8 @@ function update(dt){
     hitDangerWallId = a.id;
    }
   }
-  if(oldY<=a.y+2||oldY-60>=a.y+a.h)continue;
+  /* v1.5: brown shutters (dashUnder) leave a gap a dash slips through; Dudu is 60px tall standing, 32px while dashing */
+  if(oldY<=a.y+2||oldY-((a.dashUnder&&dashing)?32:60)>=a.y+a.h)continue;
   if(oldX+19<=a.x&&p.x+19>a.x){
    p.x=a.x-19;p.vx=0;p.dash=0;p.knockVX=0;
    if(isMonatiumB && !monatiumBTower3Cleared && MB_T3_DANGER_WALLS.has(a.id)){
@@ -841,6 +845,10 @@ function update(dt){
    wallHazardReset = true;
    hitDangerWallId = hitDangerWallId || 'MB-T3-EXTERIOR-BYPASS';
   }
+ }
+ if(dashing&&p.dash<=0&&typeof isNightActive==='function'&&isNightActive()){
+  /* a dash that ends half under a shutter keeps going until Dudu is clear */
+  for(const a of platforms){if(a.dashUnder&&p.x+19>a.x&&p.x-19<a.x+a.w&&p.y-60<a.y+a.h&&p.y>a.y){p.dash=dt;break;}}
  }
  if(wallHazardReset){
   deaths++;

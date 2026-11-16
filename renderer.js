@@ -328,6 +328,7 @@ function drawPanoramaByBgKey(bgKey, alpha = 1) {
 
 function renderBackground() {
   const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex], segments = l.segments;
+  if (l && typeof l.customBackground === 'function') { l.customBackground(); return; }
   const center = rCam + W * 0.5;
   let activeIdx = segments.findIndex(s => center >= s.start && center < s.end);
   if (activeIdx < 0) activeIdx = segments.length - 1;
@@ -1796,6 +1797,7 @@ function drawPlatform(a) {
   if (a.hidden) return;
   const drawX = Math.round((a.prevX ?? a.x) + (a.x - (a.prevX ?? a.x)) * renderAlpha);
   const drawY = Math.round((a.prevY ?? a.y) + (a.y - (a.prevY ?? a.y)) * renderAlpha);
+  if (a.nightDraw && typeof drawNightPlatform === 'function') { drawNightPlatform(a, drawX, drawY); return; }
 
   // [A-4 Fix]: Distinct non-collidable turret perch pedestal (`C3-TURRET-P1/P2/P3`, `nonCollidable: true`)
   if (a.nonCollidable) {
@@ -2185,6 +2187,7 @@ function draw() {
   drawTowerStructures();
   drawMonatiumBArchitecture();
   drawErpienAArchitecture();
+  if (typeof drawNightMonatiumBack === 'function') drawNightMonatiumBack();
   drawPitShade(viewW, viewH);
 
   if (typeof gameMode !== 'undefined' && gameMode === 'world') {
@@ -2216,6 +2219,7 @@ function draw() {
     if (typeof drawChallengeHazards === 'function') drawChallengeHazards();
   } else if (typeof gameMode !== 'undefined' && gameMode === 'world') {
     if (typeof drawWorld1TentaclesAndSlots === 'function') drawWorld1TentaclesAndSlots();
+    if (typeof drawNightMonatiumFront === 'function') drawNightMonatiumFront();
   } else {
     drawActors();
     drawBombs();
@@ -2257,7 +2261,7 @@ function draw() {
   }
   for (let i = 0; i < flags.length; i++) {
     const f = flags[i];
-    if (f.x < rCam - 100 || f.x > rCam + viewW + 100) continue;
+    if (f.hidden || f.x < rCam - 100 || f.x > rCam + viewW + 100) continue;
     line(f.x, f.y, f.x, f.y - 100, '#665d52', 4);
     ctx.fillStyle = checkpoint > i ? '#87bb90' : '#f4ce83';
     ctx.beginPath();
@@ -2285,7 +2289,7 @@ function draw() {
   const activeLv = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
   const allGoals = activeLv ? [activeLv.goal, ...(activeLv.alternateGoals || [])].filter(Boolean) : [];
   for (const goal of allGoals) {
-    drawHomeDoor(goal);
+    if (!goal.hidden) drawHomeDoor(goal);
   }
   for (const t of trail) {
     ctx.save();

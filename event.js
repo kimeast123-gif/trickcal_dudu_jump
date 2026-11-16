@@ -248,7 +248,7 @@ function finishStoryModal(){
  modal(
   wasSpecial?'올 컬렉션':wasCandy?'왕사탕 올 컬렉션':'모험 완료',
   wasLate?'조금 늦어버렸어요':wasSpecial?'두두, 모든 황금 크레파스를 선물하러 가요!':wasCandy?'두두, 왕사탕을 하나도 놓치지 않았어요!':'두두, 무사히 집에 도착!',
-  `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b>, 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b>, 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wmUnlocked?'월드맵 해금 완료':'제한 시간 안에 도착하면 월드맵이 해금됩니다.'}`,
+  `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b>, 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b>, 왕사탕 <b>${candyCount}/${candyTotal}</b>`,
   wmUnlocked?'월드맵':'다시 시작'
  );
  if(wmUnlocked){

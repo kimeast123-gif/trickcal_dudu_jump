@@ -121,7 +121,7 @@ async def desktop_checks(pw, want):
     if on('modes'):
         bad = []
         for name, js in [('challenge', "startChallengeMode(0)"), ('world1', "startWorld1StageFromMenu(0,true)"),
-                         ('worldmap', "openWorldMapMenu({forceDevOpen:true})")]:
+                         ('worldmap', "openWorldMapMenu({forceDevOpen:true})"), ('night', "startNightStage()")]:
             n0 = len(errs)
             try:
                 await pg.evaluate(f"()=>{{{js};}}")
@@ -129,7 +129,7 @@ async def desktop_checks(pw, want):
                 errs.append(str(e)[:120])
             await pg.wait_for_timeout(2500)
             if len(errs) > n0: bad.append(name + ': ' + errs[n0])
-        check('modes: challenge, world 1 and world map open without errors', not bad, '; '.join(bad))
+        check('modes: challenge, world 1, world map and night map open without errors', not bad, '; '.join(bad))
 
     if on('world1'):
         await pg.evaluate("()=>startWorld1StageFromMenu(0,true)"); await pg.wait_for_timeout(2500)
@@ -143,6 +143,21 @@ async def desktop_checks(pw, want):
             if g is not None: ys.append(g)
         await pg.evaluate("()=>releaseInput('ArrowRight','kb_ArrowRight')")
         check('camera: world 1 keeps Dudu near screen middle when grounded', ys and all(250 <= y <= 470 for y in ys), f'screen y: {ys}')
+
+    if on('night'):
+        # v1.5 World 2 night map. Full checks: tools/qa/night_checks.py, night_hops.py, night_run.py
+        r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));localStorage.removeItem('DUDU_WORLDMAP_SAVE_V1');_memoryWorldMapSave=null;
+          const open=openWorldMapMenu();document.getElementById('overlay').hidden=true;startNightStage();pressInput('ArrowRight','kb_ArrowRight');
+          const t0=levelClock;let movedAt=null;for(let i=0;i<70;i++){await w(50);if(movedAt===null&&p.x>131)movedAt=levelClock-t0;}
+          releaseInput('ArrowRight','kb_ArrowRight');
+          const lines=world1Stages[NIGHT_STAGE_INDEX].nightNpcs.map(n=>n.name+':'+n.dialogue).join('|');
+          devPracticeNight(13000,300);await w(300);const hallEarly=__nightBgDebug.hall;
+          return {open,movedAt,lines,hallEarly,drones:__night.drones.length}}""")
+        want_lines = ('리온:시저가 또 난리를 치다니... 빨리 붙잡아 다행이에요!|시저:히끅... 빌... 빌런은 반드시 다시 돌아온다!|'
+                      '엘레나:바빠 죽겠는데 뭔 빌런이야 어휴!|아멜리아:언젠가 외래종 교도소를 한번 손 봐야겠군요|'
+                      '칸나:역시 스핑크스! 이번에도 협조해 주셔서 감사합니다!')
+        ok = r['open'] and r['movedAt'] is not None and 1.98 <= r['movedAt'] <= 2.2 and r['lines'] == want_lines and not r['hallEarly'] and r['drones'] == 8
+        check('night: world map open from start, 2s start hold, 5 plaza lines exact, city hall hidden early', ok, r)
     await b.close()
 
 

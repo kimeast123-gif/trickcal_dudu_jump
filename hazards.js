@@ -890,8 +890,9 @@ function applyStunHit(sourceX,sourceKind='generic',customMsg=null){
   worldStageHitsThisRun++;
   const save = typeof loadWorldMapSave === 'function' ? loadWorldMapSave() : null;
   const stg = (typeof world1Stages !== 'undefined') ? world1Stages[activeWorldStageIndex] : null;
-  if (save && stg && save.worlds.world1_beastforest.stages[stg.stageCode]) {
-   save.worlds.world1_beastforest.stages[stg.stageCode].hits++;
+  const rec = (save && stg && typeof getWorldStageRecord === 'function') ? getWorldStageRecord(save, stg) : null;
+  if (rec) {
+   rec.hits++;
    saveWorldMapData(save);
   }
  }
@@ -1848,6 +1849,7 @@ function updateHazards(dt){
   if(typeof syncWorld1Tentacles==='function')syncWorld1Tentacles(dt);
   if(typeof updateWorld1Collectibles==='function')updateWorld1Collectibles();
   if(typeof updateWorld1Friends==='function')updateWorld1Friends(dt);
+  if(typeof updateNightMonatium==='function')updateNightMonatium(dt);
   return;
  }
  hazardClock+=dt;

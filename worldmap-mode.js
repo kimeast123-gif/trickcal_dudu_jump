@@ -59,7 +59,7 @@ const WORLDMAP_CARDS = [
     subtitle: '밝은 초원과 거목 미로를 지나 마을로 (1-1부터 1-5)',
     kind: 'world',
     implementationStatus: 'playable',
-    unlockCondition: 'storyClearConfirmed',
+    unlockCondition: null,
     action: 'openWorld1StageSelect',
     thumbnail: 'assets/world/w1-meadow-bg.webp?v=31',
     fallbackThumb: makePlaceholderSvgDataUri('수인숲 나들이', '1-1부터 1-5까지', '#689f38', '#33691e', '#fff59d', '🌳'),
@@ -68,7 +68,21 @@ const WORLDMAP_CARDS = [
   },
   {
     order: 2,
-    id: 'world2_spiritmountain',
+    id: 'world2_monatium_night',
+    title: '모나티엄의 야경',
+    subtitle: '시저와 리온을 쫓아 불 켜진 밤의 도시를 가로질러요',
+    kind: 'world',
+    implementationStatus: 'playable',
+    unlockCondition: null,
+    action: 'openNightStageSelect',
+    thumbnail: 'assets/world/night-towers.webp?v=31',
+    fallbackThumb: makePlaceholderSvgDataUri('모나티엄의 야경', '밤의 추격전', '#1f2942', '#0d1326', '#74c0fc', '🌃'),
+    statusBadge: '플레이 가능',
+    isPlaceholderArt: false
+  },
+  {
+    order: 3,
+    id: 'world3_spiritmountain',
     title: '정령산의 아침',
     subtitle: '정령이 사는 산으로 가는 길',
     kind: 'world',
@@ -77,21 +91,6 @@ const WORLDMAP_CARDS = [
     action: 'showComingSoon',
     thumbnail: makePlaceholderSvgDataUri('정령산의 아침', '곧 열려요', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
     fallbackThumb: makePlaceholderSvgDataUri('정령산의 아침', '곧 열려요', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
-    statusBadge: '준비 중',
-    isPlaceholderArt: true
-  },
-  {
-    order: 3,
-    id: 'world3_monatium_night',
-    title: '모나티엄의 야경',
-    
-    subtitle: '불이 켜진 밤의 모나티엄',
-    kind: 'world',
-    implementationStatus: 'coming_soon',
-    unlockCondition: null,
-    action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('모나티엄의 야경', '곧 열려요', '#1f2942', '#0d1326', '#74c0fc', '🌃'),
-    fallbackThumb: makePlaceholderSvgDataUri('모나티엄의 야경', '곧 열려요', '#1f2942', '#0d1326', '#74c0fc', '🌃'),
     statusBadge: '준비 중',
     isPlaceholderArt: true
   },
@@ -156,6 +155,12 @@ function makeDefaultWorldMapSave() {
           '1-4': { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'lower',   lastExitRoute: null },
           '1-5': { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null }
         }
+      },
+      world2_monatium_night: {
+        regionCleared: false,
+        stages: {
+          '2-1': { unlocked: true, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null }
+        }
       }
     }
   };
@@ -189,8 +194,26 @@ function normalizeWorldMapSave(raw) {
       }
     }
   }
+  const w2 = raw.worlds && raw.worlds.world2_monatium_night;
+  const st2 = w2 && w2.stages && w2.stages['2-1'];
+  if (st2 && typeof st2 === 'object') {
+    const rec = base.worlds.world2_monatium_night.stages['2-1'];
+    rec.cleared = Boolean(st2.cleared);
+    rec.bestSeconds = (typeof st2.bestSeconds === 'number' && Number.isFinite(st2.bestSeconds)) ? st2.bestSeconds : null;
+    rec.retries = Math.max(0, parseInt(st2.retries || 0, 10) || 0);
+    rec.hits = Math.max(0, parseInt(st2.hits || 0, 10) || 0);
+    base.worlds.world2_monatium_night.regionCleared = rec.cleared;
+  }
   return base;
 }
+
+// v1.5: stage records live under their own world (world 1 stages, or the night map's 2-1).
+function getWorldStageRecord(save, stg) {
+  if (!save || !stg) return null;
+  const w = save.worlds && save.worlds[stg.worldId || 'world1_beastforest'];
+  return (w && w.stages && w.stages[stg.stageCode]) || null;
+}
+window.getWorldStageRecord = getWorldStageRecord;
 
 function loadWorldMapSave() {
   if (_memoryWorldMapSave) return _memoryWorldMapSave;
@@ -239,7 +262,7 @@ function confirmStoryGoalClearForWorldMap(clearKind = 'success') {
 window.confirmStoryGoalClearForWorldMap = confirmStoryGoalClearForWorldMap;
 
 function isWorldMapUnlocked() {
-  return Boolean(loadWorldMapSave().storyClearConfirmed);
+  return true; // v1.5: open from the start; story clear is still recorded for the result screen
 }
 window.isWorldMapUnlocked = isWorldMapUnlocked;
 
@@ -1487,7 +1510,8 @@ function loadWorld1Stage(stageIdx, opts = {}) {
   activeWorldStageIndex = idx;
   const stg = world1Stages[idx];
   const save = loadWorldMapSave();
-  const stgRec = save.worlds.world1_beastforest.stages[stg.stageCode];
+  const stgRec = getWorldStageRecord(save, stg);
+  if (typeof stg.onLoad === 'function') stg.onLoad(opts);
 
   const requestedRoute = opts.entryRoute || (stgRec && stgRec.lastEntryRoute) || 'default';
   const resolvedSpawn = resolveStageEntrySpawn(stg, requestedRoute);
@@ -1524,7 +1548,7 @@ function loadWorld1Stage(stageIdx, opts = {}) {
   for (let i = 0; i < stg.sections.length; i++) {
     const s = stg.sections[i];
     sections.push({ ...s });
-    if (i > 0) flags.push({ x: s.flagX ?? s.x, y: s.y });
+    if (i > 0) flags.push({ x: s.flagX ?? s.x, y: s.y, hidden: Boolean(s.hiddenFlag) });
   }
 
   world1Tentacles = stg.tentacleDefs.map(td => {
@@ -1624,6 +1648,7 @@ function resetWorld1PlayerToCheckpoint() {
   shadow.alpha = 0.13;
   shadow.width = 25;
   visual.reset = true;
+  if (typeof stg.onReset === 'function') stg.onReset();
   updateWorld1Hud();
 }
 window.resetWorld1PlayerToCheckpoint = resetWorld1PlayerToCheckpoint;
@@ -1633,7 +1658,7 @@ function retryWorld1StageCheckpoint() {
   if (gameMode !== 'world') return;
   const stg = world1Stages[activeWorldStageIndex];
   const save = loadWorldMapSave();
-  const rec = save.worlds.world1_beastforest.stages[stg.stageCode];
+  const rec = getWorldStageRecord(save, stg);
   if (rec) {
     rec.retries = (rec.retries || 0) + 1;
     saveWorldMapData(save);
@@ -1666,6 +1691,10 @@ window.checkWorld1Journey = checkWorld1Journey;
 
 function completeWorld1Stage(clearedGoal = null) {
   const stg = world1Stages[activeWorldStageIndex];
+  if (stg && stg.worldId && stg.worldId !== 'world1_beastforest' && typeof completeNightStage === 'function') {
+    completeNightStage(clearedGoal);
+    return;
+  }
   const save = loadWorldMapSave();
   const w1 = save.worlds.world1_beastforest;
   const rec = w1.stages[stg.stageCode];
@@ -1729,7 +1758,9 @@ function updateWorld1Hud() {
   const stg = world1Stages[activeWorldStageIndex];
   if (!stg) return;
   $('zoneTitle').textContent = stg.name;
-  $('routeLabel').textContent = `WORLD 1 · ${activeWorldStageIndex + 1} / ${world1Stages.length}`;
+  $('routeLabel').textContent = stg.worldId === 'world2_monatium_night'
+    ? '월드 2'
+    : `WORLD 1 · ${activeWorldStageIndex + 1} / ${world1Stages.filter(st => !st.worldId).length}`;
 }
 window.updateWorld1Hud = updateWorld1Hud;
 
@@ -1745,13 +1776,6 @@ window.closeWorldMapOverlayUI = closeWorldMapOverlayUI;
 
 function openWorldMapMenu(opts = {}) {
   if (typeof ensureWorldRegionAssets === 'function') ensureWorldRegionAssets('world1');
-  const save = loadWorldMapSave();
-  if (!save.storyClearConfirmed && ((window.DUDU_RELEASE && window.DUDU_RELEASE.releaseMode === true) || !opts.forceDevOpen)) {
-    if (typeof notify === 'function') {
-      notify('스토리 모드(25분 산책)에서 엄마의 방에 도착해 완주하면 월드맵이 영구 해금됩니다!');
-    }
-    return false;
-  }
   if (typeof leaveEvent === 'function') leaveEvent();
   if (typeof releaseAllInputs === 'function') releaseAllInputs();
   else keys.clear();
@@ -1810,6 +1834,10 @@ function handleWorldMapCardAction(cardId) {
     openWorld1StageSelect();
     return;
   }
+  if (card.action === 'openNightStageSelect' && typeof openNightStageSelect === 'function') {
+    openNightStageSelect();
+    return;
+  }
 }
 window.handleWorldMapCardAction = handleWorldMapCardAction;
 
@@ -1829,6 +1857,8 @@ function renderWorldMap7CardsUI() {
     const isComingSoon = card.implementationStatus === 'coming_soon';
     const extraProgress = card.id === 'world1_beastforest'
       ? `<div class="wmCardMeta">진행: ${clearedCount}/5 클리어 · 특수자원 ${totalCols}/2 ${w1.regionCleared ? '· ★완주' : ''}</div>`
+      : card.id === 'world2_monatium_night'
+      ? (() => { const r = save.worlds.world2_monatium_night.stages['2-1']; return `<div class="wmCardMeta">${r.cleared ? `완주, 최고 기록 ${r.bestSeconds.toFixed(1)}초` : '스테이지 1개, 시청 앞 광장까지'}</div>`; })()
       : (card.id === 'story_replay'
         ? `<div class="wmCardMeta">본편 6개 지역, 왕사탕 135개, 황금 크레파스 12개</div>`
         : `<div class="wmCardMeta">${card.isPlaceholderArt ? '임시 플레이스홀더 썸네일' : '준비 중'}</div>`);
@@ -1892,6 +1922,7 @@ function openWorld1StageSelect() {
   const isDevBuild = !(window.DUDU_RELEASE && window.DUDU_RELEASE.releaseMode === true);
 
   const stageCardsHtml = world1Stages.map((stg, idx) => {
+    if (stg.worldId) return '';
     const rec = w1.stages[stg.stageCode] || { unlocked: idx === 0, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default' };
     const unlocked = Boolean(rec.unlocked);
     const cleared = Boolean(rec.cleared);
@@ -2011,7 +2042,7 @@ function syncWorldMapEntryButtons() {
   const unlocked = isWorldMapUnlocked();
   const btn = $('openWorldMapBtn');
   if (btn) {
-    btn.textContent = unlocked ? '🗺️ 월드맵 열기 (수인숲 나들이)' : '🔒 월드맵 (스토리 완주 시 해금)';
+    btn.textContent = '🗺️ 월드맵 열기';
     btn.classList.toggle('unlocked', unlocked);
   }
 }

@@ -128,7 +128,9 @@
         const stg = world1Stages[activeWorldStageIndex];
         const save = loadWorldMapSave();
         const stgRec = (stg && save?.worlds?.world1_beastforest?.stages?.[stg.stageCode]) || null;
-        if (stg && stg.collectibleDefs && stg.collectibleDefs.length > 0) {
+        if (stg && stg.worldId) {
+          specPill.hidden = true; // v1.5: the night map has no crayons
+        } else if (stg && stg.collectibleDefs && stg.collectibleDefs.length > 0) {
           specPill.hidden = false;
           const got = stgRec && Array.isArray(stgRec.collectibles) ? stgRec.collectibles.length : 0;
           if ($id('specialScore')) $id('specialScore').textContent = String(got);
