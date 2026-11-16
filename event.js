@@ -156,13 +156,13 @@ function showGoldRewardArtwork(){
  $('storyRewardArt').hidden=false;
  $('storyDialogueTemplate').hidden=true;
  $('storyText').hidden=true;
- $('storyHint').textContent='클릭 · 엔딩 결과 보기';
+ $('storyHint').textContent='클릭해서 결과 보기';
 }
 function endingStoryHint(){
- if(storyRewardShowing)return '클릭 · 엔딩 결과 보기';
- if(storyScript.length&&storyScriptStep<storyScript.length-1)return '클릭 · 다음 대사';
- if(activeStoryKind==='special'&&storyScript.length)return '클릭 · 황금 크레파스 엔딩 일러스트';
- return state==='opening'?'클릭 · 산책 준비':'클릭 · 이야기 마치기';
+ if(storyRewardShowing)return '클릭해서 결과 보기';
+ if(storyScript.length&&storyScriptStep<storyScript.length-1)return '클릭해서 계속';
+ if(activeStoryKind==='special'&&storyScript.length)return '클릭해서 특별한 결말 보기';
+ return state==='opening'?'클릭해서 출발':'클릭해서 이야기 마치기';
 }
 
 
@@ -213,7 +213,7 @@ function showStory(kind){
  const src=eventImages[imgKind]?.src||(EVENT_ROOT+imgKind+'.png?v=12');
  const baseEl=$('storyBase'),motionEl=$('storyMotion'),storyEl=$('story');
  $('storyText').textContent='';
- $('storyHint').textContent='클릭 · 대사 완성 / 다음';
+ $('storyHint').textContent='클릭해서 계속';
  // Commit the correct scene in the same JS turn: never uncover the canvas or the
  // old lobby/intro while waiting for an image load or MP4 decode.
  $('launchScene').hidden=true;
@@ -248,7 +248,7 @@ function finishStoryModal(){
  modal(
   wasSpecial?'올 컬렉션':wasCandy?'왕사탕 올 컬렉션':'모험 완료',
   wasLate?'조금 늦어버렸어요':wasSpecial?'두두, 모든 황금 크레파스를 선물하러 가요!':wasCandy?'두두, 왕사탕을 하나도 놓치지 않았어요!':'두두, 무사히 집에 도착!',
-  `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wmUnlocked?'월드맵 해금 완료':'제한 시간 안에 도착하면 월드맵이 해금됩니다.'}`,
+  `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b>, 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b>, 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wmUnlocked?'월드맵 해금 완료':'제한 시간 안에 도착하면 월드맵이 해금됩니다.'}`,
   wmUnlocked?'월드맵':'다시 시작'
  );
  if(wmUnlocked){
@@ -268,7 +268,7 @@ function storyAdvance(){
  if(scenePaused){
   scenePaused=false;eventLast=performance.now();
   const v=$('storyVideo');if(v&&!v.ended&&v.paused)v.play().catch(()=>{});
-  $('storyHint').textContent='클릭 · 대사 완성 / 다음';return;
+  $('storyHint').textContent='클릭해서 계속';return;
  }
  if(state!=='opening'&&state!=='ending')return;
  if(storyRewardShowing){finishStoryModal();return;}
@@ -391,7 +391,7 @@ function eventTick(now){
    typed=Math.min(storyLine.length,typed+dt*22);
    if(!storyRewardShowing){
     $('storyText').textContent=storyLine.slice(0,Math.floor(typed));
-    $('storyHint').textContent=typed>=storyLine.length?endingStoryHint():'클릭 · 대사 바로 보기';
+    $('storyHint').textContent=typed>=storyLine.length?endingStoryHint():'클릭하면 대사가 바로 나와요';
    }
   }else if(state==='popup'&&journeyResult===null){
    sceneElapsed+=dt;
@@ -431,7 +431,7 @@ function eventTick(now){
  const nextUrgent=Boolean(eventMode&&eventElapsed>=1350);
  if(window.__lastClockUrgent!==nextUrgent){window.__lastClockUrgent=nextUrgent;$('eventClock').classList.toggle('urgent',nextUrgent);}
 }
-window.addEventListener('blur',()=>{if(['opening','popup','night','ending','regionTransition'].includes(state)){scenePaused=true;$('storyHint').textContent='클릭 · 계속 보기';}tracks.forEach(a=>a.pause());if($('storyVideo'))$('storyVideo').pause();});
+window.addEventListener('blur',()=>{if(['opening','popup','night','ending','regionTransition'].includes(state)){scenePaused=true;$('storyHint').textContent='클릭해서 이어 보기';}tracks.forEach(a=>a.pause());if($('storyVideo'))$('storyVideo').pause();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&['opening','popup','night','ending','regionTransition'].includes(state)){scenePaused=true;tracks.forEach(a=>a.pause());if($('storyVideo'))$('storyVideo').pause();}});
 $('launchScene').onclick=()=>{scenePaused=false;eventLast=performance.now();};
 window.addEventListener('focus',()=>{if(state==='night'||state==='regionTransition'){scenePaused=false;eventLast=performance.now();}});

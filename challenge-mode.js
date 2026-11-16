@@ -4,8 +4,8 @@
 // - Difficulty 1 (`challengeDifficultyId === 'd1'`): 3 stages (`CH-S1`, `CH-S2`, `CH-S3`),
 //   storage key `dudu_challenge_records_test22_stage3hotfix_v1` (100% preserved).
 // - Difficulty 2 (`challengeDifficultyId === 'd2'`): 2 playable stages:
-//   * Stage 1 (`CH-D2-S1`: `2-1 · 정밀 3층 등반`, storage key `dudu_challenge_d2_stage1_v1`, 100% preserved)
-//   * Stage 2 (`CH-D2-S2`: `2-2 · 가시 덩굴과 순찰 교량`, storage key `dudu_challenge_d2_stage2_v1`)
+//   * Stage 1 (`CH-D2-S1`: `2-1 정밀 3층 등반`, storage key `dudu_challenge_d2_stage1_v1`, 100% preserved)
+//   * Stage 2 (`CH-D2-S2`: `2-2 가시 덩굴과 순찰 교량`, storage key `dudu_challenge_d2_stage2_v1`)
 //   * Stage 3 (`2-3`): explicitly locked as `'2-3 · 준비 중 🔒'` (zero dummy stage created).
 // - Supports `2-1 클리어 -> 결과 모달 -> 2-2 도전하기 -> 2-2 로딩 -> 2-2 클리어 (2-3 제작 예정)`
 //   as well as direct stage selection for `2-1` and `2-2`.
@@ -220,38 +220,38 @@ function syncChallengeNavButtons() {
 
   if (challengeDifficultyId === 'd2') {
     if (chS1) {
-      chS1.textContent = '2-1 · 정밀 3층 등반';
+      chS1.textContent = '2-1 정밀 3층 등반';
       chS1.disabled = false;
       chS1.removeAttribute('aria-disabled');
       chS1.classList.toggle('activeStage', challengeStageIndex === 0);
     }
     if (chS2) {
-      chS2.textContent = '2-2 · 가시 덩굴과 순찰 교량';
+      chS2.textContent = '2-2 가시 덩굴과 순찰 교량';
       chS2.disabled = false;
       chS2.removeAttribute('aria-disabled');
       chS2.classList.toggle('activeStage', challengeStageIndex === 1);
     }
     if (chS3) {
-      chS3.textContent = '2-3 · 바람총 회랑과 쌍둥이 승강대';
+      chS3.textContent = '2-3 바람총 회랑과 쌍둥이 승강대';
       chS3.disabled = false;
       chS3.removeAttribute('aria-disabled');
       chS3.classList.toggle('activeStage', challengeStageIndex === 2);
     }
   } else {
     if (chS1) {
-      chS1.textContent = 'Stage 1 · 가지와 가지 사이';
+      chS1.textContent = '1단계 가지와 가지 사이';
       chS1.disabled = false;
       chS1.removeAttribute('aria-disabled');
       chS1.classList.toggle('activeStage', challengeStageIndex === 0);
     }
     if (chS2) {
-      chS2.textContent = 'Stage 2 · 진압반의 징검다리';
+      chS2.textContent = '2단계 진압반의 징검다리';
       chS2.disabled = false;
       chS2.removeAttribute('aria-disabled');
       chS2.classList.toggle('activeStage', challengeStageIndex === 1);
     }
     if (chS3) {
-      chS3.textContent = 'Stage 3 · 마요의 바람총 숲';
+      chS3.textContent = '3단계 마요의 바람총 숲';
       chS3.disabled = false;
       chS3.removeAttribute('aria-disabled');
       chS3.classList.toggle('activeStage', challengeStageIndex === 2);
@@ -290,9 +290,9 @@ function updateChallengeHud() {
 
   if (challengeDifficultyId === 'd2') {
     const code = st.stageCode || `2-${challengeStageIndex + 1}`;
-    $('routeLabel').textContent = `난이도 2 · ${challengeStageIndex + 1} / 3 · ${code}`;
+    $('routeLabel').textContent = `난이도 2, ${challengeStageIndex + 1}/3`;
   } else {
-    $('routeLabel').textContent = `챌린지 · ${challengeStageIndex + 1} / ${stages.length}`;
+    $('routeLabel').textContent = `챌린지 ${challengeStageIndex + 1}/${stages.length}`;
   }
   $('zoneTitle').textContent = st.name;
 
@@ -302,7 +302,7 @@ function updateChallengeHud() {
   }
   const curDeaths = challengeState.stageDeaths[challengeStageIndex] || 0;
   const curHits = challengeState.stageHits[challengeStageIndex] || 0;
-  if ($('chRetries')) $('chRetries').textContent = `재시도 ${curDeaths} · 피격 ${curHits}`;
+  if ($('chRetries')) $('chRetries').textContent = `재시도 ${curDeaths}회, 피격 ${curHits}회`;
 }
 
 function resetChallengePlayer(fullStageReset = false) {
@@ -457,8 +457,8 @@ function returnToStoryMenu() {
   modal(
     '해가 지기 전에 집으로',
     '준비됐나요, 두두?',
-    '25분 동안 두두와 산책하고 집으로 돌아가요.<br>일반 경로의 왕사탕을 따라가면 누구나 완주할 수 있고, 황금 크레파스 12개는 숙련자 도전이에요!<br>← → 이동 · SPACE 점프 · ↓+SPACE 발판 내려가기 · ↓ 아래보기 · L SHIFT 대시',
-    '스토리 모드 시작하기 →'
+    '25분 동안 두두와 산책하고 집으로 돌아가요.<br>일반 경로의 왕사탕을 따라가면 누구나 완주할 수 있고, 황금 크레파스 12개는 숙련자 도전이에요!<br>조작은 게임 옵션에서 바꿀 수 있어요.',
+    '스토리 시작하기'
   );
   $('restart').hidden = true;
 }
@@ -566,12 +566,12 @@ function checkChallengeJourney() {
           state = 'challengeStageClear';
           const nextSt = stages[1];
           modal(
-            '추억의 인내의 숲 · 난이도 2-1 돌파!',
-            '2-1 · 정밀 3층 등반 클리어!',
-            `2-1 클리어 기록: <b>${formatChallengeStopwatch(stTime)}</b> · 2-1 최고 기록: <b>${formatChallengeStopwatch(challengeState.d2Records.bestStage1Time)}</b><br>` +
-            `구간 재시도: <b>${curDeaths}회</b> · 피격: <b>${curHits}회</b><br>` +
+            '난이도 2-1 돌파!',
+            '2-1 정밀 3층 등반 클리어!',
+            `2-1 클리어 기록: <b>${formatChallengeStopwatch(stTime)}</b>, 2-1 최고 기록: <b>${formatChallengeStopwatch(challengeState.d2Records.bestStage1Time)}</b><br>` +
+            `구간 재시도: <b>${curDeaths}회</b>, 피격: <b>${curHits}회</b><br>` +
             `다음 단계: <b>${nextSt.name}</b> (${nextSt.subtitle})`,
-            `다음 단계 (${nextSt.name}) 도전하기 →`
+            `다음 단계: ${nextSt.name}`
           );
           $('restart').textContent = '2-1 처음부터 다시 도전';
           $('restart').hidden = false;
@@ -602,12 +602,12 @@ function checkChallengeJourney() {
           state = 'challengeStageClear';
           const nextSt = stages[2];
           modal(
-            '추억의 인내의 숲 · 난이도 2-2 돌파!',
-            '2-2 · 가시 덩굴과 순찰 교량 클리어!',
-            `2-2 클리어 기록: <b>${formatChallengeStopwatch(stTime)}</b> · 2-2 최고 기록: <b>${formatChallengeStopwatch(challengeState.d2Stage2Records.bestStage2Time)}</b><br>` +
-            `2-2 구간 재시도: <b>${curDeaths}회</b> · 피격: <b>${curHits}회</b><br>` +
+            '난이도 2-2 돌파!',
+            '2-2 가시 덩굴과 순찰 교량 클리어!',
+            `2-2 클리어 기록: <b>${formatChallengeStopwatch(stTime)}</b>, 2-2 최고 기록: <b>${formatChallengeStopwatch(challengeState.d2Stage2Records.bestStage2Time)}</b><br>` +
+            `2-2 구간 재시도: <b>${curDeaths}회</b>, 피격: <b>${curHits}회</b><br>` +
             `다음 최종 단계: <b>${nextSt.name}</b> (${nextSt.subtitle})`,
-            `다음 단계 (${nextSt.name}) 도전하기 →`
+            `다음 단계: ${nextSt.name}`
           );
           $('restart').textContent = '2-1부터 연속 도전하기';
           $('restart').hidden = false;
@@ -638,11 +638,11 @@ function checkChallengeJourney() {
         ? `<br>난이도 2 전 구간(2-1~2-3) 합산: <b>${formatChallengeStopwatch(totD2Time)}</b> (2-1: ${formatChallengeStopwatch(challengeState.stageTimes[0])} · 2-2: ${formatChallengeStopwatch(challengeState.stageTimes[1])} · 2-3: ${formatChallengeStopwatch(stTime)})`
         : '';
       modal(
-        '추억의 인내의 숲 · 난이도 2 전 구간 완주 달성!',
-        '2-3 · 바람총 회랑과 쌍둥이 승강대 클리어!',
-        `2-3 클리어 기록: <b>${formatChallengeStopwatch(stTime)}</b> · 2-3 최고 기록: <b>${formatChallengeStopwatch(challengeState.d2Stage3Records.bestStage3Time)}</b>${fullRunLine}<br>` +
-        `2-3 구간 재시도: <b>${curDeaths}회</b> · 피격: <b>${curHits}회</b> (난이도 1 및 스토리 기록과 완전 분리 저장됨)`,
-        '↻ 2-3 다시 도전하기 →'
+        '난이도 2를 모두 완주했어요!',
+        '2-3 바람총 회랑과 쌍둥이 승강대 클리어!',
+        `2-3 클리어 기록: <b>${formatChallengeStopwatch(stTime)}</b>, 2-3 최고 기록: <b>${formatChallengeStopwatch(challengeState.d2Stage3Records.bestStage3Time)}</b>${fullRunLine}<br>` +
+        `2-3 구간 재시도: <b>${curDeaths}회</b>, 피격: <b>${curHits}회</b> (난이도 1 및 스토리 기록과 완전 분리 저장됨)`,
+        '2-3 다시 도전'
       );
       $('restart').textContent = '2-1부터 전체 연속 도전하기';
       $('restart').hidden = false;
@@ -662,10 +662,10 @@ function checkChallengeJourney() {
       const nextSt = stages[nextIdx];
       saveChallengeRecords();
       modal(
-        `추억의 인내의 숲 · ${challengeStageIndex + 1}단계 돌파!`,
+        `${challengeStageIndex + 1}단계 돌파!`,
         `${st.name} 클리어!`,
-        `단계 기록: <b>${formatChallengeStopwatch(stTime)}</b> · 최고 기록: <b>${formatChallengeStopwatch(challengeState.records.bestStageTimes[challengeStageIndex])}</b><br>구간 재시도: <b>${challengeState.stageDeaths[challengeStageIndex]}회</b> · 피격: <b>${challengeState.stageHits[challengeStageIndex]}회</b><br>다음 단계: <b>${nextSt.name}</b> (${nextSt.subtitle})`,
-        `다음 단계 (${nextSt.name}) 도전하기 →`
+        `단계 기록: <b>${formatChallengeStopwatch(stTime)}</b>, 최고 기록: <b>${formatChallengeStopwatch(challengeState.records.bestStageTimes[challengeStageIndex])}</b><br>구간 재시도: <b>${challengeState.stageDeaths[challengeStageIndex]}회</b>, 피격: <b>${challengeState.stageHits[challengeStageIndex]}회</b><br>다음 단계: <b>${nextSt.name}</b> (${nextSt.subtitle})`,
+        `다음 단계: ${nextSt.name}`
       );
       $('restart').textContent = '챌린지 1단계부터 처음부터 다시';
       $('restart').hidden = false;
@@ -682,12 +682,12 @@ function checkChallengeJourney() {
         ? `<br><small>구버전(TEST17) 보존 기록: ${formatChallengeStopwatch(challengeState.legacyV17Records.bestTotalTime)}</small>`
         : '';
       modal(
-        '추억의 인내의 숲 · 전 구간 완주 달성!',
+        '추억의 인내의 숲 완주!',
         '3단계 인내의 숲을 모두 정복했어요!',
         `총 합계 시간: <b>${formatChallengeStopwatch(totTime)}</b> (최고 기록: <b>${formatChallengeStopwatch(challengeState.records.bestTotalTime)}</b>)${legacyNote}<br>` +
-        `1단계: <b>${formatChallengeStopwatch(challengeState.stageTimes[0])}</b> · 2단계: <b>${formatChallengeStopwatch(challengeState.stageTimes[1])}</b> · 3단계: <b>${formatChallengeStopwatch(challengeState.stageTimes[2])}</b><br>` +
-        `총 낙사/재시도: <b>${challengeState.deaths}회</b> · 총 피격: <b>${challengeState.hits}회</b> (스토리 기록과 완전 분리됨)`,
-        '챌린지 1단계부터 새 도전 →'
+        `1단계: <b>${formatChallengeStopwatch(challengeState.stageTimes[0])}</b>, 2단계: <b>${formatChallengeStopwatch(challengeState.stageTimes[1])}</b>, 3단계: <b>${formatChallengeStopwatch(challengeState.stageTimes[2])}</b><br>` +
+        `총 낙사/재시도: <b>${challengeState.deaths}회</b>, 총 피격: <b>${challengeState.hits}회</b> (스토리 기록과 완전 분리됨)`,
+        '1단계부터 다시 도전'
       );
       $('restart').textContent = '챌린지 1단계부터 처음부터 다시';
       $('restart').hidden = false;
@@ -725,7 +725,7 @@ function ensureChallengeSelectModalDOM() {
             <span class="chDiffStageCount">3개 구간</span>
           </div>
           <h4>기본 코스</h4>
-          <p>1-1 ~ 1-3 · 3개 구간</p>
+          <p>1-1부터 1-3까지 3개 구간</p>
           <div class="chDiffRecord" id="chD1RecordSummary">최고 완주 기록: 기록 없음</div>
           <div class="chStageBtnGroup">
             <button type="button" class="chLaunchPrimaryBtn" id="chModalStartD1Btn">난이도 1 시작</button>
@@ -742,7 +742,7 @@ function ensureChallengeSelectModalDOM() {
             <span class="chDiffStageCount">3개 구간</span>
           </div>
           <h4>심화 코스</h4>
-          <p>2-1 ~ 2-3 · 3개 구간</p>
+          <p>2-1부터 2-3까지 3개 구간</p>
           <div class="chDiffRecord" id="chD2RecordSummary">구간별 최고 기록: 기록 없음</div>
           <div class="chStageBtnGroup">
             <button type="button" class="chLaunchPrimaryBtn chLaunchD2Btn" id="chModalStartD2Btn">난이도 2 시작</button>
@@ -810,7 +810,7 @@ function openChallengeSelectModal() {
     const bt = challengeState.records.bestTotalTime;
     const cl = challengeState.records.clears || 0;
     d1Rec.textContent = bt !== null
-      ? `최고 기록  ${formatChallengeStopwatch(bt)}  ·  ${cl}회 완주`
+      ? `최고 기록 ${formatChallengeStopwatch(bt)}, ${cl}회 완주`
       : '최고 기록  없음';
   }
   const d2Rec = $('chD2RecordSummary');
@@ -818,7 +818,7 @@ function openChallengeSelectModal() {
     const bt = challengeState.d2Stage3Records.bestThreeStageTotalTime;
     const cl = challengeState.d2Stage3Records.clears || 0;
     d2Rec.textContent = bt !== null
-      ? `최고 기록  ${formatChallengeStopwatch(bt)}  ·  ${cl}회 완주`
+      ? `최고 기록 ${formatChallengeStopwatch(bt)}, ${cl}회 완주`
       : '최고 기록  없음';
   }
   modalEl.hidden = false;

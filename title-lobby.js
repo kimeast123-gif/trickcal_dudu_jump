@@ -27,13 +27,13 @@
 
   // 7 Distinct Real-Map Stage Scenes for Cross-Dissolve Slideshow (C01)
   const DEMO_SCENES = [
-    { id: 'scene-01', stageCode: 'STORY-SEC-1', title: '수인숲 초입 · 산책길', webp: 'assets/title/demo/scene-01.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-01.jpg?v=V4_STANDALONE' },
-    { id: 'scene-02', stageCode: 'STORY-SEC-2', title: '수인마을 · 마을 광장', webp: 'assets/title/demo/scene-02.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-02.jpg?v=V4_STANDALONE' },
-    { id: 'scene-03', stageCode: 'STORY-SEC-3', title: '모나티엄 A · 엘프 첨단 연구지구', webp: 'assets/title/demo/scene-03.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-03.jpg?v=V4_STANDALONE' },
-    { id: 'scene-04', stageCode: 'STORY-SEC-4', title: '모나티엄 B · 고가도로와 드론 구역', webp: 'assets/title/demo/scene-04.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-04.jpg?v=V4_STANDALONE' },
-    { id: 'scene-05', stageCode: 'STORY-SEC-5', title: '에르피엔 A · 요정 왕국 정원', webp: 'assets/title/demo/scene-05.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-05.jpg?v=V4_STANDALONE' },
-    { id: 'scene-06', stageCode: 'WORLD1-1-2',  title: '월드1 수인숲 · 1-2 거목과 다리의 숲', webp: 'assets/title/demo/scene-06.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-06.jpg?v=V4_STANDALONE' },
-    { id: 'scene-07', stageCode: 'WORLD1-1-3',  title: '월드1 수인숲 · 1-3 깊은 숲의 갈림길', webp: 'assets/title/demo/scene-07.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-07.jpg?v=V4_STANDALONE' }
+    { id: 'scene-01', stageCode: 'STORY-SEC-1', title: '수인숲 산책길', webp: 'assets/title/demo/scene-01.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-01.jpg?v=V4_STANDALONE' },
+    { id: 'scene-02', stageCode: 'STORY-SEC-2', title: '수인마을 광장', webp: 'assets/title/demo/scene-02.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-02.jpg?v=V4_STANDALONE' },
+    { id: 'scene-03', stageCode: 'STORY-SEC-3', title: '모나티엄 연구지구', webp: 'assets/title/demo/scene-03.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-03.jpg?v=V4_STANDALONE' },
+    { id: 'scene-04', stageCode: 'STORY-SEC-4', title: '모나티엄 고가도로', webp: 'assets/title/demo/scene-04.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-04.jpg?v=V4_STANDALONE' },
+    { id: 'scene-05', stageCode: 'STORY-SEC-5', title: '에르피엔 정원', webp: 'assets/title/demo/scene-05.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-05.jpg?v=V4_STANDALONE' },
+    { id: 'scene-06', stageCode: 'WORLD1-1-2',  title: '거목과 다리의 숲', webp: 'assets/title/demo/scene-06.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-06.jpg?v=V4_STANDALONE' },
+    { id: 'scene-07', stageCode: 'WORLD1-1-3',  title: '깊은 숲의 갈림길', webp: 'assets/title/demo/scene-07.webp?v=V4_STANDALONE', jpg: 'assets/title/demo/scene-07.jpg?v=V4_STANDALONE' }
   ];
 
   let _lobbyState = 'titleEntering';
@@ -320,7 +320,7 @@
               <div class="lobbyKeyRow"><span>점프 / 2단 점프</span><span class="lobbyKeyBadge">우측 점프 버튼</span></div>
               <div class="lobbyKeyRow"><span>순간 대시</span><span class="lobbyKeyBadge">우측 대시 버튼</span></div>
               <div class="lobbyKeyRow"><span>발판 내려가기</span><span class="lobbyKeyBadge">스틱 하단 + 점프</span></div>
-              <div class="lobbyKeyRow"><span>패드 위치·크기 조절</span><span class="lobbyKeyBadge">게임옵션 → 컨트롤러</span></div>
+              <div class="lobbyKeyRow"><span>패드 위치와 크기</span><span class="lobbyKeyBadge">게임 옵션의 컨트롤러 항목</span></div>
             </div>
           </div>
           <div class="lobbyKeyFooter">
@@ -491,7 +491,7 @@
       const startBtn = $id('start');
       if (startBtn) {
         startBtn.disabled = false;
-        startBtn.textContent = '이벤트 시작하기  →';
+        startBtn.textContent = '산책 시작하기';
         if (typeof start === 'function') {
           startBtn.onclick = () => start();
         }

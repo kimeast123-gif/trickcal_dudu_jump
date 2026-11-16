@@ -284,10 +284,10 @@ function getPrescaledPanorama(bgKey, im) {
 function drawPanoramaByBgKey(bgKey, alpha = 1) {
   const im = worldImages[bgKey];
   if (!im) {
-    if (!_warnedMissingBgKeys.has(bgKey)) {
-      _warnedMissingBgKeys.add(bgKey);
-      console.warn(`[Renderer] Missing background image for bgKey="${bgKey}" (expected assets/world/${bgKey}.webp)`);
-    }
+    // RENEWAL: while the panorama is still loading, paint a quiet sky instead of an empty frame.
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#9fd4f0'); sky.addColorStop(0.7, '#d9eedc'); sky.addColorStop(1, '#b9d79c');
+    ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H); ctx.restore();
     return;
   }
   const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
@@ -1181,6 +1181,44 @@ function drawMonatiumRoadPavementTransitionSeam(seamX, seamY) {
   ctx.restore();
 }
 
+
+// RENEWAL: gaps between ground slabs fall into shadow, so a pit reads as a drop instead of a lower meadow.
+function drawPitShade(viewW, viewH) {
+  if (typeof gameMode !== 'undefined' && gameMode !== 'story') return;
+  const grounds = platforms
+    .filter(a => a.groundTile && a.y >= 480 && a.y <= 600 && a.x + a.w >= rCam - 400 && a.x <= rCam + viewW + 400)
+    .sort((a, b) => a.x - b.x);
+  if (grounds.length < 2) return;
+  const bottom = rCamY + viewH + 40;
+  for (let i = 0; i < grounds.length - 1; i++) {
+    const L = grounds[i], R = grounds[i + 1];
+    const x1 = L.x + L.w, x2 = R.x;
+    if (x2 - x1 < 24) continue;
+    const top = Math.min(L.y, R.y) + 34;
+    const g = ctx.createLinearGradient(0, top, 0, top + 260);
+    g.addColorStop(0, 'rgba(20, 28, 24, 0)');
+    g.addColorStop(0.45, 'rgba(20, 28, 24, 0.34)');
+    g.addColorStop(1, 'rgba(14, 20, 18, 0.62)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x1 - 2, top, x2 - x1 + 4, Math.max(0, bottom - top));
+    // side shadows cast by the cliff walls, faded in vertically so no hard edge appears at the rim
+    const side = Math.min(70, (x2 - x1) * 0.3);
+    const gl = ctx.createLinearGradient(x1, 0, x1 + side, 0);
+    gl.addColorStop(0, 'rgba(14, 20, 18, 0.28)'); gl.addColorStop(1, 'rgba(14, 20, 18, 0)');
+    const gr = ctx.createLinearGradient(x2, 0, x2 - side, 0);
+    gr.addColorStop(0, 'rgba(14, 20, 18, 0.28)'); gr.addColorStop(1, 'rgba(14, 20, 18, 0)');
+    const bands = 8, bandH = 18;
+    for (let k = 0; k <= bands; k++) {
+      const yy = top + k * bandH;
+      const hh = k === bands ? Math.max(0, bottom - yy) : bandH;
+      ctx.globalAlpha = Math.min(1, (k + 1) / (bands + 1));
+      ctx.fillStyle = gl; ctx.fillRect(x1, yy, side, hh);
+      ctx.fillStyle = gr; ctx.fillRect(x2 - side, yy, side, hh);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
 function drawGroundVisual(a, drawX, drawY) {
   const mat = a.visual?.material || a.skin || 'grass';
   const spec = TERRAIN_SPECS[mat] || TERRAIN_SPECS.grass;
@@ -1315,6 +1353,25 @@ function drawGroundVisual(a, drawX, drawY) {
         }
         ctx.restore();
       }
+    }
+  }
+
+  // RENEWAL: depth shading. Soil darkens with depth and sits in the lip's shadow, so slabs stop looking pasted on.
+  {
+    const shX1 = drawX + (showCliffLeft ? Math.round(clW * 0.12) : 0);
+    const shX2 = drawX + a.w - (showCliffRight ? Math.round(crW * 0.12) : 0);
+    const vx1 = Math.max(shX1, Math.floor(viewLeft)), vx2 = Math.min(shX2, Math.ceil(viewRight));
+    const y0 = bodyStartY + 6;
+    if (vx2 > vx1 && bottomY > y0) {
+      ctx.save();
+      const dg = ctx.createLinearGradient(0, y0, 0, y0 + 300);
+      dg.addColorStop(0, 'rgba(24, 18, 12, 0.26)');
+      dg.addColorStop(0.12, 'rgba(24, 18, 12, 0.04)');
+      dg.addColorStop(0.55, 'rgba(18, 14, 10, 0.20)');
+      dg.addColorStop(1, 'rgba(12, 10, 8, 0.42)');
+      ctx.fillStyle = dg;
+      ctx.fillRect(vx1, y0, vx2 - vx1, bottomY - y0);
+      ctx.restore();
     }
   }
 
@@ -1799,6 +1856,26 @@ function drawPlatform(a) {
     // [P0 §2-1 & §2-2]: Removed all blinking timer bars, return progress gauges, corner brackets, and dashed timer slots.
     // Only the platform's natural visibility (ON / WARNING shake+alpha fade / OFF disappeared) and pass/lock notch remain.
     if (a.blinkState === 'off') {
+      // RENEWAL: a vanished platform leaves a ghost that fills back in, so the player can read when it returns.
+      const prog = Math.max(0, Math.min(1, a.blinkStateProgress ?? 0));
+      ctx.save();
+      ctx.globalAlpha = 0.08 + 0.30 * prog * prog;
+      drawThinPlatformVisual(a, drawX, drawY);
+      ctx.restore();
+      ctx.save();
+      const imminent = a.blinkImminent || prog > 0.72;
+      const pulse = imminent ? (0.55 + 0.45 * Math.abs(Math.sin(time * 18))) : 1;
+      ctx.globalAlpha = (0.5 + 0.5 * prog) * pulse;
+      ctx.setLineDash(imminent ? [] : [8, 5]);
+      ctx.beginPath();
+      ctx.roundRect(drawX + 3, drawY + 2, Math.max(8, a.w - 6), 16, 6);
+      ctx.strokeStyle = 'rgba(28, 30, 40, 0.55)';
+      ctx.lineWidth = (imminent ? 3 : 2) + 2.5;
+      ctx.stroke();
+      ctx.strokeStyle = imminent ? '#fff2b8' : '#ffffff';
+      ctx.lineWidth = imminent ? 3 : 2;
+      ctx.stroke();
+      ctx.restore();
       return;
     }
     ctx.save();
@@ -1824,26 +1901,53 @@ function drawPlatform(a) {
 // Only the subtle pass-through notch (`▾`) and non-drop lock bracket (`dropThroughDisabled`) are retained.
 function drawThinPassAndLockCue(a, drawX, drawY) {
   if (!a.thin || a.wall || a.ceiling) return;
+  // RENEWAL: when the player stands here and holds down, the platform answers: chevrons (you can drop) or a lock (you can't).
+  if (typeof p !== 'undefined' && p.on === a && typeof keys !== 'undefined' && keys.has('ArrowDown') && state === 'playing') {
+    ctx.save();
+    const fx = Math.round(Math.max(drawX + 14, Math.min(drawX + a.w - 14, rPx)));
+    if (a.dropThroughDisabled) {
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = 'rgba(52, 36, 26, 0.85)';
+      ctx.beginPath(); ctx.roundRect(drawX + 6, drawY + 12, a.w - 12, 7, 3); ctx.fill();
+      ctx.fillStyle = 'rgba(30, 24, 20, 0.6)';
+      ctx.beginPath(); ctx.roundRect(fx - 14, drawY + 22, 28, 26, 7); ctx.fill();
+      ctx.strokeStyle = '#f3dfb4'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(fx, drawY + 33, 6, Math.PI, 0); ctx.stroke();
+      ctx.fillStyle = '#f3dfb4';
+      ctx.beginPath(); ctx.roundRect(fx - 9, drawY + 32, 18, 12, 3); ctx.fill();
+    } else {
+      const t = (time * 2.4) % 1;
+      for (let k = 0; k < 2; k++) {
+        const yy = drawY + 26 + k * 14 + t * 8;
+        ctx.globalAlpha = (k === 0 ? 0.95 : 0.6) * (1 - t * 0.5);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(fx - 12, yy); ctx.lineTo(fx, yy + 10); ctx.lineTo(fx + 12, yy);
+        ctx.strokeStyle = 'rgba(30, 40, 30, 0.55)'; ctx.lineWidth = 7; ctx.stroke();
+        ctx.strokeStyle = '#fffbe8'; ctx.lineWidth = 4; ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
   ctx.save();
   const midX = Math.round(drawX + a.w * 0.5);
   const isNarrow = a.w < 72;
   if (a.dropThroughDisabled) {
     const inset = isNarrow ? 6 : 10;
     const lockW = Math.max(12, a.w - inset * 2);
-    const lockH = isNarrow ? 3.5 : 4.5;
+    const lockH = isNarrow ? 4.5 : 6;
     const lockX = drawX + Math.round((a.w - lockW) * 0.5);
-    ctx.fillStyle = 'rgba(42, 30, 22, 0.72)';
-    ctx.strokeStyle = 'rgba(210, 180, 140, 0.55)';
+    ctx.fillStyle = 'rgba(42, 30, 22, 0.86)';
+    ctx.strokeStyle = 'rgba(232, 205, 160, 0.75)';
     ctx.lineWidth = 1.0;
     ctx.beginPath();
     ctx.roundRect(lockX, drawY + 14.5, lockW, lockH, 2);
     ctx.fill();
     ctx.stroke();
   } else {
-    const hw = isNarrow ? 2.6 : 3.8;
+    const hw = isNarrow ? 3.4 : 5.2;
     const topY = isNarrow ? (drawY + 13.8) : (drawY + 13.0);
     const botY = isNarrow ? (drawY + 16.6) : (drawY + 16.8);
-    ctx.fillStyle = 'rgba(245, 252, 232, 0.68)';
+    ctx.fillStyle = 'rgba(250, 254, 238, 0.86)';
     ctx.strokeStyle = 'rgba(38, 62, 34, 0.55)';
     ctx.lineWidth = 1.0;
     ctx.beginPath();
@@ -1980,6 +2084,45 @@ function drawDeveloperQaOverlay() {
   ctx.restore();
 }
 
+// RENEWAL: the last thing the player reaches is a real door: framed, paneled, and lit from the room behind it.
+function drawHomeDoor(goal) {
+  const x = goal.x, y = goal.y, w = goal.w, h = goal.h;
+  const archR = Math.min(w * 0.5, 70);
+  ctx.save();
+  const glow = ctx.createRadialGradient(x + w / 2, y - h * 0.45, 10, x + w / 2, y - h * 0.45, w * 1.3);
+  glow.addColorStop(0, `rgba(255, 214, 140, ${0.32 + 0.08 * Math.sin(time * 2)})`);
+  glow.addColorStop(1, 'rgba(255, 214, 140, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(x - w * 0.8, y - h * 1.4, w * 2.6, h * 1.5);
+  ctx.fillStyle = '#5b4231';
+  ctx.beginPath(); ctx.roundRect(x - 10, y - h - 10, w + 20, h + 10, [archR + 10, archR + 10, 0, 0]); ctx.fill();
+  const wood = ctx.createLinearGradient(x, 0, x + w, 0);
+  wood.addColorStop(0, '#9a6f4c'); wood.addColorStop(0.5, '#b8875d'); wood.addColorStop(1, '#8e6646');
+  ctx.fillStyle = wood;
+  ctx.beginPath(); ctx.roundRect(x, y - h, w, h, [archR, archR, 0, 0]); ctx.fill();
+  ctx.strokeStyle = 'rgba(70, 48, 32, 0.45)'; ctx.lineWidth = 2;
+  for (let k = 1; k < 4; k++) { const lx = x + (w * k) / 4; ctx.beginPath(); ctx.moveTo(lx, y - h + archR * 0.35); ctx.lineTo(lx, y - 6); ctx.stroke(); }
+  const winR = Math.min(18, w * 0.16);
+  ctx.fillStyle = 'rgba(255, 236, 190, 0.85)';
+  ctx.beginPath(); ctx.arc(x + w / 2, y - h + archR * 0.95, winR, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#5b4231'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x + w / 2, y - h + archR * 0.95, winR, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#e8c27a';
+  ctx.beginPath(); ctx.arc(x + w - 22, y - h * 0.42, 5.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255, 220, 150, 0.55)';
+  ctx.fillRect(x + 4, y - 4, w - 8, 4);
+  if (typeof gameMode === 'undefined' || gameMode !== 'world') {
+    const label = goal.label || '엄마의 방';
+    ctx.font = '19px "ONE Mobile POP", "Malgun Gothic", sans-serif';
+    const tw = ctx.measureText(label).width + 28;
+    ctx.fillStyle = 'rgba(255, 248, 232, 0.92)';
+    ctx.beginPath(); ctx.roundRect(x + w / 2 - tw / 2, y - h - 52, tw, 32, 12); ctx.fill();
+    ctx.fillStyle = '#6c5742'; ctx.textAlign = 'center';
+    ctx.fillText(label, x + w / 2, y - h - 29);
+  }
+  ctx.restore();
+}
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
   renderBackground();
@@ -1995,6 +2138,7 @@ function draw() {
   drawTowerStructures();
   drawMonatiumBArchitecture();
   drawErpienAArchitecture();
+  drawPitShade(viewW, viewH);
 
   if (typeof gameMode !== 'undefined' && gameMode === 'world') {
     const visGrounds = platforms.filter(a => a.groundTile && a.x + a.w >= rCam - 120 && a.x <= rCam + viewW + 120);
@@ -2079,35 +2223,22 @@ function draw() {
   if ((typeof gameMode === 'undefined' || gameMode === 'story') && activeLvForSigns?.id === 'forest') {
     for (const s of (activeLvForSigns.signs || [])) {
       if (s.x < rCam - 250 || s.x > rCam + W + 250 || s.y - rCamY > H + 120 || s.y - rCamY < -120) continue;
-      ctx.font = 'bold 17px "Malgun Gothic",sans-serif';
-      const width = ctx.measureText(s.text).width + 26;
+      const signText = (typeof duduKeyText === 'function') ? duduKeyText(s.text) : s.text;
+      ctx.font = '18px "ONE Mobile POP", "Malgun Gothic", sans-serif';
+      const width = ctx.measureText(signText).width + 30;
       ctx.fillStyle = '#fff9e8ed';
       ctx.beginPath();
-      ctx.roundRect(s.x - width / 2, s.y - 25, width, 39, 12);
+      ctx.roundRect(s.x - width / 2, s.y - 26, width, 40, 14);
       ctx.fill();
       ctx.fillStyle = '#465646';
       ctx.textAlign = 'center';
-      ctx.fillText(s.text, s.x, s.y);
+      ctx.fillText(signText, s.x, s.y);
     }
   }
   const activeLv = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
   const allGoals = activeLv ? [activeLv.goal, ...(activeLv.alternateGoals || [])].filter(Boolean) : [];
   for (const goal of allGoals) {
-    ctx.fillStyle = '#80634d';
-    ctx.beginPath();
-    ctx.roundRect(goal.x, goal.y - goal.h, goal.w, goal.h, [70, 70, 0, 0]);
-    ctx.fill();
-    ctx.fillStyle = '#ffeac0';
-    ctx.beginPath();
-    ctx.roundRect(goal.x + 12, goal.y - goal.h + 12, goal.w - 24, goal.h - 12, [60, 60, 0, 0]);
-    ctx.fill();
-    ellipse(goal.x + goal.w - 30, goal.y - 65, 5, 5, '#aa7e46');
-    if (typeof gameMode === 'undefined' || gameMode !== 'world') {
-      ctx.font = 'bold 18px "Malgun Gothic"';
-      ctx.fillStyle = '#6c5742';
-      ctx.textAlign = 'center';
-      ctx.fillText(goal.label || '엄마의 방', goal.x + goal.w / 2, goal.y - goal.h - 18);
-    }
+    drawHomeDoor(goal);
   }
   for (const t of trail) {
     ctx.save();

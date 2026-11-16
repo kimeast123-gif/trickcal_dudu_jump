@@ -139,16 +139,16 @@ body.is-mobile-device .landscapeStartBtn{
 
 /* Joystick Size Variants */
 .mobileControls[data-stick-size="small"]{
-  --joy-size: 106px;
-  --joy-knob-size: 44px;
+  --joy-size: 92px;
+  --joy-knob-size: 38px;
 }
 .mobileControls[data-stick-size="medium"]{
-  --joy-size: 124px;
-  --joy-knob-size: 52px;
+  --joy-size: 108px;
+  --joy-knob-size: 44px;
 }
 .mobileControls[data-stick-size="large"]{
-  --joy-size: 142px;
-  --joy-knob-size: 58px;
+  --joy-size: 128px;
+  --joy-knob-size: 52px;
 }
 
 /* Joystick Container Position:
@@ -667,9 +667,15 @@ body.mobile-game-landscape .encounterNav {
 }
 
 /* TEST31.3: independent jump/dash control sizing (joystick unaffected) */
-.mobileControls[data-action-size="small"] .vbtn-action{width:56px;height:56px;font-size:13px}
-.mobileControls[data-action-size="medium"] .vbtn-action{width:70px;height:70px;font-size:16px}
-.mobileControls[data-action-size="large"] .vbtn-action{width:86px;height:86px;font-size:18px}
+/* RENEWAL: smaller action buttons. Small fits a 390px-tall phone without covering the landing spot. */
+.mobileControls[data-action-size="small"] .vbtn-action{width:44px;height:44px;font-size:11px}
+.mobileControls[data-action-size="medium"] .vbtn-action{width:54px;height:54px;font-size:13px}
+.mobileControls[data-action-size="large"] .vbtn-action{width:64px;height:64px;font-size:15px}
+.mobileControls[data-action-size="small"] .vpad-right{gap:10px}
+/* Dash by double-flicking the stick only: the dash button is hidden. */
+.mobileControls[data-dash-mode="tap"] .vbtn-dash{display:none}
+.mobileControls .vbtn-action{opacity:.82}
+.mobileControls .vbtn-action:active,.mobileControls .vbtn-action.active{opacity:1}
 
 
 /* ============================================================================

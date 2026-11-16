@@ -17,14 +17,17 @@
 //     prevents browser touch pan/zoom inside `#game`, and requires explicit user click to resume after portrait pause.
 // ============================================================================
 
-const inputSourceMap = new Map(); // Map<logicalCode, Set<sourceId>>
+const inputSourceMap = new Map();
+const DOUBLE_TAP_MS = 230, DOUBLE_TAP_HOLD_MS = 190;
+const doubleTapState = { ArrowLeft: { press: 0, release: 0 }, ArrowRight: { press: 0, release: 0 } }; // Map<logicalCode, Set<sourceId>>
 const MOBILE_PREFS_KEY = 'dudu_mobile_ctrl_prefs_v1';
 
 const mobilePrefs = {
   stickPosition: 'bottom', // 'bottom' | 'top'
   buttonSwap: 'normal',    // 'normal' | 'swapped'
   stickSize: 'medium',     // 'small' | 'medium' | 'large'
-  actionSize: 'medium'     // jump/dash buttons independently sized
+  actionSize: 'small',     // jump/dash buttons independently sized (RENEWAL: default small)
+  dashMode: 'both'         // 'button' | 'both' (double-tap + button) | 'tap' (double-tap only, mobile dash button hidden)
 };
 
 const mobileUIState = {
@@ -55,6 +58,19 @@ function pressInput(code, sourceId = 'touch') {
   if (wasEmpty) {
     keys.add(code);
     if (typeof p !== 'undefined' && p.guardStun > 0) return;
+    if ((code === 'ArrowLeft' || code === 'ArrowRight') && mobilePrefs.dashMode !== 'button') {
+      // RENEWAL: double-tap a direction to dash (keyboard and joystick flick share this path).
+      // Only a short tap followed quickly by a second press counts, so walking and inching never dash by accident.
+      const now = performance.now();
+      const st = doubleTapState[code];
+      const wasTap = st.release > st.press && (st.release - st.press) <= DOUBLE_TAP_HOLD_MS;
+      if (wasTap && now - st.release <= DOUBLE_TAP_MS && state === 'playing') {
+        dashRequest = true;
+        st.press = 0; st.release = 0;
+      } else {
+        st.press = now;
+      }
+    }
 
     if (code === 'Space') {
       if (state !== 'playing') return;
@@ -90,6 +106,7 @@ function releaseInput(code, sourceId = 'touch') {
     sources.delete(sourceId);
     if (sources.size === 0) {
       keys.delete(code);
+      if (doubleTapState[code] && doubleTapState[code].press) doubleTapState[code].release = performance.now();
       if (code === 'Space' && typeof p !== 'undefined') {
         if (p.hold < (p.jumps === 2 ? 0.22 : 0.24)) p.jumpCut = true;
         p.jumpHeld = false;
@@ -327,18 +344,24 @@ function setPcKeybind(action, physicalCode) {
     syncAllKeybindLabels();
     return { ok: false, reason: 'forbidden_key' };
   }
-  // Check duplicate across other actions
+  // RENEWAL: a key already in use is swapped with the action that held it, instead of being rejected.
+  let swappedWith = null;
   for (const otherAct of Object.keys(ACTION_TO_LOGICAL_CODE)) {
-    if (otherAct !== action && pcKeybinds[otherAct] === physicalCode) {
-      keybindStatusMsg = `이미 [${ACTION_LABELS_KO[otherAct]}]에 할당된 키(${formatKeyCodeLabel(physicalCode)})입니다.`;
-      syncAllKeybindLabels();
-      return { ok: false, reason: 'duplicate_key', conflictAction: otherAct };
-    }
+    if (otherAct !== action && pcKeybinds[otherAct] === physicalCode) swappedWith = otherAct;
+  }
+  if (swappedWith && pcKeybinds[action] === 'Escape' && swappedWith !== 'PAUSE') {
+    keybindStatusMsg = 'ESC는 일시정지 전용이라 바꿀 수 없어요.';
+    syncAllKeybindLabels();
+    return { ok: false, reason: 'escape_reserved_for_pause' };
   }
   releaseAllInputs('keybind_change');
+  const previous = pcKeybinds[action];
   pcKeybinds[action] = physicalCode;
+  if (swappedWith) pcKeybinds[swappedWith] = previous;
   capturingKeyAction = null;
-  keybindStatusMsg = `[${ACTION_LABELS_KO[action]}] 키가 ${formatKeyCodeLabel(physicalCode)}(으)로 변경되었습니다.`;
+  keybindStatusMsg = swappedWith
+    ? `${ACTION_LABELS_KO[action]}: ${formatKeyCodeLabel(physicalCode)}, ${ACTION_LABELS_KO[swappedWith]}: ${formatKeyCodeLabel(previous)}로 서로 바꿨어요.`
+    : `${ACTION_LABELS_KO[action]}: ${formatKeyCodeLabel(physicalCode)}로 바꿨어요.`;
   savePcKeybinds();
   return { ok: true, action, code: physicalCode };
 }
@@ -362,8 +385,22 @@ function resolvePhysicalKeyToLogicalCode(physicalCode) {
   if (physicalCode === 'KeyS' && !boundSet.has('KeyS')) return 'ArrowDown';
   if (physicalCode === 'KeyW' && !boundSet.has('KeyW')) return 'Space';
   if (physicalCode === 'ShiftRight' && !boundSet.has('ShiftRight')) return 'ShiftLeft';
+  if (physicalCode === 'ArrowUp' && !boundSet.has('ArrowUp')) return 'Space';
   return null;
 }
+
+// RENEWAL: in-game hints name the player's actual controls, not hard-coded defaults.
+function duduKeyText(text) {
+  if (!text || typeof text !== 'string' || text.indexOf('{') < 0) return text;
+  const touch = typeof isMobileOrTabletViewport === 'function' && isMobileOrTabletViewport();
+  const k = getKeybindSummaryLabels();
+  const tapDash = mobilePrefs.dashMode === 'tap';
+  const map = touch
+    ? { MOVE: '스틱', JUMP: '점프', DOWN: '스틱 ↓', DASH: tapDash ? '스틱 두 번 밀기' : '대시' }
+    : { MOVE: `${k.l} ${k.r}`, JUMP: k.j, DOWN: k.d, DASH: k.dash };
+  return text.replace(/\{(MOVE|JUMP|DOWN|DASH)\}/g, (_, t) => map[t]);
+}
+window.duduKeyText = duduKeyText;
 
 function getKeybindSummaryLabels() {
   const l = formatKeyCodeLabel(pcKeybinds.MOVE_LEFT);
@@ -402,7 +439,7 @@ function syncAllKeybindLabels() {
   // 2. Update modalKeys & below keys bar
   const modalKeysEl = document.querySelector('.modalKeys');
   if (modalKeysEl) {
-    modalKeysEl.innerHTML = `${k.l} ${k.r} 이동 <span>·</span> ${k.j} 점프 <span>·</span> ${k.d}+${k.j} 발판 내려가기 <span>·</span> ${k.d} 길게 아래보기 <span>·</span> ${k.dash} 대시`;
+    modalKeysEl.textContent = `${k.l} ${k.r} 이동, ${k.j} 점프, ${k.d}+${k.j} 내려가기, ${k.d} 꾹 눌러 아래보기, ${k.dash} 대시` + (mobilePrefs.dashMode !== 'button' ? ' (방향 두 번으로도 대시)' : '');
   }
   const belowKeysEl = document.querySelector('.below .keys');
   if (belowKeysEl) {
@@ -411,7 +448,7 @@ function syncAllKeybindLabels() {
       <span><kbd>${k.j}</kbd> 점프 / 2단 점프</span>
       <span><kbd>${k.d}</kbd> 길게 눌러 아래보기</span>
       <span><kbd>${k.d}</kbd> + <kbd>${k.j}</kbd> 얇은 발판 내려가기</span>
-      <span><kbd>${k.dash}</kbd> 순간 대시</span>
+      <span><kbd>${k.dash}</kbd> 대시${mobilePrefs.dashMode !== 'button' ? ' (방향 두 번도 가능)' : ''}</span>
       <span><kbd>${k.retry}</kbd> 구간 다시 시작</span>
       <span><kbd>${k.pauseLabel}</kbd> 쉬어가기</span>
     `;
@@ -529,6 +566,7 @@ function loadMobilePrefs() {
         mobilePrefs.stickSize = parsed.stickSize;
       }
       if (parsed && ['small','medium','large'].includes(parsed.actionSize)) mobilePrefs.actionSize=parsed.actionSize;
+      if (parsed && ['button','both','tap'].includes(parsed.dashMode)) mobilePrefs.dashMode=parsed.dashMode;
     }
   } catch (e) {
     // Ignore storage errors in private mode
@@ -552,7 +590,11 @@ function applyMobilePrefsToDOM() {
     ctrlEl.setAttribute('data-btn-swap', mobilePrefs.buttonSwap);
     ctrlEl.setAttribute('data-stick-size', mobilePrefs.stickSize);
     ctrlEl.setAttribute('data-action-size', mobilePrefs.actionSize);
+    ctrlEl.setAttribute('data-dash-mode', mobilePrefs.dashMode);
   }
+  document.querySelectorAll('[data-opt-dash-mode]').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-opt-dash-mode') === mobilePrefs.dashMode);
+  });
   // Update button labels in settings dialog so '상단/하단' reflects current left/right side clearly
   const isSwapped = mobilePrefs.buttonSwap === 'swapped';
   const btnBottom = document.getElementById('optStickBottom');
@@ -583,6 +625,8 @@ function setMobilePref(key, value) {
     mobilePrefs.stickSize = value;
   } else if (key === 'actionSize' && ['small','medium','large'].includes(value)) {
     mobilePrefs.actionSize = value;
+  } else if (key === 'dashMode' && ['button','both','tap'].includes(value)) {
+    mobilePrefs.dashMode = value;
   }
   saveMobilePrefs();
 }
@@ -1030,6 +1074,13 @@ function setupMobileControls() {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       setMobilePref('actionSize', btn.getAttribute('data-opt-action-size'));
+    });
+  });
+  document.querySelectorAll('[data-opt-dash-mode]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      setMobilePref('dashMode', btn.getAttribute('data-opt-dash-mode'));
+      if (typeof syncAllKeybindLabels === 'function') syncAllKeybindLabels();
     });
   });
 

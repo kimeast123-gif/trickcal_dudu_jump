@@ -4,7 +4,7 @@
  * - 통계(analyticsEnabled)는 사용자 동의 UI 및 공개 프로젝트 토큰이 준비되기 전까지 false(비활성)를 기본값으로 유지합니다.
  */
 window.DUDU_RELEASE = Object.freeze({
-  version: 'v1.0',
+  version: 'v1.1',
   releaseMode: true,
   qaBuild: false,
   posthogProjectToken: '',
@@ -17,10 +17,10 @@ try {
 } catch (e) {}
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.DUDU_RELEASE && window.DUDU_RELEASE.releaseMode && !window.DUDU_RELEASE.qaBuild) {
-    document.querySelectorAll('.practiceNav, .encounterNav').forEach(el => {
-      el.hidden = true;
-      el.setAttribute('aria-hidden', 'true');
-    });
-  }
+  // Dev practice bars ship hidden in the HTML; only a QA build reveals them.
+  const showDev = window.DUDU_RELEASE && (!window.DUDU_RELEASE.releaseMode || window.DUDU_RELEASE.qaBuild);
+  document.querySelectorAll('.practiceNav, .encounterNav').forEach(el => {
+    el.hidden = !showDev;
+    el.setAttribute('aria-hidden', showDev ? 'false' : 'true');
+  });
 });

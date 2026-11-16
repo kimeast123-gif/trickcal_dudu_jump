@@ -29,7 +29,7 @@ function makePlaceholderSvgDataUri(title, subtitle, gradStart, gradEnd, accentCo
     <circle cx="330" cy="52" r="38" fill="${accentColor}" opacity="0.22"/>
     <path d="M0 175 Q110 130 210 168 T400 150 L400 225 L0 225 Z" fill="#000000" opacity="0.28"/>
     <rect x="14" y="14" width="148" height="26" rx="13" fill="#000000" opacity="0.55"/>
-    <text x="88" y="31" font-family="sans-serif" font-size="11.5" font-weight="bold" fill="#ffd89b" text-anchor="middle">임시 썸네일 · 준비 중</text>
+    <text x="88" y="31" font-family="sans-serif" font-size="11.5" font-weight="bold" fill="#ffd89b" text-anchor="middle">곧 열려요</text>
     <text x="200" y="102" font-family="sans-serif" font-size="38" text-anchor="middle">${iconText}</text>
     <text x="200" y="142" font-family="sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">${title}</text>
     <text x="200" y="166" font-family="sans-serif" font-size="12" fill="#e0e8f6" text-anchor="middle">${subtitle}</text>
@@ -42,41 +42,41 @@ const WORLDMAP_CARDS = [
     order: 0,
     id: 'story_replay',
     title: '스토리 모드 재도전',
-    subtitle: '수인숲 1구간부터 25분 산책 본편 새 회차 시작',
+    subtitle: '숲에서부터 25분 귀갓길을 다시 걸어요',
     kind: 'story_replay',
     implementationStatus: 'playable',
     unlockCondition: 'storyClearConfirmed',
     action: 'openStoryReplay',
     thumbnail: 'assets/event/opening.png?v=31',
-    fallbackThumb: makePlaceholderSvgDataUri('스토리 모드 재도전', '25분 본편 6개 맵 재시작', '#5f8d6b', '#2b4c3f', '#ffe082', '🏡'),
-    statusBadge: '플레이 가능 · 25분 본편',
+    fallbackThumb: makePlaceholderSvgDataUri('스토리 모드 재도전', '25분 귀갓길 다시 걷기', '#5f8d6b', '#2b4c3f', '#ffe082', '🏡'),
+    statusBadge: '플레이 가능',
     isPlaceholderArt: false
   },
   {
     order: 1,
     id: 'world1_beastforest',
     title: '수인숲 나들이',
-    subtitle: 'WORLD 1 · 밝은 초원과 거목 미로, 마을 귀환 (1-1 ~ 1-5)',
+    subtitle: '밝은 초원과 거목 미로를 지나 마을로 (1-1부터 1-5)',
     kind: 'world',
     implementationStatus: 'playable',
     unlockCondition: 'storyClearConfirmed',
     action: 'openWorld1StageSelect',
     thumbnail: 'assets/world/w1-meadow-bg.webp?v=31',
-    fallbackThumb: makePlaceholderSvgDataUri('수인숲 나들이', 'WORLD 1 · 1-1 ~ 1-5', '#689f38', '#33691e', '#fff59d', '🌳'),
-    statusBadge: '플레이 가능 · WORLD 1',
+    fallbackThumb: makePlaceholderSvgDataUri('수인숲 나들이', '1-1부터 1-5까지', '#689f38', '#33691e', '#fff59d', '🌳'),
+    statusBadge: '플레이 가능',
     isPlaceholderArt: false
   },
   {
     order: 2,
     id: 'world2_spiritmountain',
     title: '정령산의 아침',
-    subtitle: 'WORLD 2 · 정령산 지역 (전용 배경 아트 미제공 · 추후 업데이트)',
+    subtitle: '정령이 사는 산으로 가는 길',
     kind: 'world',
     implementationStatus: 'coming_soon',
     unlockCondition: null,
     action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('정령산의 아침', '전용 아트 미제공 · 추후 공개 예정', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
-    fallbackThumb: makePlaceholderSvgDataUri('정령산의 아침', '준비 중인 지역입니다', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
+    thumbnail: makePlaceholderSvgDataUri('정령산의 아침', '곧 열려요', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
+    fallbackThumb: makePlaceholderSvgDataUri('정령산의 아침', '곧 열려요', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
     statusBadge: '준비 중',
     isPlaceholderArt: true
   },
@@ -84,56 +84,56 @@ const WORLDMAP_CARDS = [
     order: 3,
     id: 'world3_monatium_night',
     title: '모나티엄의 야경',
-    titleNote: '임시 썸네일(주간 city-bg 기반)',
-    subtitle: 'WORLD 3 · 도심 야경 지역 (야경 전용 원본 미제공 · 추후 업데이트)',
+    
+    subtitle: '불이 켜진 밤의 모나티엄',
     kind: 'world',
     implementationStatus: 'coming_soon',
     unlockCondition: null,
     action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('모나티엄의 야경', '야경 전용 원본 미제공 · 임시 썸네일', '#1f2942', '#0d1326', '#74c0fc', '🌃'),
-    fallbackThumb: makePlaceholderSvgDataUri('모나티엄의 야경', '준비 중인 지역입니다', '#1f2942', '#0d1326', '#74c0fc', '🌃'),
-    statusBadge: '준비 중 · 임시 썸네일',
+    thumbnail: makePlaceholderSvgDataUri('모나티엄의 야경', '곧 열려요', '#1f2942', '#0d1326', '#74c0fc', '🌃'),
+    fallbackThumb: makePlaceholderSvgDataUri('모나티엄의 야경', '곧 열려요', '#1f2942', '#0d1326', '#74c0fc', '🌃'),
+    statusBadge: '준비 중',
     isPlaceholderArt: true
   },
   {
     order: 4,
     id: 'world4_ghostswamp',
     title: '무시무시 유령늪',
-    subtitle: 'WORLD 4 · 안개 낀 유령늪 지역 (전용 아트 미제공 · 추후 업데이트)',
+    subtitle: '안개 낀 늪에서 들리는 이상한 소리',
     kind: 'world',
     implementationStatus: 'coming_soon',
     unlockCondition: null,
     action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('무시무시 유령늪', '전용 아트 미제공 · 추후 공개 예정', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
-    fallbackThumb: makePlaceholderSvgDataUri('무시무시 유령늪', '준비 중인 지역입니다', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
+    thumbnail: makePlaceholderSvgDataUri('무시무시 유령늪', '곧 열려요', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
+    fallbackThumb: makePlaceholderSvgDataUri('무시무시 유령늪', '곧 열려요', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
     statusBadge: '준비 중',
     isPlaceholderArt: true
   },
   {
     order: 5,
     id: 'world5_dragoncave',
-    title: '지하로 떠나는 여정 1 — 용족동굴',
-    subtitle: 'WORLD 5 · 깊은 지하 광맥과 용족동굴 (전용 아트 미제공 · 추후 업데이트)',
+    title: '땅속 여행 1: 용족동굴',
+    subtitle: '깊은 땅속, 반짝이는 광맥 사이로',
     kind: 'world',
     implementationStatus: 'coming_soon',
     unlockCondition: null,
     action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('용족동굴', '전용 아트 미제공 · 추후 공개 예정', '#4a2c2a', '#1f1211', '#ff922b', '💎'),
-    fallbackThumb: makePlaceholderSvgDataUri('용족동굴', '준비 중인 지역입니다', '#4a2c2a', '#1f1211', '#ff922b', '💎'),
+    thumbnail: makePlaceholderSvgDataUri('용족동굴', '곧 열려요', '#4a2c2a', '#1f1211', '#ff922b', '💎'),
+    fallbackThumb: makePlaceholderSvgDataUri('용족동굴', '곧 열려요', '#4a2c2a', '#1f1211', '#ff922b', '💎'),
     statusBadge: '준비 중',
     isPlaceholderArt: true
   },
   {
     order: 6,
     id: 'world6_witchkingdom',
-    title: '지하로 떠나는 여정 2 — 마녀왕국',
-    subtitle: 'WORLD 6 · 지하 세계의 마녀왕국 (전용 아트 미제공 · 추후 업데이트)',
+    title: '땅속 여행 2: 마녀왕국',
+    subtitle: '땅속 끝에 숨은 마녀의 나라',
     kind: 'world',
     implementationStatus: 'coming_soon',
     unlockCondition: null,
     action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('마녀왕국', '전용 아트 미제공 · 추후 공개 예정', '#2d1e4a', '#110b22', '#f783ac', '🔮'),
-    fallbackThumb: makePlaceholderSvgDataUri('마녀왕국', '준비 중인 지역입니다', '#2d1e4a', '#110b22', '#f783ac', '🔮'),
+    thumbnail: makePlaceholderSvgDataUri('마녀왕국', '곧 열려요', '#2d1e4a', '#110b22', '#f783ac', '🔮'),
+    fallbackThumb: makePlaceholderSvgDataUri('마녀왕국', '곧 열려요', '#2d1e4a', '#110b22', '#f783ac', '🔮'),
     statusBadge: '준비 중',
     isPlaceholderArt: true
   }
@@ -1771,8 +1771,8 @@ function backFromWorldMapToMainMenu() {
   loadLevel(0, { section: 0 });
   $('modalTag').textContent = '해가 지기 전에 집으로';
   $('modalTitle').textContent = '준비됐나요, 두두?';
-  $('modalText').innerHTML = '25분 동안 두두와 산책하고 집으로 돌아가요.<br>일반 경로의 왕사탕을 따라가면 누구나 완주할 수 있고, 황금 크레파스 12개는 숙련자 도전이에요!<br>← → 이동 · SPACE 점프 · ↓+SPACE 발판 내려가기 · ↓ 아래보기 · L SHIFT 대시';
-  $('start').textContent = '이벤트 시작하기  →';
+  $('modalText').innerHTML = '해가 지기 전에 엄마가 기다리는 집으로 돌아가요.<br>왕사탕을 따라가면 길이 보이고, 숨은 황금 크레파스 12개를 찾으면 특별한 결말이 기다려요.';
+  $('start').textContent = '산책 시작하기';
   $('start').disabled = false;
   $('overlay').hidden = false;
   syncWorldMapEntryButtons();
@@ -1830,7 +1830,7 @@ function renderWorldMap7CardsUI() {
     const extraProgress = card.id === 'world1_beastforest'
       ? `<div class="wmCardMeta">진행: ${clearedCount}/5 클리어 · 특수자원 ${totalCols}/2 ${w1.regionCleared ? '· ★완주' : ''}</div>`
       : (card.id === 'story_replay'
-        ? `<div class="wmCardMeta">기존 6개 맵 · 왕사탕 135 · 황금 크레파스 12</div>`
+        ? `<div class="wmCardMeta">본편 6개 지역, 왕사탕 135개, 황금 크레파스 12개</div>`
         : `<div class="wmCardMeta">${card.isPlaceholderArt ? '임시 플레이스홀더 썸네일' : '준비 중'}</div>`);
     return `
       <button type="button"
@@ -1857,7 +1857,7 @@ function renderWorldMap7CardsUI() {
     <div class="wmPanel" role="dialog" aria-modal="true" aria-labelledby="wmHeaderTitle">
       <div class="wmHeader">
         <div>
-          <span class="wmEyebrow">DUDU WORLD MAP · 7 REGIONS</span>
+          <span class="wmEyebrow">월드맵</span>
           <h2 id="wmHeaderTitle">🗺️ 두두의 세계지도 (월드맵 선택)</h2>
         </div>
         <div class="wmHeaderActions">
@@ -1914,7 +1914,7 @@ function openWorld1StageSelect() {
         <p class="wmStageDesc">${stg.subtitle}</p>
         <div class="wmStageStats">
           <span>최고 기록: <b>${bestTxt}</b></span>
-          <span>재시도: <b>${rec.retries}</b> · 피격: <b>${rec.hits}</b></span>
+          <span>재시도 <b>${rec.retries}</b>회, 피격 <b>${rec.hits}</b>회</span>
           <span>${specTxt}${hasDualEntry ? ` · 최근 진입: <b>${savedRouteLabel}</b>` : ''}</span>
         </div>
         <div class="wmStageBtnRow">
@@ -1923,7 +1923,7 @@ function openWorld1StageSelect() {
                   id="wmStageBtn-${stg.stageCode}"
                   ${unlocked ? '' : 'disabled'}
                   onclick="startWorld1StageFromMenu(${idx}, false, '${savedRoute}')">
-            ${unlocked ? (hasDualEntry ? `스테이지 시작 (${savedRouteLabel}) →` : '스테이지 시작 →') : '잠김 (순차 해금)'}
+            ${unlocked ? (hasDualEntry ? `스테이지 시작 (${savedRouteLabel})` : '스테이지 시작') : '앞 스테이지를 깨면 열려요'}
           </button>
           ${(unlocked && hasDualEntry) ? `
             <div style="display:flex;gap:4px;">
@@ -1941,7 +1941,7 @@ function openWorld1StageSelect() {
     <div class="wmPanel" role="dialog" aria-modal="true" aria-labelledby="wmStageHeaderTitle">
       <div class="wmHeader">
         <div>
-          <span class="wmEyebrow">월드 1 · 스테이지 선택</span>
+          <span class="wmEyebrow">월드 1 스테이지</span>
           <h2 id="wmStageHeaderTitle">수인숲 나들이 (1-1 ~ 1-5)</h2>
         </div>
         <div class="wmHeaderActions">
@@ -1993,11 +1993,11 @@ function renderWorld1ClearModal(stg, rec, hasNextStage, exitRoute = 'default', n
         </div>
       </div>
       <p class="wmClearSummary">
-        소요 시간 <b>${elapsedTxt}</b> · 이번 주행 피격 <b>${worldStageHitsThisRun}회</b> · 특수 수집물 <b>${colTxt}</b>${routeBadge}<br>
+        걸린 시간 <b>${elapsedTxt}</b>, 피격 <b>${worldStageHitsThisRun}회</b>, 수집물 <b>${colTxt}</b>${routeBadge}<br>
         ${isFinalStage ? '수인숲 나들이 1-1 ~ 1-5를 모두 완주했습니다! (기존 25분 스토리 엔딩과 독립된 월드맵 전용 클리어)' : `다음 스테이지(1-${nextIdx + 1})가 해금되어 저장되었습니다.`}
       </p>
       <div class="wmClearBtnRow">
-        ${hasNextStage ? `<button type="button" class="primary" id="wmNextStageBtn" onclick="startWorld1StageFromMenu(${nextIdx}, true, '${nextEntryRoute}')">다음 스테이지 (1-${nextIdx + 1}${nextEntryRoute === 'upper' ? ' · 상단 루트' : (nextEntryRoute === 'lower' ? ' · 하단 루트' : '')}) 시작 →</button>` : ''}
+        ${hasNextStage ? `<button type="button" class="primary" id="wmNextStageBtn" onclick="startWorld1StageFromMenu(${nextIdx}, true, '${nextEntryRoute}')">다음 스테이지 (1-${nextIdx + 1}${nextEntryRoute === 'upper' ? ', 위쪽 길' : (nextEntryRoute === 'lower' ? ', 아래쪽 길' : '')}) 시작</button>` : ''}
         <button type="button" class="secondary" id="wmReturnStageSelectBtn" onclick="openWorld1StageSelect()">스테이지 선택 화면으로</button>
         <button type="button" class="secondary" id="wmReturnWorldMapBtn" onclick="openWorldMapMenu({forceDevOpen:true})">세계지도로</button>
         <button type="button" class="secondary" id="wmReplayCurrentStageBtn" onclick="loadWorld1Stage(${activeWorldStageIndex}, {section:0, entryRoute:'${activeWorldEntryRoute}'})">↻ 다시 플레이</button>

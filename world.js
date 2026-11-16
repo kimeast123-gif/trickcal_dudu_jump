@@ -225,41 +225,44 @@ forest.segments=[{start:0,end:7400,bg:'forest-bg',skin:'grass',name:'수인숲',
 
 // F1 (0~1200)
 floor(forest,0,1200,'grass',580,{id:'F-GND-01',joinRight:true});
-checkpointAt(forest,150,'햇살 산책길','← → 이동 · SPACE를 짧게 / 길게 눌러 점프 높이를 조절해요');
+checkpointAt(forest,150,'햇살 산책길','{MOVE}로 걷고, {JUMP}를 짧게 누르면 낮게, 꾹 누르면 높이 뛰어요');
 surface(forest,520,525,90,'grass',{id:'F-OBS-01',h:55,thin:false,wall:true});
 surface(forest,820,450,210,'grass',{id:'F-STEP-01'});
-sign(forest,680,375,'짧게 폴짝(장애물) vs 길게 폴짝(높은 발판)');
+sign(forest,680,375,'낮은 건 살짝, 높은 건 꾹!');
 
 // F2 (1200~2450)
 floor(forest,1200,840,'grass',580,{id:'F-GND-02A',joinLeft:true});
-checkpointAt(forest,1340,'두 번 폴짝','1단 점프만으로는 넘을 수 없어요! 공중에서 SPACE를 한 번 더!');
-sign(forest,1620,350,'공중에서 SPACE 한 번 더 · 2단 점프 필수');
+checkpointAt(forest,1340,'두 번 폴짝','공중에서 {JUMP}를 한 번 더 누르면 한 번 더 뛰어요');
+sign(forest,1620,350,'공중에서 한 번 더 폴짝');
 surface(forest,1800,380,230,'grass',{id:'F-STEP-02'});
 wall(forest,2040,420,80,480,'grass',{id:'F-CLIFF-02'});
 floor(forest,2120,330,'grass',580,{id:'F-GND-02B',joinRight:true});
 
 // F3 (2450~3550)
 floor(forest,2450,1100,'grass',580,{id:'F-GND-03',joinLeft:true,joinRight:true});
-checkpointAt(forest,2580,'아래로 폴짝','상단 발판 위에서 ↓ + SPACE를 한 번 눌러 아래 발판으로 내려가요');
+checkpointAt(forest,2580,'아래로 폴짝','떠 있는 발판에서는 {DOWN} + {JUMP}로 아래로 내려갈 수 있어요');
 surface(forest,2760,370,340,'grass',{id:'F-DROP-01'});
 surface(forest,2840,475,360,'grass',{id:'F-DROP-02'});
 wall(forest,3080,180,54,205,'grass',{id:'F-DROP-BARRIER'});
-sign(forest,2930,305,'↓ + SPACE · 얇은 발판 내려가기');
+sign(forest,2930,305,'{DOWN} + {JUMP}로 쏙');
 
 // F4 (3550~4800)
 floor(forest,3550,1550,'grass',580,{id:'F-GND-04',joinLeft:true});
-checkpointAt(forest,3620,'징검다리 조준','넓은 발판에서 좁은 발판으로! 정확히 착지해요');
+checkpointAt(forest,3620,'징검다리','발판이 점점 좁아져요. 천천히 노려 봐요');
 surface(forest,3780,485,165,'grass',{id:'F-BRIDGE-01'});
 surface(forest,4080,435,125,'grass',{id:'F-BRIDGE-02'});
 surface(forest,4360,390,92,'grass',{id:'F-BRIDGE-03',useSmallVisual:true});
 
 // F5 (4800~6250)
-checkpointAt(forest,4940,'바람처럼 대시','앞의 긴 절벽은 점프만으론 못 건너요! 2단 점프 후 L SHIFT 공중 대시!');
-sign(forest,5010,415,'⚠ 긴 절벽 · 2단 점프 + L SHIFT 공중 대시 필수');
+checkpointAt(forest,4940,'바람처럼 대시','두 번 뛴 다음 {DASH}! 떨어져도 아래 풀밭에서 다시 해 볼 수 있어요');
+sign(forest,5010,415,'멀다! 두 번 폴짝, 그리고 {DASH}');
 floor(forest,5585,815,'grass',580,{id:'F-GND-05'});
+// RENEWAL: first dash is taught over a safe lower meadow. A miss lands here instead of resetting; the step leads back up.
+floor(forest,5100,485,'grass',700,{id:'F-DASH-NET'});
+surface(forest,5150,640,120,'grass',{id:'F-DASH-NET-STEP'});
 
 // F6 (6250~7400)
-checkpointAt(forest,6260,'숲의 출구','점프와 대시를 연결해 수인마을로 출발해요!');
+checkpointAt(forest,6260,'숲의 출구','이제 마을로 가요');
 surface(forest,6580,485,180,'grass',{id:'F-FINAL-01'});
 floor(forest,6920,480,'grass',580,{id:'F-GND-06'});
 
@@ -298,6 +301,8 @@ addStageProp(village,{id:'V-DEC-FENCE-01',assetType:'DECORATION',layer:'midgroun
 // V1 Collidable Platforms (Strictly in x = 1140..1830 over open lawn & stream 1560..1920!)
 surface(village,1160,505,190,'village',{id:'V-STEP-01'});
 surface(village,1630,490,200,'village',{id:'V-BRIDGE-01'});
+// RENEWAL: the village is a rest stop. Gaps are shallow dips you can walk out of, never death pits.
+floor(village,1560,360,'village',650,{id:'V-DIP-01',noAutoDecor:true});
 
 // --- V2 (1920 ~ 4160): 마을 장터 (1920..3180 가판대·오두막 전용 광장 / 3240..4160 시냇물 징검다리 도약) ---
 floor(village,1920,1720,'village',580,{id:'V-GND-02',noAutoDecor:true});
@@ -311,6 +316,7 @@ addStageProp(village,{id:'V-PROP-HOUSE-B',assetType:'BACKGROUND_PROP',layer:'bac
 surface(village,3260,500,195,'village',{id:'V-MARKET-01'});
 surface(village,3710,485,175,'village',{id:'V-STREAM-01'});
 surface(village,3935,450,175,'village',{id:'V-STREAM-02'});
+floor(village,3640,520,'village',650,{id:'V-DIP-02',noAutoDecor:true});
 
 // --- V3 (4160 ~ 6220): 오두막 정원 (4160..5080 오두막·꽃밭 관람 산책로 / 5140..6220 얕은 단차·시냇물 도약) ---
 floor(village,4160,1580,'village',580,{id:'V-GND-03',noAutoDecor:true});
@@ -323,6 +329,7 @@ addStageProp(village,{id:'V-DEC-FENCE-02',assetType:'DECORATION',layer:'midgroun
 surface(village,5160,495,195,'village',{id:'V-GARDEN-01'});
 surface(village,5460,440,200,'village',{id:'V-GARDEN-02'});
 surface(village,5860,485,200,'village',{id:'V-BRIDGE-02'});
+floor(village,5740,480,'village',650,{id:'V-DIP-03',noAutoDecor:true});
 
 // --- V4 (6220 ~ 7800): 마을 출구 대문 (6360..6555 단일 낮은 발판 / 6700..7600 출구 가판대·대문 평지) ---
 floor(village,6220,1580,'village',580,{id:'V-GND-04',noAutoDecor:true});
@@ -1627,7 +1634,7 @@ function ensureWorldRegionAssets(regionId) {
  }
  for (const k of TERRAIN_ASSET_LIST) {
   if (prefixes.some(pf => k.startsWith(pf))) {
-   tasks.push(_loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=30', true));
+   tasks.push(_loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=31R', true));
   }
  }
  if (regionId === 'monatium_a' || regionId === 'monatium_b') {
@@ -1658,7 +1665,7 @@ function preloadRemainingWorldAssetsInBackground() {
    _loadSingleWorldImg(worldImages, bg, 'assets/world/' + bg + '.webp?v=30', true);
   }
   for (const k of TERRAIN_ASSET_LIST) {
-   _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=30', true);
+   _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=31R', true);
   }
  }, 400);
 }
