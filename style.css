@@ -673,12 +673,13 @@ body.mobile-game-landscape .encounterNav {
 
 
 /* ============================================================================
-   TEST31.5 UI/UX MASTER REDESIGN v1.0 (Fairy-Tale Trickcal Style & Genuine ONE Mobile POP)
-   - Genuine `@font-face` using `./assets/fonts/ONE-Mobile-POP.ttf` (zero fake local fallbacks!)
-   - Asymmetric, high-readability Corner Floating HUD (Ribbon + Medallion + Leaf Health Tray)
-   - Open Storybook Title Screen (Dudu & Suin Forest background remain the hero; zero giant PPT boards!)
-   - Separated Pause Card (`data-modal-kind="pause"`) vs. Title Dock (`data-modal-kind="title"`)
-   - Atmospheric 7-Region Expedition World Map & Compact Non-Occluding Clear/Settings Modals
+   두두의 폴짝폴짝 대모험 — 261116 통합 디자인 시스템 ('트릭컬풍 숲속 모험의 조용한 인터페이스')
+   - P1 단일 디자인 토큰 수립 (웜 크림 표면 #FAF6EE, 짙은 숲색 잉크 #29372E, 회녹색 보조 잉크 #68756A,
+     주 행동색 #5F965B, 절제된 성취 금색 #CDA45B, 경고 적색 #BC6057)
+   - 타이포그래피 분리: 주요 제목·로비 메뉴는 ONE Mobile POP, 설명·기록·설정·HUD 수치는
+     판독성 높은 시스템 본문 고딕 + tabular-nums 적용
+   - P2 화면별 정돈: HUD 소형화, 월드맵 7카드, 챌린지 난이도 1·2 선택, 게임 옵션(PC 키 설정),
+     일시정지·결과창, 외부 웹페이지 및 반응형(1280x720, 900x600, 844x390, 740x320) 통합
    ============================================================================ */
 
 @font-face {
@@ -691,61 +692,193 @@ body.mobile-game-landscape .encounterNav {
 }
 
 :root {
-  --font-game: 'ONE Mobile POP', sans-serif;
-  --ui-forest-glass: rgba(22, 38, 28, 0.78);
-  --ui-forest-deep: rgba(15, 26, 20, 0.86);
-  --ui-cream-pill: rgba(255, 253, 244, 0.94);
-  --ui-leaf-primary: #58a64e;
-  --ui-leaf-shadow: #356b2f;
-  --ui-crayon-gold: #f5b82e;
-  --ui-crayon-shadow: #b87412;
-  --ui-pine-teal: #3d8067;
-  --ui-pine-shadow: #234d3d;
-  --ui-ink-dark: #243627;
-  --ui-ink-muted: #5a6e5c;
-  --ui-cream-text: #fffdf5;
+  --font-display: 'ONE Mobile POP', 'Malgun Gothic', sans-serif;
+  --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+
+  /* Color Tokens (§3-2) */
+  --ds-bg-page: #FAF6EE;
+  --ds-surface-card: #FAF6EE;
+  --ds-surface-elevated: #FFFFFF;
+  --ds-surface-sub: #F2EDE2;
+  --ds-surface-muted: #ECE7DC;
+  --ds-surface-hud: rgba(33, 47, 38, 0.80);
+  --ds-surface-hud-light: rgba(250, 246, 238, 0.92);
+
+  --ds-ink-primary: #29372E;
+  --ds-ink-secondary: #68756A;
+  --ds-ink-on-dark: #F9F7F1;
+
+  --ds-accent-primary: #5F965B;
+  --ds-accent-primary-hover: #52854E;
+  --ds-accent-gold: #CDA45B;
+  --ds-accent-warn: #BC6057;
+
+  --ds-border-subtle: rgba(41, 55, 46, 0.14);
+  --ds-border-strong: rgba(41, 55, 46, 0.24);
+  --ds-border-on-dark: rgba(255, 255, 255, 0.20);
+
+  /* Radius & Shadow Tokens (§3-2) */
+  --ds-radius-card: 14px;
+  --ds-radius-modal: 20px;
+  --ds-radius-btn: 12px;
+  --ds-shadow-soft: 0 6px 20px rgba(32, 46, 36, 0.12);
+  --ds-shadow-modal: 0 14px 36px rgba(20, 32, 24, 0.26);
 }
 
-/* Apply genuine ONE Mobile POP across all game UI layers without fake bold synthesis */
-body,
+/* Typography Hierarchy (§3-3): Body font by default; Display font only on titles & featured headers */
+body {
+  background: var(--ds-bg-page);
+  color: var(--ds-ink-primary);
+  font-family: var(--ds-font-body);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
 .gameViewport,
-.gameViewport button,
-.gameViewport input,
-.gameViewport select,
 .hud,
 .pill,
 .playerHealthHud,
-#playerHealthCount,
 .practiceHUD,
 .overlay,
 .intro,
 .worldmapOverlay,
 .wmPanel,
+.challengeSelectModal,
 .mobileSettingsModal,
 .portraitWarning,
-#toast,
-#encounterStatus,
-.practiceNav,
-.challengeNav,
-.encounterNav {
-  font-family: var(--font-game) !important;
+.below,
+footer {
+  font-family: var(--ds-font-body);
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ----------------------------------------------------------------------------
-   1. In-Game HUD Hierarchy (Corner Floating Ribbon + Clock Medallion + Capsules)
-   ---------------------------------------------------------------------------- */
-.hud {
-  top: 14px;
-  left: 16px;
-  right: 16px;
-  align-items: center;
-  z-index: 6;
-  transition: opacity 0.22s ease, transform 0.22s ease;
+.intro h2,
+.wmHeader h2,
+.chSelectHeader h3,
+.mobileSettingsHeader strong,
+#transitionName,
+#toast {
+  font-family: var(--font-display);
+  font-weight: 400;
 }
 
-/* Hide gameplay HUD cleanly during fullscreen story cutscenes / region transitions */
+/* ----------------------------------------------------------------------------
+   G. External Webpage & Responsive Viewport Fit (§4-G)
+   ---------------------------------------------------------------------------- */
+html[data-release-mode="true"] .practiceNav,
+html[data-release-mode="true"] .encounterNav,
+body[data-release-mode="true"] .practiceNav,
+body[data-release-mode="true"] .encounterNav {
+  display: none !important;
+}
+
+header {
+  height: 36px;
+  padding: 0 2.5%;
+  background: var(--ds-bg-page);
+  border-bottom: 1px solid var(--ds-border-subtle);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  color: var(--ds-ink-primary);
+  gap: 8px;
+}
+
+.logo {
+  font-size: 18px;
+  color: var(--ds-accent-primary);
+}
+
+.edition {
+  font-size: 11.5px;
+  letter-spacing: 0;
+  color: var(--ds-ink-secondary);
+}
+
+.edition b {
+  background: var(--ds-surface-sub);
+  color: var(--ds-ink-primary);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+main {
+  padding: 8px 2% 12px;
+  max-width: 1440px;
+}
+
+.heading {
+  display: none;
+}
+
+.game {
+  width: min(100%, calc((100dvh - 54px) * 16 / 9));
+  max-height: calc(100dvh - 54px);
+  margin: 0 auto;
+  border: 2px solid rgba(41, 55, 46, 0.16);
+  border-radius: 16px;
+  box-shadow: var(--ds-shadow-soft);
+  background: #e7f1ed;
+}
+
+.below {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 10px 4px;
+  gap: 12px;
+  align-items: center;
+}
+
+.keys {
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--ds-ink-secondary);
+}
+
+kbd {
+  background: var(--ds-surface-elevated);
+  border: 1px solid var(--ds-border-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-family: var(--ds-font-body);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ds-ink-primary);
+}
+
+.note {
+  font-size: 11.5px;
+  color: var(--ds-ink-secondary);
+}
+
+footer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--ds-border-subtle);
+  font-size: 11px;
+  color: var(--ds-ink-secondary);
+}
+
+/* ----------------------------------------------------------------------------
+   B. In-Game Gameplay HUD (§4-B) — Compact, Quiet, Tabular Numerals
+   ---------------------------------------------------------------------------- */
+.hud {
+  top: 12px;
+  left: 14px;
+  right: 14px;
+  align-items: center;
+  z-index: 6;
+  transition: opacity 180ms ease;
+}
+
 body[data-game-state="opening"] .hud,
 body[data-game-state="ending"] .hud,
 body[data-game-state="cutscene"] .hud,
@@ -759,745 +892,1097 @@ body[data-game-state="cutscene"] .practiceHUD {
   pointer-events: none;
 }
 
-/* In 1-5 Suin Village, softly dim secondary top HUD when conversing with an NPC (§4-4) */
 body[data-world-stage="1-5"].npc-talking .hud {
-  opacity: 0.52;
+  opacity: 0.55;
 }
 
-/* Top-Left Stage Ribbon Badge (`.hudZonePill`) — distinct from white counter pills! */
+/* Top-Left Stage Pill (`.hudZonePill`) */
 .hud .hudZonePill {
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 9px !important;
-  padding: 5px 15px 5px 7px !important;
-  height: 38px;
-  background: var(--ui-forest-glass) !important;
-  border: 1.5px solid rgba(216, 243, 205, 0.55) !important;
-  border-radius: 999px !important;
-  box-shadow: 0 4px 12px rgba(10, 20, 14, 0.28) !important;
-  color: var(--ui-cream-text) !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px 0 6px;
+  background: var(--ds-surface-hud);
+  border: 1px solid var(--ds-border-on-dark);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(10, 20, 14, 0.18);
+  color: var(--ds-ink-on-dark);
   backdrop-filter: blur(4px);
 }
 
 .hud .hudZonePill .tiny:not([hidden]) {
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
-  background: linear-gradient(180deg, #ffd966 0%, #f0a824 100%);
-  color: #243627 !important;
+  padding: 3px 8px;
+  background: rgba(250, 246, 238, 0.16);
+  color: #E8DFC8;
   border-radius: 999px;
-  font-size: 10.5px !important;
-  letter-spacing: 0.4px !important;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
   line-height: 1;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .hud .hudZonePill #zoneTitle {
-  font-size: 14.5px !important;
-  font-weight: 400 !important;
-  color: #fffdf6 !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
-  letter-spacing: 0.2px;
-}
-
-@keyframes stagePulseAnim {
-  0% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(245, 184, 46, 0.7); }
-  50% { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(245, 184, 46, 0); }
-  100% { transform: scale(1); box-shadow: 0 4px 12px rgba(10, 20, 14, 0.28); }
-}
-.hud .hudZonePill.stage-enter-pulse {
-  animation: stagePulseAnim 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--ds-ink-on-dark);
+  letter-spacing: 0.1px;
 }
 
 /* Top-Right Cluster (`.hudRight`) */
 .hudRight {
-  align-items: center !important;
-  gap: 7px !important;
+  align-items: center;
+  gap: 6px;
 }
 
-/* Primary Timer Medallion (`.eventClock`) */
+/* Story Timer (`.eventClock`) */
 .hud .eventClock:not([hidden]) {
-  height: 38px !important;
-  min-width: 76px !important;
-  padding: 0 14px !important;
-  border-radius: 999px !important;
-  background: var(--ui-cream-pill) !important;
-  border: 2px solid #e6b44c !important;
-  box-shadow: 0 3px 0 rgba(156, 108, 24, 0.32), 0 4px 10px rgba(0, 0, 0, 0.16) !important;
-  color: #273b29 !important;
-  font-size: 17.5px !important;
-  font-weight: 400 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  height: 32px;
+  min-width: 68px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--ds-surface-hud-light);
+  border: 1px solid var(--ds-border-strong);
+  box-shadow: 0 4px 10px rgba(10, 20, 14, 0.12);
+  color: var(--ds-ink-primary);
+  font-size: 14.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hud .eventClock.urgent {
-  background: #fff0ed !important;
-  border-color: #e05243 !important;
-  color: #c93326 !important;
+  background: #FDF2F0;
+  border-color: var(--ds-accent-warn);
+  color: var(--ds-accent-warn);
+}
+
+/* Challenge HUD Pill (`#challengeHud`) — Compact Single-Row Tabular Display */
+.hud .challengeHud:not([hidden]) {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  min-width: auto;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--ds-surface-hud-light);
+  border: 1px solid var(--ds-border-strong);
+  box-shadow: 0 4px 10px rgba(10, 20, 14, 0.12);
+  color: var(--ds-ink-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud .challengeHud .tiny {
+  display: inline;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ds-ink-secondary);
+}
+
+.hud .challengeHud b {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--ds-ink-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud .challengeHud small {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ds-ink-secondary);
+  padding-left: 6px;
+  border-left: 1px solid var(--ds-border-subtle);
 }
 
 /* Collectible Capsules (`#specialPill`, `.coins`) */
 .hud .specialCoins,
 .hud .coins {
-  height: 36px !important;
-  padding: 0 12px 0 9px !important;
-  border-radius: 999px !important;
-  background: rgba(255, 252, 242, 0.90) !important;
-  border: 1.5px solid rgba(235, 198, 122, 0.85) !important;
-  box-shadow: 0 3px 0 rgba(120, 92, 34, 0.22) !important;
-  font-size: 15.5px !important;
-  font-weight: 400 !important;
-  gap: 5px !important;
-}
-
-.hud .specialCoins {
-  color: #c75b16 !important;
-}
-
-.hud .coins {
-  color: #b83d56 !important;
-  border-color: rgba(232, 150, 166, 0.85) !important;
+  height: 32px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  background: var(--ds-surface-hud-light);
+  border: 1px solid var(--ds-border-strong);
+  box-shadow: 0 4px 10px rgba(10, 20, 14, 0.10);
+  font-size: 13.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  gap: 5px;
+  color: var(--ds-ink-primary);
 }
 
 .hud .specialCoins span,
 .hud .coins span {
-  font-size: 12px !important;
-  color: #6c7865 !important;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ds-ink-secondary);
 }
 
-/* Utility Icon Buttons (`⚙️`, `♪`, `Ⅱ`, `⛶`) — Compact Circular Medallions */
+.candyIcon { width: 19px; height: 19px; }
+.crayonIcon { width: 21px; height: 21px; }
+
+/* Utility Icon Buttons (`⚙️`, `♪`, `Ⅱ`, `⛶`) */
 .hudRight button:not([hidden]) {
-  height: 36px !important;
-  min-width: 36px !important;
-  padding: 0 10px !important;
-  border-radius: 999px !important;
-  background: var(--ui-forest-glass) !important;
-  border: 1.5px solid rgba(232, 246, 224, 0.55) !important;
-  box-shadow: 0 3px 0 rgba(14, 24, 18, 0.35) !important;
-  color: #fffdf5 !important;
-  font-size: 13.5px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: transform 0.08s ease, background 0.12s ease;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--ds-surface-hud);
+  border: 1px solid var(--ds-border-on-dark);
+  box-shadow: 0 4px 10px rgba(10, 20, 14, 0.14);
+  color: var(--ds-ink-on-dark);
+  font-family: var(--ds-font-body);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 160ms ease, transform 120ms ease;
 }
 
 .hudRight button:hover {
-  background: rgba(42, 68, 50, 0.92) !important;
-  transform: translateY(-1px);
+  background: rgba(48, 68, 55, 0.92);
 }
 
-.hudRight button:active {
-  transform: translateY(1px);
+.hudRight button:focus-visible {
+  outline: 2px solid var(--ds-accent-gold);
+  outline-offset: 2px;
 }
 
-/* Neonsaurus 5-Icon Health Tray (`#playerHealthHud`) — High-Contrast Forest Leaf Tray */
+/* Neonsaurus 5-Icon Health Tray (`#playerHealthHud`) — Compact & Unobtrusive (§4-B.4) */
 .playerHealthHud {
-  top: 58px !important;
-  right: 16px !important;
-  padding: 4px 12px 4px 9px !important;
-  gap: 8px !important;
-  background: rgba(20, 36, 26, 0.76) !important;
-  border: 1.5px solid rgba(182, 232, 168, 0.62) !important;
-  border-radius: 999px !important;
-  box-shadow: 0 4px 12px rgba(10, 20, 14, 0.28) !important;
+  top: 50px;
+  right: 14px;
+  padding: 3px 10px 3px 7px;
+  gap: 6px;
+  background: var(--ds-surface-hud);
+  border: 1px solid var(--ds-border-on-dark);
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(10, 20, 14, 0.16);
   backdrop-filter: blur(4px);
 }
 
 .playerHealthIcons {
-  gap: 3px !important;
+  gap: 2px;
 }
 
 .playerHealthIcons img {
-  width: 28px !important;
-  height: 28px !important;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  width: 22px;
+  height: 22px;
 }
 
 .playerHealthIcons img.lost {
-  filter: grayscale(1) brightness(0.65) !important;
-  opacity: 0.28 !important;
+  filter: grayscale(1) brightness(0.65);
+  opacity: 0.28;
 }
 
 #playerHealthCount {
-  font-family: var(--font-game) !important;
-  font-size: 13.5px !important;
-  font-weight: 400 !important;
-  color: #e9f7e1 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-family: var(--ds-font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ds-ink-on-dark);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Bottom-Left Situational Action Indicator (`.practiceHUD`) — Compact & Non-Occluding */
+/* Bottom-Left Situational Action Indicator (`.practiceHUD`) */
 .practiceHUD {
-  bottom: 12px !important;
-  left: 16px !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 10px !important;
-  padding: 5px 12px !important;
-  background: rgba(20, 34, 25, 0.62) !important;
-  border: 1px solid rgba(210, 235, 200, 0.35) !important;
-  border-radius: 999px !important;
-  color: #e8f5e2 !important;
-  font-size: 11px !important;
+  bottom: 10px;
+  left: 14px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgba(33, 47, 38, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: var(--ds-ink-on-dark);
+  font-size: 11px;
+  font-weight: 600;
   backdrop-filter: blur(3px);
 }
 
 .practiceHUD #jumpInfo {
-  display: none !important;
+  display: none;
 }
 
 .practiceHUD .holdTrack {
-  width: 64px !important;
-  height: 5px !important;
-  background: rgba(255, 255, 255, 0.24) !important;
+  width: 56px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .practiceHUD .holdTrack i {
-  background: #ffd43b !important;
+  background: var(--ds-accent-gold);
 }
 
-/* Hide keyboard practiceHUD on touch mobile devices */
 body.is-mobile-device .practiceHUD {
   display: none !important;
 }
 
-/* Toast & Encounter Banner */
 #toast {
-  top: 104px !important;
-  font-size: 16px !important;
-  color: #fffdf4 !important;
-  text-shadow: 0 2px 6px rgba(15, 28, 18, 0.85), 0 0 2px rgba(15, 28, 18, 0.95) !important;
+  top: 94px;
+  font-size: 15px;
+  color: var(--ds-ink-on-dark);
+  text-shadow: 0 2px 6px rgba(15, 26, 20, 0.85);
 }
 
 /* ----------------------------------------------------------------------------
-   2. Title Screen / Pause Menu / Story Clear Overlay (`#overlay`)
-   - ZERO Giant Brown/Ivory PPT Boards!
-   - When `data-modal-kind="title"`, Dudu & Suin Forest canvas shine on the left/center
-     while the title logo and 3 mode buttons float as an adventure dock!
+   F. Pause, Story Intro Fallback & Result Modals (`#overlay`, §4-F)
    ---------------------------------------------------------------------------- */
 .overlay {
-  background: radial-gradient(circle at 34% 54%, rgba(18, 30, 22, 0.04) 0%, rgba(14, 24, 18, 0.42) 100%) !important;
-  backdrop-filter: none !important;
-  padding: 20px 26px !important;
+  background: rgba(20, 30, 24, 0.52);
+  backdrop-filter: blur(3px);
+  padding: 18px;
 }
 
-/* Title Mode (`#overlay[data-modal-kind="title"]`): Split Hero Layout */
-.overlay[data-modal-kind="title"]:not([hidden]) {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
-}
-
-.overlay[data-modal-kind="title"] .intro {
-  width: min(410px, 46%) !important;
-  max-width: 420px !important;
-  background: rgba(22, 38, 28, 0.80) !important;
-  border: 2px solid rgba(215, 242, 202, 0.55) !important;
-  border-radius: 26px !important;
-  padding: 22px 24px 18px !important;
-  text-align: left !important;
-  color: #fffdf5 !important;
-  box-shadow: 0 18px 42px rgba(8, 16, 11, 0.44) !important;
-  backdrop-filter: blur(6px);
-}
-
-.overlay[data-modal-kind="title"] .intro .eyebrow {
-  display: inline-block;
-  padding: 4px 11px;
-  background: rgba(245, 184, 46, 0.22);
-  border: 1px solid rgba(245, 184, 46, 0.65);
-  border-radius: 999px;
-  color: #ffe07d !important;
-  font-size: 11px !important;
-  letter-spacing: 1px !important;
-}
-
-.overlay[data-modal-kind="title"] .intro h2 {
-  font-size: clamp(22px, 2.3vw, 29px) !important;
-  margin: 10px 0 8px !important;
-  color: #fffdf5 !important;
-  text-shadow: 0 2px 0 #1b3022, 0 4px 10px rgba(0, 0, 0, 0.35);
-  line-height: 1.2;
-}
-
-.overlay[data-modal-kind="title"] .intro p {
-  font-size: 12.5px !important;
-  line-height: 1.55 !important;
-  color: rgba(238, 247, 234, 0.90) !important;
-  margin-bottom: 4px !important;
-}
-
-.overlay[data-modal-kind="title"] .modeBtnRow {
-  flex-direction: column !important;
-  gap: 9px !important;
-  margin: 14px 0 12px !important;
-}
-
-.overlay[data-modal-kind="title"] .modeBtnRow > button:not([hidden]) {
-  flex: none !important;
-  width: 100% !important;
-  padding: 12px 16px !important;
-  border-radius: 16px !important;
-  font-size: 15px !important;
-  font-weight: 400 !important;
-  text-align: left !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  transition: transform 0.1s ease, filter 0.12s ease;
-}
-
-.overlay[data-modal-kind="title"] .modeBtnRow > button:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.05);
-}
-
-/* 1) Primary Story Button */
-.overlay .primary {
-  background: linear-gradient(180deg, #68b85e 0%, #468e3d 100%) !important;
-  color: #fffdf6 !important;
-  border: 2px solid #c9f2be !important;
-  box-shadow: 0 4px 0 #2b5c25, 0 6px 14px rgba(0, 0, 0, 0.24) !important;
-  border-radius: 16px !important;
-  font-weight: 400 !important;
-}
-
-/* 2) World Map Expedition Button */
-.overlay .worldmapPrimary {
-  background: linear-gradient(180deg, #4b6955 0%, #314739 100%) !important;
-  color: #e9f2eb !important;
-  border: 2px solid rgba(185, 214, 192, 0.55) !important;
-  box-shadow: 0 4px 0 #1d2b22, 0 6px 14px rgba(0, 0, 0, 0.22) !important;
-  border-radius: 16px !important;
-  font-weight: 400 !important;
-}
-
-.overlay .worldmapPrimary.unlocked {
-  background: linear-gradient(180deg, #f5b638 0%, #d48315 100%) !important;
-  color: #231806 !important;
-  border-color: #fff0b3 !important;
-  box-shadow: 0 4px 0 #8c5206, 0 6px 14px rgba(0, 0, 0, 0.25) !important;
-}
-
-/* 3) Challenge Forest Button */
-.overlay .challengePrimary {
-  background: linear-gradient(180deg, #44856c 0%, #2a5c48 100%) !important;
-  color: #fffdf6 !important;
-  border: 2px solid #a8e0c9 !important;
-  box-shadow: 0 4px 0 #193b2e, 0 6px 14px rgba(0, 0, 0, 0.22) !important;
-  border-radius: 16px !important;
-  font-weight: 400 !important;
-}
-
-.overlay .modalSubBtnRow {
-  justify-content: flex-start !important;
-  gap: 7px !important;
-  margin-bottom: 8px !important;
-}
-
-.overlay .modalSubBtnRow .secondary {
-  background: rgba(255, 253, 244, 0.14) !important;
-  border: 1.5px solid rgba(230, 245, 224, 0.42) !important;
-  color: #fffdf5 !important;
-  border-radius: 999px !important;
-  padding: 6px 13px !important;
-  font-size: 12px !important;
-  box-shadow: none !important;
-}
-
-.overlay .modalSubBtnRow .secondary:hover {
-  background: rgba(255, 253, 244, 0.26) !important;
-}
-
-.overlay[data-modal-kind="title"] .modalKeys {
-  font-size: 10.5px !important;
-  color: rgba(215, 232, 210, 0.78) !important;
-  letter-spacing: 0.3px !important;
-  border-top: 1px solid rgba(215, 232, 210, 0.18);
-  padding-top: 8px;
-}
-
-/* Pause Mode (`#overlay[data-modal-kind="pause"]`): Compact Focused Pause Card (§6-3) */
 .overlay[data-modal-kind="pause"]:not([hidden]),
 .overlay[data-modal-kind="result"]:not([hidden]) {
-  display: grid !important;
-  place-items: center !important;
-  background: rgba(14, 24, 18, 0.52) !important;
-  backdrop-filter: blur(3px) !important;
+  display: grid;
+  place-items: center;
 }
 
 .overlay[data-modal-kind="pause"] .intro,
 .overlay[data-modal-kind="result"] .intro {
-  width: min(430px, 92%) !important;
-  background: rgba(255, 253, 245, 0.96) !important;
-  border: 2.5px solid #6b965e !important;
-  border-radius: 26px !important;
-  padding: 24px 28px 20px !important;
-  text-align: center !important;
-  color: #243627 !important;
-  box-shadow: 0 18px 44px rgba(10, 20, 14, 0.38) !important;
+  width: min(440px, 92%);
+  background: var(--ds-surface-card);
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-modal);
+  padding: 24px 26px 20px;
+  text-align: center;
+  color: var(--ds-ink-primary);
+  box-shadow: var(--ds-shadow-modal);
 }
 
-/* Hide World Map & Challenge launch buttons when inside Pause Menu so Pause stays clean and focused! */
 .overlay[data-modal-kind="pause"] #openWorldMapBtn,
-.overlay[data-modal-kind="pause"] #startChallengeBtn {
+.overlay[data-modal-kind="pause"] #startChallengeBtn,
+.overlay[data-modal-kind="result"] #openWorldMapBtn,
+.overlay[data-modal-kind="result"] #startChallengeBtn {
   display: none !important;
 }
 
-.overlay[data-modal-kind="pause"] .intro .eyebrow,
+.overlay[data-modal-kind="pause"] .intro .eyebrow {
+  display: inline-block;
+  padding: 3px 10px;
+  background: var(--ds-surface-sub);
+  color: var(--ds-ink-secondary);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+/* Achievement Accent Only on Result Eyebrow (§4-F.5) */
 .overlay[data-modal-kind="result"] .intro .eyebrow {
   display: inline-block;
   padding: 4px 12px;
-  background: #e6f2e2;
-  color: #386632 !important;
+  background: rgba(205, 164, 91, 0.18);
+  border: 1px solid rgba(205, 164, 91, 0.45);
+  color: #8C6520;
   border-radius: 999px;
-  font-size: 11px !important;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
 .overlay[data-modal-kind="pause"] .intro h2,
 .overlay[data-modal-kind="result"] .intro h2 {
-  color: #233827 !important;
-  font-size: 25px !important;
-  margin: 10px 0 8px !important;
+  color: var(--ds-ink-primary);
+  font-size: 23px;
+  margin: 10px 0 8px;
 }
 
 .overlay[data-modal-kind="pause"] .intro p,
 .overlay[data-modal-kind="result"] .intro p {
-  color: #495e4c !important;
-  font-size: 13.5px !important;
-  line-height: 1.6 !important;
+  color: var(--ds-ink-secondary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
 }
 
-.overlay[data-modal-kind="pause"] .modalSubBtnRow,
-.overlay[data-modal-kind="result"] .modalSubBtnRow {
-  justify-content: center !important;
+.overlay[data-modal-kind="pause"] .intro p b,
+.overlay[data-modal-kind="result"] .intro p b {
+  color: var(--ds-ink-primary);
 }
 
-.overlay[data-modal-kind="pause"] .modalSubBtnRow .secondary,
-.overlay[data-modal-kind="result"] .modalSubBtnRow .secondary {
-  background: #f0f5ec !important;
-  border: 1.5px solid #bdd4b5 !important;
-  color: #2f4a33 !important;
+.overlay .modeBtnRow {
+  margin: 16px 0 10px;
+}
+
+/* Primary Action Button in Modals */
+.overlay .primary {
+  background: var(--ds-accent-primary);
+  color: #FAF6EE;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-btn);
+  padding: 12px 20px;
+  font-family: var(--ds-font-body);
+  font-size: 14.5px;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(41, 55, 46, 0.16);
+  transition: background-color 160ms ease, transform 120ms ease;
+}
+
+.overlay .primary:hover:not(:disabled) {
+  background: var(--ds-accent-primary-hover);
+}
+
+.overlay .modalSubBtnRow {
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.overlay .modalSubBtnRow .secondary,
+.backStoryModalBtn {
+  background: var(--ds-surface-sub) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  color: var(--ds-ink-primary) !important;
+  border-radius: 10px !important;
+  padding: 7px 14px !important;
+  font-family: var(--ds-font-body) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.overlay .modalSubBtnRow .secondary:hover,
+.backStoryModalBtn:hover {
+  background: #E6DFD1 !important;
+}
+
+.overlay .modalKeys {
+  font-size: 11px;
+  color: var(--ds-ink-secondary);
+  letter-spacing: 0.1px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ds-border-subtle);
 }
 
 /* ----------------------------------------------------------------------------
-   3. World Map 7-Region Expedition UI (`#worldmapOverlay`, §6-2)
-   - Replaces the opaque #f9f5eb brown/ivory sheet with an atmospheric forest-glass
-     expedition map where region artwork is the hero!
+   C. World Map 7-Region Menu & World 1 Stage Select (`#worldmapOverlay`, §4-C)
    ---------------------------------------------------------------------------- */
 .worldmapOverlay {
-  background: rgba(12, 22, 16, 0.68) !important;
-  backdrop-filter: blur(5px) !important;
-  padding: 14px 18px !important;
+  background: rgba(20, 30, 24, 0.58);
+  backdrop-filter: blur(4px);
+  padding: 16px;
 }
 
 .wmPanel {
-  background: rgba(22, 36, 27, 0.84) !important;
-  border: 2px solid rgba(176, 218, 168, 0.48) !important;
-  border-radius: 24px !important;
-  padding: 14px 18px !important;
-  color: #fffdf5 !important;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.48) !important;
+  background: var(--ds-surface-card);
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-modal);
+  padding: 18px 20px;
+  color: var(--ds-ink-primary);
+  box-shadow: var(--ds-shadow-modal);
 }
 
 .wmHeader {
-  border-bottom: 1px solid rgba(185, 220, 180, 0.24) !important;
-  padding-bottom: 8px !important;
+  border-bottom: 1px solid var(--ds-border-subtle);
+  padding-bottom: 10px;
 }
 
 .wmEyebrow {
-  color: #ffd966 !important;
-  font-size: 10.5px !important;
-  letter-spacing: 1px !important;
-}
-
-.wmHeader h2 {
-  color: #fffdf5 !important;
-  font-size: 20px !important;
-  font-weight: 400 !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-}
-
-.wmCarouselBtn {
-  background: rgba(255, 253, 244, 0.14) !important;
-  border: 1.5px solid rgba(210, 238, 202, 0.45) !important;
-  color: #fffdf5 !important;
-  border-radius: 999px !important;
-}
-
-.wmBackBtn {
-  background: linear-gradient(180deg, #589e50 0%, #3d7536 100%) !important;
-  border: 1.5px solid #c5edb8 !important;
-  color: #fffdf5 !important;
-  border-radius: 999px !important;
-  padding: 7px 15px !important;
-  font-weight: 400 !important;
-  box-shadow: 0 3px 0 #254d20 !important;
-}
-
-.wmCard {
-  background: rgba(30, 48, 36, 0.90) !important;
-  border: 2px solid rgba(162, 204, 156, 0.42) !important;
-  border-radius: 16px !important;
-  overflow: hidden;
-}
-
-.wmCard.playable {
-  border-color: #ffd43b !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 212, 59, 0.35) !important;
-}
-
-.wmCard.comingSoon {
-  opacity: 0.84 !important;
-  border-style: solid !important;
-  border-color: rgba(140, 165, 145, 0.32) !important;
-  background: rgba(20, 30, 24, 0.82) !important;
-}
-
-.wmCardThumbWrap {
-  max-height: 118px !important;
-}
-
-.wmCardThumbScrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(10, 18, 13, 0.35) 0%, transparent 40%, rgba(12, 22, 16, 0.82) 100%);
-  pointer-events: none;
-}
-
-.wmRegionIndex {
-  position: absolute;
-  bottom: 6px;
-  left: 8px;
-  font-size: 9.5px;
-  color: #ffe082;
-  background: rgba(14, 24, 18, 0.72);
-  padding: 2px 7px;
-  border-radius: 999px;
+  color: var(--ds-ink-secondary);
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.4px;
 }
 
+.wmHeader h2 {
+  color: var(--ds-ink-primary);
+  font-size: 20px;
+  margin: 2px 0 0;
+}
+
+.wmCarouselBtn {
+  background: var(--ds-surface-sub);
+  border: 1px solid var(--ds-border-strong);
+  color: var(--ds-ink-primary);
+  border-radius: 10px;
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wmCarouselBtn:hover {
+  background: #E6DFD1;
+}
+
+.wmBackBtn {
+  background: var(--ds-surface-sub);
+  border: 1px solid var(--ds-border-strong);
+  color: var(--ds-ink-primary);
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.wmBackBtn:hover {
+  background: #E6DFD1;
+}
+
+.wmCardGrid {
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.wmCard {
+  background: var(--ds-surface-elevated);
+  border: 1.5px solid var(--ds-border-subtle);
+  border-radius: var(--ds-radius-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.wmCard.playable {
+  border-color: var(--ds-accent-primary);
+  box-shadow: 0 4px 12px rgba(41, 55, 46, 0.08);
+}
+
+.wmCard.playable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(41, 55, 46, 0.14);
+}
+
+.wmCard.comingSoon {
+  background: var(--ds-surface-muted);
+  border: 1px solid var(--ds-border-subtle);
+  opacity: 0.78;
+}
+
+.wmCard.comingSoon .wmCardThumb {
+  filter: grayscale(0.35) contrast(0.92);
+}
+
+.wmCardThumbWrap {
+  max-height: 104px;
+  background: #233028;
+}
+
+.wmCardBadge {
+  top: 8px;
+  right: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.badgePlay {
+  background: var(--ds-accent-primary);
+  color: #FAF6EE;
+}
+
+.badgeSoon {
+  background: rgba(41, 55, 46, 0.76);
+  color: #E8E4DA;
+}
+
 .wmCardBody {
-  padding: 9px 11px 10px !important;
-  color: #fffdf5 !important;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 4px;
 }
 
 .wmCardTitle {
-  color: #fffdf5 !important;
-  font-size: 14.5px !important;
-  font-weight: 400 !important;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ds-ink-primary);
 }
 
 .wmCardSub {
-  color: rgba(220, 236, 218, 0.84) !important;
-  font-size: 11px !important;
+  font-size: 11.5px;
+  color: var(--ds-ink-secondary);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .wmCardMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px !important;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ds-ink-primary);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
 }
 
-.wmMetaPill {
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(255, 253, 244, 0.14);
-  color: #e6f4e2;
+.wmCardActionRow {
+  margin-top: auto;
+  padding-top: 6px;
 }
 
-.wmMetaGold {
-  background: rgba(245, 184, 46, 0.24);
-  color: #ffe07d;
+.wmCardActionLabel {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 700;
 }
 
-.wmMetaClear {
-  background: rgba(88, 166, 78, 0.35);
-  color: #b7f5a8;
+.wmCardActionLabel.is-primary {
+  color: var(--ds-accent-primary);
 }
 
-.wmMetaLocked {
-  background: rgba(255, 255, 255, 0.08);
-  color: #adbdb0;
+.wmCardActionLabel.is-disabled {
+  color: var(--ds-ink-secondary);
 }
 
-/* World 1 Stage Select Cards (`.wmStageCard`) */
+/* World 1 Stage Cards */
 .wmStageCard {
-  background: rgba(255, 253, 246, 0.95) !important;
-  border: 2px solid #8ab882 !important;
-  border-radius: 16px !important;
-  color: #243627 !important;
+  background: var(--ds-surface-elevated);
+  border: 1.5px solid var(--ds-border-subtle);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-ink-primary);
+}
+
+.wmStageCard.unlocked {
+  border-color: var(--ds-accent-primary);
 }
 
 .wmStageCard.cleared {
-  border-color: #f5b82e !important;
-  background: #fffdf2 !important;
+  border-color: var(--ds-accent-gold);
+}
+
+.wmStageCard.locked {
+  background: var(--ds-surface-muted);
+  opacity: 0.72;
 }
 
 .wmStageName {
-  font-size: 14.5px !important;
-  font-weight: 400 !important;
-  color: #1f3624 !important;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ds-ink-primary);
+}
+
+.wmStageStats {
+  font-variant-numeric: tabular-nums;
+  background: var(--ds-surface-sub);
 }
 
 .wmStagePlayBtn {
-  background: linear-gradient(180deg, #58a64e 0%, #3d7d35 100%) !important;
-  border-radius: 12px !important;
-  font-weight: 400 !important;
-  box-shadow: 0 3px 0 #265220 !important;
+  background: var(--ds-accent-primary);
+  color: #FAF6EE;
+  border-radius: 10px;
+  font-weight: 700;
 }
 
-/* World 1 Clear Modal (`.wmClearPanel`) — Compact Celebratory Banner Card (§6-4) */
+.wmStagePlayBtn:hover:not(:disabled) {
+  background: var(--ds-accent-primary-hover);
+}
+
+/* World 1 Clear Modal */
 .wmPanel.wmClearPanel {
-  max-width: 500px !important;
-  background: rgba(255, 253, 245, 0.96) !important;
-  border: 3px solid #f5b82e !important;
-  border-radius: 26px !important;
-  padding: 22px 26px !important;
-  color: #243627 !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
-}
-
-.wmPanel.wmClearPanel .wmHeader {
-  border-bottom-color: rgba(107, 150, 94, 0.25) !important;
-  justify-content: center !important;
+  max-width: 480px;
+  background: var(--ds-surface-card);
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-modal);
+  padding: 24px 26px;
 }
 
 .wmPanel.wmClearPanel .wmEyebrow {
-  color: #d48315 !important;
-}
-
-.wmPanel.wmClearPanel .wmHeader h2 {
-  color: #243627 !important;
-  text-shadow: none !important;
-  font-size: 23px !important;
-}
-
-.wmPanel.wmClearPanel .wmClearSummary {
-  color: #3c5240 !important;
-  font-size: 13.5px !important;
-}
-
-.wmPanel.wmClearPanel .secondary {
-  background: #eef5ea !important;
-  border: 1.5px solid #bdd4b5 !important;
-  color: #2c4730 !important;
-  border-radius: 999px !important;
-  padding: 8px 15px !important;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(205, 164, 91, 0.18);
+  color: #8C6520;
 }
 
 /* ----------------------------------------------------------------------------
-   4. Common Game Options Modal (`#mobileSettingsModal`, §6-3)
+   D. Challenge Difficulty & Stage Selection (`#challengeSelectModal`, §4-D)
    ---------------------------------------------------------------------------- */
+.challengeSelectModal {
+  position: absolute;
+  inset: 0;
+  z-index: 65;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 30, 24, 0.58);
+  backdrop-filter: blur(4px);
+  padding: 16px;
+}
+
+.chSelectCard {
+  background: var(--ds-surface-card);
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-modal);
+  width: min(780px, 95%);
+  max-height: 92%;
+  overflow-y: auto;
+  padding: 20px 24px;
+  box-shadow: var(--ds-shadow-modal);
+  color: var(--ds-ink-primary);
+}
+
+.chSelectHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ds-border-subtle);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+}
+
+.chSelectEyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ds-ink-secondary);
+  display: block;
+}
+
+.chSelectHeader h3 {
+  margin: 2px 0 0;
+  font-size: 20px;
+  color: var(--ds-ink-primary);
+}
+
+.chSelectCloseBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-surface-sub);
+  color: var(--ds-ink-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chSelectCloseBtn:hover {
+  background: #E6DFD1;
+}
+
+.chSelectGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Equal-sized Difficulty Cards — Only `.is-selected` gets active highlight (§4-D.2) */
+.chDiffBox {
+  border-radius: var(--ds-radius-card);
+  padding: 16px;
+  border: 1.5px solid var(--ds-border-subtle);
+  background: var(--ds-surface-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.chDiffBox.is-selected {
+  border-color: var(--ds-accent-primary);
+  box-shadow: 0 6px 18px rgba(41, 55, 46, 0.10);
+}
+
+.chDiffTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chDiffBadge {
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--ds-surface-sub);
+  color: var(--ds-ink-primary);
+}
+
+.chDiffBox.is-selected .chDiffBadge {
+  background: rgba(95, 150, 91, 0.16);
+  color: #366133;
+}
+
+.chDiffStageCount {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ds-ink-secondary);
+}
+
+.chDiffBox h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ds-ink-primary);
+}
+
+.chDiffBox p {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ds-ink-secondary);
+  margin: 0;
+}
+
+.chDiffRecord {
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-ink-primary);
+  background: var(--ds-surface-sub);
+  padding: 7px 10px;
+  border-radius: 8px;
+}
+
+.chStageBtnGroup {
+  margin-top: auto;
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chLaunchPrimaryBtn {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--ds-accent-primary);
+  color: #FAF6EE;
+  font-family: var(--ds-font-body);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.chLaunchPrimaryBtn:hover {
+  background: var(--ds-accent-primary-hover);
+}
+
+.chStageQuickRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.chStageMiniBtn {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-surface-sub);
+  color: var(--ds-ink-primary);
+  font-family: var(--ds-font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chStageMiniBtn:hover:not(:disabled) {
+  background: #E6DFD1;
+}
+
+.chStageMiniBtn.is-locked,
+.challengeNav button:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+}
+
+.chNavDiffSwitch {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 4px;
+}
+
+.chDiffSwitchBtn.active,
+.challengeNav button.activeStage {
+  background: var(--ds-accent-primary) !important;
+  color: #FAF6EE !important;
+  border-color: transparent !important;
+}
+
+/* ----------------------------------------------------------------------------
+   E. Game Options & PC Keybind Modal (`#mobileSettingsModal`, §4-E)
+   ---------------------------------------------------------------------------- */
+.mobileSettingsModal {
+  background: rgba(20, 30, 24, 0.58);
+  backdrop-filter: blur(4px);
+}
+
 .mobileSettingsCard {
-  background: rgba(255, 253, 246, 0.97) !important;
-  border: 2.5px solid #7aa370 !important;
-  border-radius: 24px !important;
-  width: min(440px, 94%) !important;
-  padding: 18px 22px !important;
-  box-shadow: 0 18px 44px rgba(10, 20, 14, 0.42) !important;
+  background: var(--ds-surface-card);
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-modal);
+  width: min(470px, 94%);
+  padding: 18px 22px;
+  box-shadow: var(--ds-shadow-modal);
+  color: var(--ds-ink-primary);
+  gap: 10px;
+}
+
+.mobileSettingsHeader {
+  border-bottom: 1px solid var(--ds-border-subtle);
+  padding-bottom: 10px;
 }
 
 .mobileSettingsHeader strong {
-  font-size: 17px !important;
-  font-weight: 400 !important;
-  color: #243627 !important;
+  font-size: 18px;
+  color: var(--ds-ink-primary);
 }
 
+.closeMobileOptBtn {
+  background: var(--ds-surface-sub);
+  border: 1px solid var(--ds-border-strong);
+  color: var(--ds-ink-primary);
+  border-radius: 8px;
+}
+
+.soundVolumeGroup #soundVolumeValue {
+  color: var(--ds-accent-primary);
+  font-weight: 700;
+}
+
+.soundVolumeSlider {
+  accent-color: var(--ds-accent-primary);
+}
+
+.soundSettingDivider {
+  background: var(--ds-border-subtle);
+}
+
+/* PC Keybind Section — Unified Warm Surface & Crisp Contrast (§4-E.2 & §4-E.3) */
+.pcKeybindSection {
+  margin-top: 2px;
+}
+
+.pcKeybindHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.pcKeybindSectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ds-ink-primary);
+  margin: 0;
+}
+
+.pcKeybindResetBtn {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-surface-sub);
+  color: var(--ds-ink-primary);
+  font-family: var(--ds-font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pcKeybindResetBtn:hover {
+  background: #E6DFD1;
+}
+
+.pcKeybindGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+}
+
+.pcKeybindRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--ds-surface-sub);
+  border: 1px solid var(--ds-border-subtle);
+  border-radius: 10px;
+  padding: 5px 9px;
+}
+
+.pcKeybindActionName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-ink-primary);
+}
+
+.pcKeybindCaptureBtn {
+  min-width: 72px;
+  background: var(--ds-surface-elevated);
+  color: var(--ds-ink-primary);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: 7px;
+  padding: 4px 8px;
+  font-family: var(--ds-font-body);
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  text-align: center;
+}
+
+.pcKeybindCaptureBtn:hover {
+  border-color: var(--ds-accent-primary);
+}
+
+.pcKeybindCaptureBtn.is-capturing {
+  background: var(--ds-accent-primary);
+  color: #FAF6EE;
+  border-color: transparent;
+}
+
+.pcKeybindHintRow {
+  margin-top: 6px;
+}
+
+.pcKeybindStatusMsg {
+  display: block;
+  font-size: 11px;
+  color: var(--ds-ink-secondary);
+}
+
+/* Mobile Controller Section inside Options */
 .mobileControlSectionTitle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #edf5e8;
+  background: var(--ds-surface-sub);
   padding: 5px 10px;
   border-radius: 8px;
-  color: #355439 !important;
+  color: var(--ds-ink-primary);
+  font-size: 12.5px;
+  font-weight: 700;
 }
 
 body:not(.is-mobile-device) .mobileControlSectionTitle::after {
   content: '터치 기기 접속 시 자동 표시';
-  font-size: 10px;
-  color: #6b806c;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--ds-ink-secondary);
 }
 
-/* Strictly guarantee mobile virtual controls NEVER appear on PC windowed mode (§7) */
+.optChoiceBtn {
+  border-radius: 8px;
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ds-surface-sub);
+  color: var(--ds-ink-primary);
+  font-family: var(--ds-font-body);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.optChoiceBtn.selected {
+  background: var(--ds-accent-primary);
+  color: #FAF6EE;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.optFullscreenBtn {
+  background: var(--ds-surface-sub);
+  border: 1px solid var(--ds-border-strong);
+  color: var(--ds-ink-primary);
+  border-radius: 10px;
+  font-family: var(--ds-font-body);
+}
+
+.optConfirmBtn {
+  background: var(--ds-accent-primary);
+  color: #FAF6EE;
+  border-radius: 10px;
+  font-family: var(--ds-font-body);
+  font-weight: 700;
+}
+
 body:not(.is-mobile-device) #mobileControls {
   display: none !important;
 }
 
-/* Responsive adaptation for mobile landscape (844x390 / 740x320) */
-@media (max-height: 500px), (max-width: 920px) {
-  .overlay[data-modal-kind="title"] .intro {
-    width: min(350px, 54%) !important;
-    padding: 12px 16px !important;
-    border-radius: 18px !important;
+/* Responsive Adaptation for Mobile Landscape (`844x390` / `740x320`) & Compact Viewports (`900x600`) */
+@media (max-height: 520px), (max-width: 920px) {
+  header {
+    display: none;
   }
-  .overlay[data-modal-kind="title"] .intro h2 {
-    font-size: 18px !important;
-    margin: 4px 0 !important;
+  main {
+    padding: 2px 1%;
   }
-  .overlay[data-modal-kind="title"] .intro p {
-    font-size: 10.5px !important;
-    line-height: 1.35 !important;
+  .game {
+    width: min(100%, calc((100dvh - 6px) * 16 / 9));
+    max-height: calc(100dvh - 6px);
+    border-width: 1.5px;
+    border-radius: 12px;
   }
-  .overlay[data-modal-kind="title"] .modeBtnRow {
-    gap: 5px !important;
-    margin: 8px 0 !important;
+  .hud {
+    top: 8px;
+    left: 10px;
+    right: 10px;
   }
-  .overlay[data-modal-kind="title"] .modeBtnRow > button {
-    padding: 7px 12px !important;
-    font-size: 12px !important;
-    border-radius: 11px !important;
-  }
-  .hud .hudZonePill {
-    height: 28px !important;
-    padding: 3px 10px 3px 5px !important;
-  }
-  .hud .hudZonePill .tiny {
-    font-size: 8.5px !important;
-    padding: 2px 6px !important;
-  }
-  .hud .hudZonePill #zoneTitle {
-    font-size: 11px !important;
-  }
-  .hud .eventClock,
+  .hud .hudZonePill,
+  .hud .eventClock:not([hidden]),
+  .hud .challengeHud:not([hidden]),
   .hud .specialCoins,
   .hud .coins,
-  .hudRight button {
-    height: 28px !important;
-    font-size: 11.5px !important;
+  .hudRight button:not([hidden]) {
+    height: 28px;
+    font-size: 11.5px;
+  }
+  .hud .hudZonePill #zoneTitle {
+    font-size: 11.5px;
   }
   .playerHealthHud {
-    top: 40px !important;
-    right: 10px !important;
-    padding: 2px 8px !important;
+    top: 40px;
+    right: 10px;
+    padding: 2px 8px;
   }
   .playerHealthIcons img {
-    width: 20px !important;
-    height: 20px !important;
+    width: 18px;
+    height: 18px;
   }
   #playerHealthCount {
-    font-size: 11px !important;
+    font-size: 11px;
+  }
+  .chSelectCard {
+    padding: 12px 16px;
+  }
+  .chSelectGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .chDiffBox {
+    padding: 10px 12px;
+    gap: 5px;
+  }
+  .chDiffBox h4 {
+    font-size: 14px;
+  }
+  .chDiffBox p {
+    font-size: 11px;
+  }
+  .mobileSettingsCard {
+    padding: 12px 16px;
+    gap: 8px;
   }
 }
 
-/* Strict [hidden] attribute enforcement — guarantees any hidden element is unconditionally display: none */
+@media (max-width: 640px) {
+  .chSelectGrid,
+  .pcKeybindGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Strict [hidden] Enforcement */
 [hidden],
 .overlay[hidden],
 .overlay[data-modal-kind][hidden],
-.overlay[data-modal-kind="title"][hidden],
-.overlay[data-modal-kind="pause"][hidden],
-.overlay[data-modal-kind="result"][hidden],
 .story[hidden],
 #launchScene[hidden],
 #regionTransition[hidden],
 .debugHud[hidden],
 .mobileSettingsModal[hidden],
+.challengeSelectModal[hidden],
 .challengeHud[hidden],
 .challengeNav[hidden],
 .eventClock[hidden],
@@ -1518,343 +2003,176 @@ body:not(.is-mobile-device) #mobileControls {
 }
 
 
-/* ============================================================================
-   [DUDU-AUDIT-261113] UI-01 Lobby-First Viewport Fit & CFG-01 Release Mode Guard
-   - Ensures the full 16:9 #game frame and all 5 lobby buttons fit 100% inside
-     initial 1280x720, 800x450, and 844x390 viewports without vertical clipping.
-   - Hides developer practice/jump bars (.practiceNav, .encounterNav) when
-     `data-release-mode="true"` is active on html/body.
-   ============================================================================ */
-html[data-release-mode="true"] .practiceNav,
-html[data-release-mode="true"] .encounterNav,
-body[data-release-mode="true"] .practiceNav,
-body[data-release-mode="true"] .encounterNav {
-  display: none !important;
-}
+/* =======================================================================
+   TEST34 UI polish 2 (2026-11-16) — reduce on-screen instructions and boxes.
+   UI only: no physics, stage data, collision, timer, or save changes.
+   ======================================================================= */
+/* Cutscenes: no incorrect poster/old video frame while the current MP4 decodes. */
+.story.cinema-loading { background: #f4ebd7; }
+.story.cinema-loading .storyVideo { display: block !important; visibility: hidden !important; }
+.story.cinema-loading > img,
+.story.cinema-loading .storyVideo,
+.story.cinema-loading .storyText,
+.story.cinema-loading .storyHint { visibility: hidden !important; }
 
-header {
-  height: 34px !important;
-  padding: 0 2.5% !important;
-}
-
-main {
-  padding: 6px 2% 10px !important;
-  max-width: 1440px !important;
-}
-
-.heading {
-  display: none !important;
-}
-
-.game {
-  width: min(100%, calc((100dvh - 52px) * 16 / 9)) !important;
-  max-height: calc(100dvh - 52px) !important;
-  margin: 0 auto !important;
-  border-width: 3px !important;
-}
-
-@media (max-height: 520px) {
-  header {
-    display: none !important;
-  }
-  main {
-    padding: 2px 1% !important;
-  }
-  .game {
-    width: min(100%, calc((100dvh - 6px) * 16 / 9)) !important;
-    max-height: calc(100dvh - 6px) !important;
-    border-width: 2px !important;
-    border-radius: 12px !important;
-  }
-}
-
-
-/* ============================================================================
-   [v1.0 Challenge Renewal & Difficulty 2-1] Challenge Select Modal & Nav Bar
-   ============================================================================ */
-.challengeSelectModal[hidden] {
-  display: none !important;
-}
-
-.challengeSelectModal {
-  position: absolute;
-  inset: 0;
-  z-index: 65;
+/* Pause is a game menu, not an instructional presentation. */
+.overlay[data-modal-kind="pause"] .intro { width: min(460px, 92%); padding: 24px 25px 20px; }
+.overlay[data-modal-kind="pause"] #modalTag,
+.overlay[data-modal-kind="pause"] .modalKeys { display: none !important; }
+.overlay[data-modal-kind="pause"] #modalText:empty { display: none; }
+.overlay[data-modal-kind="pause"] .intro h2 { margin: 0 0 18px; font-size: 25px; }
+.overlay[data-modal-kind="pause"] .modeBtnRow { margin: 0 0 12px; }
+.overlay[data-modal-kind="pause"] .modeBtnRow #start { min-height: 48px; }
+.overlay[data-modal-kind="pause"] .modalSubBtnRow {
   display: grid;
-  place-items: center;
-  background: rgba(14, 24, 18, 0.72);
-  backdrop-filter: blur(4px);
-  padding: 16px;
-}
-
-.chSelectCard {
-  background: #fffdf5;
-  border: 3px solid #6b9e62;
-  border-radius: 26px;
-  width: min(820px, 95%);
-  max-height: 92%;
-  overflow-y: auto;
-  padding: 20px 24px 22px;
-  box-shadow: 0 22px 54px rgba(8, 16, 12, 0.48);
-  color: #243627;
-}
-
-.chSelectHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1.5px solid rgba(107, 158, 98, 0.28);
-  padding-bottom: 10px;
-  margin-bottom: 14px;
-}
-
-.chSelectEyebrow {
-  font-size: 10px;
-  letter-spacing: 1.4px;
-  color: #4f7d47;
-  display: block;
-}
-
-.chSelectHeader h3 {
-  margin: 3px 0 0;
-  font-size: 21px;
-  font-weight: 400;
-  color: #1f3322;
-}
-
-.chSelectCloseBtn {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  border: 1.5px solid #bdd4b5;
-  background: #eef5ea;
-  color: #243627;
-  font-size: 15px;
-  cursor: pointer;
-}
-
-.chSelectGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.chDiffBox {
-  border-radius: 18px;
-  padding: 14px 16px;
-  border: 2px solid #c5dcc0;
-  background: #f6faf3;
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
-}
-
-.chDiffBoxD2 {
-  border-color: #f0b449;
-  background: #fff9eb;
-}
-
-.chDiffBadge {
-  display: inline-flex;
-  align-self: flex-start;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  background: #dff0d8;
-  color: #285223;
-}
-
-.chDiffBadgeHard {
-  background: #ffe8b3;
-  color: #9c5708;
-}
-
-.chDiffBox h4 {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 400;
-  color: #1e3121;
-}
-
-.chDiffBox p {
-  font-size: 12px;
-  line-height: 1.45;
-  color: #4b5e4d;
   margin: 0;
 }
-
-.chDiffRecord {
-  font-size: 11.5px;
-  color: #345937;
-  background: rgba(255, 255, 255, 0.78);
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(107, 158, 98, 0.25);
+.overlay[data-modal-kind="pause"] #restart,
+.overlay[data-modal-kind="pause"] #returnToLobbyFromOptBtn {
+  width: 100%; min-height: 41px; margin: 0; padding: 10px 8px !important;
+  border-radius: 9px !important; font-size: 13px !important;
+  background: #f2ede2 !important; color: #29372e !important;
+  border: 1px solid #c8ccbf !important; box-shadow: none !important;
 }
-
-.chStageBtnGroup {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.overlay[data-modal-kind="pause"] .mobileOptModalBtn,
+.overlay[data-modal-kind="pause"] .landscapeStartBtn {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: auto;
+  margin: 0;
+  min-height: 32px;
+  padding: 6px 16px !important;
 }
+.overlay[data-modal-kind="pause"] .mobileOptModalBtn[hidden],
+.overlay[data-modal-kind="pause"] .landscapeStartBtn[hidden] { display: none !important; }
 
-.chLaunchPrimaryBtn {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: 13px;
-  border: none;
-  background: linear-gradient(180deg, #5cb852 0%, #43913b 100%);
-  color: #fffdf6;
-  font-size: 14px;
-  cursor: pointer;
-  box-shadow: 0 3px 0 #2b6325;
-}
-
-.chLaunchD2Btn {
-  background: linear-gradient(180deg, #f59f00 0%, #d97706 100%);
-  box-shadow: 0 3px 0 #92400e;
-}
-
-.chStageQuickRow {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+/* Challenge levels: genuinely identical type scales, columns and controls. */
+.chSelectCard { width: min(700px, 96%); padding: 20px; }
+.chSelectHeader { margin-bottom: 14px; }
+.chSelectGrid { align-items: stretch; gap: 14px; }
+.chDiffBox { min-width: 0; min-height: 270px; gap: 10px; padding: 18px; }
+.chDiffTopRow { gap: 8px; }
+.chDiffBadge, .chDiffStageCount { white-space: nowrap; font-size: 11.5px; }
+.chDiffBox h4 { font-size: 19px; line-height: 1.35; min-height: 26px; }
+.chDiffBox p { min-height: 18px; font-size: 12.5px; }
+.chDiffRecord { min-height: 38px; display: flex; align-items: center; padding: 9px 11px; font-size: 12px; }
+.chStageBtnGroup { gap: 9px; }
+.chLaunchPrimaryBtn { min-height: 42px; font-size: 13.5px; }
+.chStageMiniBtn { min-height: 35px; font-size: 12px; }
+@media (max-width: 640px) {
+  .chDiffBox { min-height: 235px; }
+  .chSelectCard { max-height: 94%; }
 }
 
-.chStageMiniBtn {
-  padding: 6px 8px;
-  border-radius: 9px;
-  border: 1.5px solid #bfd6b8;
-  background: #ffffff;
-  color: #2c462f;
-  font-size: 11.5px;
-  cursor: pointer;
+/* Options: one compact settings dialog rather than a sheet full of helper copy. */
+.mobileSettingsCard {
+  width: min(540px, 95%); gap: 12px;
+  border: 1px solid rgba(41,55,46,.23);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 12px 32px rgba(15,26,18,.22);
 }
-
-.chStageMiniBtn.is-locked,
-.challengeNav button:disabled {
-  opacity: 0.56 !important;
-  cursor: not-allowed !important;
-  background: #e9ecef !important;
-  color: #6c757d !important;
-  border-color: #ced4da !important;
-}
-
-.chNavDiffSwitch {
-  display: inline-flex;
-  gap: 4px;
-  margin-right: 4px;
-}
-
-.chDiffSwitchBtn.active,
-.challengeNav button.activeStage {
-  background: #4d8f46 !important;
-  color: #fffdf6 !important;
-  border-color: #2f612a !important;
-}
-
-@media (max-width: 720px) {
-  .chSelectGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* [A-03 & D-03]: PC Keyboard Remapping UI inside Game Options Modal */
-.pcKeybindSection {
-  margin-top: 4px;
-}
-.pcKeybindHeaderRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.pcKeybindResetBtn {
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffe8a3;
-  border: 1.5px solid rgba(255, 232, 163, 0.45);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 12px;
-  cursor: pointer;
-}
-.pcKeybindResetBtn:hover {
-  background: rgba(255, 232, 163, 0.24);
-}
-.pcKeybindGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 10px;
-}
+.mobileSettingsHeader { padding-bottom: 11px; }
+.mobileSettingsHeader strong { font-size: 21px; }
+.mobileSettingGroup { gap: 7px; }
+.mobileSettingLabel { font-size: 13px; font-weight: 650; }
+.mobileSettingLabel small, .soundVolumeHint, #stickPosHint { display: none !important; }
+.mobileSettingBtns { gap: 7px; }
+.optChoiceBtn { border-radius: 8px; border-width: 1px; background: #f4f0e8; box-shadow: none; }
+.optChoiceBtn.selected { background: #5f965b; border-color: #4d754b; box-shadow: none; }
+.mobileSettingsFooter { padding-top: 10px; }
+.pcKeybindSection { margin-top: 2px; }
+.pcKeybindHeaderRow { margin-bottom: 7px; }
+.pcKeybindGrid { gap: 0 14px; }
 .pcKeybindRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(15, 28, 22, 0.55);
-  border: 1px solid rgba(158, 240, 180, 0.25);
-  border-radius: 9px;
-  padding: 5px 9px;
+  border: 0; border-bottom: 1px solid rgba(41,55,46,.12);
+  border-radius: 0; background: transparent; padding: 9px 3px;
 }
-.pcKeybindActionName {
-  font-size: 12.5px;
-  color: #e9f7ec;
-}
-.pcKeybindCaptureBtn {
-  min-width: 74px;
-  background: #2b5c3f;
-  color: #fff9db;
-  border: 1.5px solid #8ce99a;
-  border-radius: 7px;
-  padding: 3px 8px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  text-align: center;
-}
-.pcKeybindCaptureBtn.is-capturing {
-  background: #e67700;
-  color: #ffffff;
-  border-color: #ffd43b;
-  animation: pulseKeyCap 0.9s infinite alternate;
-}
-@keyframes pulseKeyCap {
-  from { transform: scale(0.98); }
-  to { transform: scale(1.03); }
-}
-.pcKeybindHintRow {
-  margin-top: 6px;
-}
-.pcKeybindStatusMsg {
-  display: block;
-  font-size: 11.5px;
-  color: #b2f2bb;
+.pcKeybindRow:last-child { border-bottom-color: transparent; }
+.pcKeybindCaptureBtn { min-width: 79px; padding: 6px 8px; }
+.pcKeybindHintRow { margin-top: 2px; }
+.pcKeybindHintRow:has(.pcKeybindStatusMsg:empty) { display: none; }
+.pcKeybindStatusMsg:empty { display: none; }
+.pcKeybindStatusMsg { font-size: 11.5px; }
+@media(max-height:520px), (max-width:920px) {
+  .mobileSettingsCard { padding: 14px 18px; gap: 8px; }
+  .chDiffBox { min-height: 238px; padding: 12px; }
 }
 
-.pcKeybindSectionTitle {
-  font-size: 14px;
-  font-weight: 900;
-  color: #21432d;
-  margin-bottom: 6px;
+/* The game's own lobby and key-help are primary; avoid repeating a slide-deck
+   heading and a second instruction strip around the shipped game viewport. */
+html[data-release-mode="true"] .below { display: none; }
+
+/* Contextual settings: PC users should not see a mobile controller manual;
+   touch users should not see desktop keybinding rows in the main options flow. */
+body:not(.is-mobile-device) .mobileSettingsCard > .mobileControlSectionTitle,
+body:not(.is-mobile-device) .mobileSettingsCard > .mobileSettingGroup:not(.soundVolumeGroup) {
+  display: none !important;
 }
-.pcKeybindTitleRow {
-  display: flex;
+body.is-mobile-device .mobileSettingsCard > .pcKeybindSection { display: none !important; }
+body:not(.is-mobile-device) .mobileSettingsCard { width: min(510px, 95%); }
+
+/* ===========================================================================
+   TEST34 UI patch 3 (2026-11-16): Challenge HUD counters must never wrap.
+   The counter pill sizes to its content, while stage-name text yields space.
+   Gameplay counters and challenge timing logic are unchanged.
+   =========================================================================== */
+.hud .challengeHud:not([hidden]) {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: none;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.hud .challengeHud > * {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  line-height: 1;
+}
+.hud .challengeHud .tiny,
+.hud .challengeHud small {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
-.pcKeybindResetBtn {
-  padding: 4px 11px;
-  border-radius: 999px;
-  border: 1.5px solid #5a8a52;
-  background: linear-gradient(180deg, #f4fbe9 0%, #dfeed0 100%);
-  color: #214b32;
-  font-size: 12px;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(24, 53, 35, 0.12);
+.hud .hudZonePill {
+  min-width: 0;
+  flex: 0 1 auto;
 }
-.pcKeybindResetBtn:hover {
-  background: linear-gradient(180deg, #e7f6d5 0%, #cde4b8 100%);
+.hud .hudZonePill #zoneTitle {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud .hudZonePill .tiny:not([hidden]) {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.hudRight { flex: 0 0 auto; }
+
+/* Compact landscape play area: keep the entire HUD readable on one line. */
+@media (max-height: 520px), (max-width: 920px) {
+  .hud .challengeHud:not([hidden]) {
+    gap: 4px;
+    padding: 0 8px;
+  }
+  .hud .challengeHud .tiny,
+  .hud .challengeHud small { font-size: 9.5px; }
+  .hud .challengeHud b { font-size: 12px; }
+  .hud .challengeHud small { padding-left: 4px; }
+  .hud .hudZonePill { gap: 5px; padding: 0 6px 0 4px; }
+  .hud .hudZonePill .tiny:not([hidden]) {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+  .hud .hudZonePill #zoneTitle { font-size: 10.5px; }
+}
+
+/* Tiny landscape screens prioritize the stage name over its redundant route code. */
+@media (max-width: 780px) and (max-height: 340px) {
+  .hud .hudZonePill .tiny:not([hidden]) { display: none; }
 }
