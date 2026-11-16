@@ -730,7 +730,7 @@ function update(dt){
   }
  }
 
- if(p.dash<=0)p.buffer=Math.max(0,p.buffer-dt);// v1.1.1: a jump pressed mid-dash waits for the dash to endp.coyote=p.ground?.10:Math.max(0,p.coyote-dt);p.dashCooldown=Math.max(0,p.dashCooldown-dt);
+ /* v1.2.1: a jump pressed mid-dash waits for the dash to end */if(p.dash<=0)p.buffer=Math.max(0,p.buffer-dt);p.coyote=p.ground?.10:Math.max(0,p.coyote-dt);p.dashCooldown=Math.max(0,p.dashCooldown-dt);
 
  const stunned=p.guardStun>0;
  if(stunned){
