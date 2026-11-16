@@ -564,9 +564,15 @@ html.mobile-landscape-lock, body.mobile-game-landscape {
   height: auto !important;
   position: static !important;
 }
+/* v1.4.2: the game frame is already as tall as the visible screen, so vertical padding pushed its bottom 14px
+   (more on shorter phones) off screen. The frame is centred in exactly one screen height instead. */
 body.mobile-game-landscape main {
   max-width: 1480px !important;
-  padding: 20px 4% !important;
+  padding: 0 4% !important;
+  min-height: var(--vvh, 100dvh);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 body.mobile-game-landscape #game {
   position: relative !important;
@@ -2201,10 +2207,26 @@ html.mobile-landscape-lock,body.mobile-game-landscape{touch-action:none}
 .mobileControls .vbtn-action::after{content:"";position:absolute;inset:-16px;border-radius:50%}
 
 /* v1.4: HUD over the playing canvas carries no backdrop blur. A blur behind an element that sits on a canvas
-   repainting every frame must be recomputed every frame, a real cost on phone GPUs. A slightly denser fill keeps it readable. */
+   repainting every frame must be recomputed every frame, a real cost on phone GPUs. A slightly denser fill keeps it readable.
+   v1.4.2: the fill stays the dark HUD green these pills were designed for. v1.4 switched it to cream while the text stayed
+   light (--ds-ink-on-dark), which left the stage name, health count and dash status unreadable. */
 .hud .hudZonePill,.playerHealthHud,.practiceHUD{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}
-.hud .hudZonePill{background-color:rgba(255,252,244,.94) !important}
-.playerHealthHud,.practiceHUD{background-color:rgba(255,252,244,.92) !important}
+.hud .hudZonePill,.playerHealthHud,.practiceHUD{background-color:rgba(33,47,38,.88) !important}
 /* iOS text-selection loupe: nothing in the game is selectable text, so long presses and double taps never raise it. */
 body.mobile-game-landscape,body.mobile-game-landscape .game,.mobileControls,.mobileControls *{
   -webkit-user-select:none !important;user-select:none !important;-webkit-touch-callout:none !important}
+
+/* v1.4.2: on short landscape phones the options card was taller than the screen and the confirm button sat below it.
+   Each setting puts its label beside its choices, and the footer stays pinned to the bottom of the scrolling card. */
+@media (max-height: 520px) {
+  .mobileSettingsCard { gap: 6px; padding-top: 10px; padding-bottom: 0; }
+  .mobileSettingsHeader { padding-bottom: 6px; }
+  .mobileSettingsHeader strong { font-size: 17px; }
+  .mobileSettingGroup:not(.soundVolumeGroup) { display: grid; grid-template-columns: 8.5em 1fr; align-items: center; column-gap: 10px; row-gap: 3px; }
+  .mobileSettingGroup:not(.soundVolumeGroup) > .soundVolumeHint { grid-column: 1 / -1; }
+  .soundVolumeGroup { padding: 2px 1px; gap: 4px; }
+  .soundSettingDivider { display: none; }
+  .mobileControlSectionTitle { padding: 4px 10px !important; }
+  .optChoiceBtn { flex-basis: 0; padding: 6px 8px; font-size: 11.5px; }
+  .mobileSettingsFooter { position: sticky; bottom: 0; z-index: 1; background: var(--ds-surface-card); padding: 8px 0 10px; margin-top: 2px; }
+}

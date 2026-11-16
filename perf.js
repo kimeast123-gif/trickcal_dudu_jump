@@ -147,16 +147,19 @@
 //   (pit shade, soil depth shading, map edge mist) switch off; they come back once frames average under 18.5ms.
 // - Add ?fps=1 to the address to show live frame stats on the device: fps, slowest frame in the last
 //   2 seconds, and how many frames took longer than 50ms since the page opened.
+// - v1.4.2: the overlay also names the current map and position, counts >50ms frames on this map alone, shows the
+//   screen size, pixel ratio and how often light mode switched, so one screenshot from a phone is a full report.
 // ============================================================================
 (function () {
   const showFps = /[?&]fps=1\b/.test(location.search);
   window.duduLightMode = false;
   let last = 0, sum = 0, n = 0, worst = 0, windowStart = 0, hitches = 0, el = null;
+  let mapKey = '', mapHitches = 0, lightSwitches = 0, fastest = 1000;
   function tick(t) {
     if (last) {
       const d = t - last;
       if (d < 1000) { // ignore tab switches and pauses
-        sum += d; n++; if (d > worst) worst = d; if (d > 50) hitches++;
+        sum += d; n++; if (d > worst) worst = d; if (d > 50) { hitches++; mapHitches++; } if (d < fastest) fastest = d;
       }
     }
     last = t;
@@ -166,8 +169,8 @@
       const playing = typeof state !== 'undefined' && state === 'playing';
       if (playing) {
         // a 60Hz screen averages 16.7ms per frame, so 'recovered' must sit above that
-        if (!window.duduLightMode && avg > 24) window.duduLightMode = true;
-        else if (window.duduLightMode && avg < 18.5) window.duduLightMode = false;
+        if (!window.duduLightMode && avg > 24) { window.duduLightMode = true; lightSwitches++; }
+        else if (window.duduLightMode && avg < 18.5) { window.duduLightMode = false; lightSwitches++; }
       }
       if (showFps) {
         if (!el) {
@@ -175,7 +178,16 @@
           el.style.cssText = 'position:fixed;left:6px;top:6px;z-index:99999;font:12px/1.3 monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 7px;border-radius:6px;pointer-events:none;white-space:pre';
           document.body.appendChild(el);
         }
-        el.textContent = `${(1000 / avg).toFixed(0)} fps  avg ${avg.toFixed(1)}ms\nslowest ${worst.toFixed(0)}ms  >50ms x${hitches}\n${window.duduLightMode ? 'light mode' : 'full effects'}`;
+        const mode = typeof gameMode !== 'undefined' ? gameMode : 'story';
+        const lv = (typeof levels !== 'undefined' && typeof levelIndex !== 'undefined' && levels[levelIndex]) || null;
+        const key = mode === 'story' ? ((lv && lv.id) || '-') : mode;
+        if (key !== mapKey) { mapKey = key; mapHitches = 0; }
+        const px = (typeof p !== 'undefined' && p && typeof p.x === 'number') ? Math.round(p.x) : '-';
+        const hz = fastest < 1000 ? Math.round(1000 / fastest) : '-';
+        el.textContent = `${(1000 / avg).toFixed(0)} fps  avg ${avg.toFixed(1)}ms\nslowest ${worst.toFixed(0)}ms  >50ms x${hitches} (this map x${mapHitches})\n` +
+          `${window.duduLightMode ? 'light mode' : 'full effects'}  switched x${lightSwitches}\n` +
+          `${key} x${px}  ${typeof state !== 'undefined' ? state : '-'}\n` +
+          `${innerWidth}x${innerHeight} dpr ${(window.devicePixelRatio || 1).toFixed(2)}  ~${hz}Hz`;
       }
       sum = 0; n = 0; worst = 0; windowStart = t;
     }

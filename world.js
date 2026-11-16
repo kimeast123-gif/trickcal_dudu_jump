@@ -1662,7 +1662,7 @@ function regionTick(dt){
 function updateRegionHud(){
  const l=levels[levelIndex];
  $('zoneTitle').textContent=l.name;
- $('routeLabel').textContent=(eventMode||state==='ready'||state==='loading'?'본편':'연습 · 기록 제외')+'  '+(levelIndex+1)+' / '+levels.length;
+ $('routeLabel').textContent=(eventMode||state==='ready'||state==='loading'?'본편':'연습 (기록 안 남음)')+'  '+(levelIndex+1)+' / '+levels.length;
  for(let i=0;i<levels.length;i++){
   const b=$('badge'+i);
   if(b)b.textContent=(routeDone[i]?'✓ ':levelIndex===i?'● ':'○ ')+levels[i].name;

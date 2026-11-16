@@ -245,9 +245,9 @@
         <img class="lobbyLogoNight" src="assets/title/logo-night.png?v=V4_STANDALONE" alt="" draggable="false">
       </div>
 
-      <div class="lobbyDemoStageTag" id="lobbyDemoStageTag">🏞️ ${DEMO_SCENES[0].title} (1/${DEMO_SCENES.length})</div>
+      <div class="lobbyDemoStageTag" id="lobbyDemoStageTag">🏞️ ${DEMO_SCENES[0].title}</div>
 
-      <!-- 8. 5 Interactive Capsule Menu Buttons (플레이 / 월드맵 / 챌린지 모드 / 키 설명 / 게임옵션) -->
+      <!-- 8. 5 Interactive Capsule Menu Buttons (플레이 / 월드맵 / 챌린지 모드 / 키 설명 / 게임 옵션) -->
       <nav class="lobbyMenu" id="lobbyMenu" aria-label="메인 게임 메뉴">
         <div class="lobbyMenuBtnWrap" style="--btn-idx:0">
           <svg class="lobbyPlayBurstRays" viewBox="0 0 64 46" aria-hidden="true">
@@ -264,7 +264,7 @@
           <button type="button" class="lobbyCapsuleBtn btn-worldmap" id="lobbyBtnWorldMap" data-lobby-action="worldmap" data-wm-locked="true">
             <span class="lobbyBtnIcon">${ICONS_SVG.worldmap}</span>
             <span class="lobbyBtnLabel">월드맵</span>
-            <span class="lobbyWmLockBadge" id="lobbyWmLockBadge">🔒 미해금</span>
+            <span class="lobbyWmLockBadge" id="lobbyWmLockBadge">🔒 엔딩 후</span>
           </button>
           ${ICONS_SVG.echoArcs}
         </div>
@@ -288,7 +288,7 @@
         <div class="lobbyMenuBtnWrap" style="--btn-idx:4">
           <button type="button" class="lobbyCapsuleBtn btn-options" id="lobbyBtnOptions" data-lobby-action="options">
             <span class="lobbyBtnIcon">${ICONS_SVG.options}</span>
-            <span class="lobbyBtnLabel">게임옵션</span>
+            <span class="lobbyBtnLabel">게임 옵션</span>
           </button>
           ${ICONS_SVG.echoArcs}
         </div>
@@ -559,7 +559,8 @@
     _activeSlideBuffer = (_activeSlideBuffer === 'A') ? 'B' : 'A';
 
     if (tagEl) {
-      tagEl.textContent = `🏞️ ${sc.title} (${_slideIdx + 1}/${DEMO_SCENES.length})`;
+      /* v1.4.2: no slide counter; "(2/7)" read like story progress */
+      tagEl.textContent = `🏞️ ${sc.title}`;
     }
     preloadSlideIndex(_slideIdx + 1);
   }
@@ -606,7 +607,7 @@
       wmBtn.setAttribute('data-wm-locked', unlocked ? 'false' : 'true');
       const badge = $id('lobbyWmLockBadge');
       if (badge) {
-        badge.textContent = unlocked ? '' : '🔒 미해금';
+        badge.textContent = unlocked ? '' : '🔒 엔딩 후';
       }
     }
     syncReturnToLobbyOptionBtnVisibility();
@@ -791,7 +792,7 @@
         syncLobbyButtonStates();
         const unlocked = (typeof isWorldMapUnlocked === 'function') ? Boolean(isWorldMapUnlocked()) : false;
         if (!unlocked) {
-          showLobbyToast('🔒 스토리 모드를 1회 완주하면 월드맵(수인숲 나들이)이 해금됩니다!');
+          showLobbyToast('엄마 집까지 한 번 가 보면 열려! 그다음엔 수인숲 나들이 가자.');
           if (typeof tone === 'function') tone(240, 0.12, 'triangle', 0.035);
           return;
         }

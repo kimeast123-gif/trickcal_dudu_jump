@@ -627,7 +627,7 @@ body[data-game-state="ready"] .practiceHUD {
 
 /* ============================================================================
    4. 5 INTERACTIVE CAPSULE MENU BUTTONS (`.lobbyMenu`) (§5-1 C02)
-   Exact labels: 플레이 / 월드맵 / 챌린지 모드 / 키 설명 / 게임옵션
+   Exact labels: 플레이 / 월드맵 / 챌린지 모드 / 키 설명 / 게임 옵션
    ============================================================================ */
 .lobbyMenu {
   position: absolute;

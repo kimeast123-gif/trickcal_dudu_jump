@@ -2327,9 +2327,75 @@ function draw() {
   }
 }
 
+// v1.4.2: Monatium B shaft interiors, composited once per 480px strip (see drawMonatiumBArchitecture).
+const MB_SHAFT_STRIP_H = 480;
+const _mbShaftStrips = new Map();
+function paintMonatiumShaftInterior(c, sh, backdrop, rx1, ry1, rx2, ry2) {
+  const grad = c.createLinearGradient(0, sh.y1, 0, sh.y2);
+  grad.addColorStop(0, 'rgba(42, 56, 78, 0.74)');
+  grad.addColorStop(0.5, 'rgba(34, 46, 66, 0.78)');
+  grad.addColorStop(1, 'rgba(26, 36, 52, 0.84)');
+  c.fillStyle = grad;
+  c.fillRect(rx1, ry1, rx2 - rx1, ry2 - ry1);
+  if (backdrop) {
+    const tileW = 480, tileH = 480;
+    const row0 = Math.max(0, Math.floor((ry1 - sh.y1) / tileH)), col0 = Math.max(0, Math.floor((rx1 - sh.x1) / tileW));
+    for (let gy = sh.y1 + row0 * tileH; gy < Math.min(sh.y2, ry2); gy += tileH) {
+      for (let gx = sh.x1 + col0 * tileW; gx < Math.min(sh.x2, rx2); gx += tileW) {
+        c.drawImage(backdrop, gx, gy, tileW, tileH);
+      }
+    }
+  }
+  const railY1 = Math.max(sh.y1 + 28, ry1), railY2 = Math.min(sh.y1 + (sh.y2 - sh.y1) - 28, ry2);
+  c.fillStyle = 'rgba(188, 226, 255, 0.11)';
+  if (railY2 > railY1) {
+    for (const rx of sh.rails) c.fillRect(rx - 30, railY1, 60, railY2 - railY1);
+  }
+  const lineY1 = Math.max(sh.y1 + 40, ry1 - 4), lineY2 = Math.min(sh.y2 - 20, ry2 + 4);
+  c.strokeStyle = 'rgba(160, 200, 235, 0.25)';
+  c.lineWidth = 4;
+  if (lineY2 > lineY1) {
+    for (const rx of sh.rails) {
+      c.beginPath();
+      c.moveTo(rx, lineY1);
+      c.lineTo(rx, lineY2);
+      c.stroke();
+    }
+  }
+}
+function getMonatiumShaftStrip(sh, row, backdrop) {
+  const key = `${sh.x1}|${sh.y1}|${row}`;
+  let strip = _mbShaftStrips.get(key);
+  if (strip) return strip;
+  const top = sh.y1 + row * MB_SHAFT_STRIP_H;
+  const h = Math.min(MB_SHAFT_STRIP_H, sh.y2 - top);
+  strip = document.createElement('canvas');
+  strip.width = Math.ceil(sh.x2 - sh.x1);
+  strip.height = Math.max(1, Math.ceil(h));
+  const sctx = strip.getContext('2d');
+  sctx.translate(-sh.x1, -top);
+  paintMonatiumShaftInterior(sctx, sh, backdrop, sh.x1, top, sh.x2, top + h);
+  _mbShaftStrips.set(key, strip);
+  return strip;
+}
+function releaseMonatiumShaftStrips(sh) {
+  const prefix = `${sh.x1}|${sh.y1}|`;
+  for (const [key, strip] of _mbShaftStrips) {
+    if (!key.startsWith(prefix)) continue;
+    strip.width = 0; strip.height = 0;
+    _mbShaftStrips.delete(key);
+  }
+}
+
 function drawMonatiumBArchitecture() {
   const curId = (typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex])?.id;
-  if (curId !== 'monatium_b') return;
+  if (curId !== 'monatium_b') {
+    if (_mbShaftStrips.size) {
+      for (const strip of _mbShaftStrips.values()) { strip.width = 0; strip.height = 0; }
+      _mbShaftStrips.clear();
+    }
+    return;
+  }
   const mb = STAGE_ANCHORS.monatium_b;
   const backdrop = structureImages['tower_backdrop'];
   const portalArch = structureImages['tower_portal_arch'];
@@ -2372,7 +2438,11 @@ function drawMonatiumBArchitecture() {
       ctx.beginPath();
       ctx.rect(pc.x, pc.topY, pc.w, bottomY - pc.topY);
       ctx.clip();
-      for (let gy = pc.topY; gy < bottomY; gy += tileH) {
+      // v1.4.2: skip pier tiles above or below the screen; the grid stays anchored at topY
+      const pierZoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+      const pierVisTop = rCamY - 8, pierVisBottom = rCamY + H / pierZoom + 8;
+      const firstRow = Math.max(0, Math.floor((pierVisTop - pc.topY) / tileH));
+      for (let gy = pc.topY + firstRow * tileH; gy < Math.min(bottomY, pierVisBottom); gy += tileH) {
         ctx.drawImage(pier, pc.x, gy, pc.w, tileH);
       }
       ctx.restore();
@@ -2407,54 +2477,43 @@ function drawMonatiumBArchitecture() {
     }
   ];
 
+  // v1.4.2: each shaft interior (gradient, backdrop tiles, rails) is a stack of three translucent layers that cost
+  // about 12ms a frame on a slow phone. They never change, so they are composited once into 480px strips and each
+  // frame draws only the strips on screen. Source-over is associative, so the result matches drawing them directly.
+  const zoomMB = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+  const viewX1 = rCam - 8, viewX2 = rCam + W / zoomMB + 8;
+  const viewY1 = rCamY - 8, viewY2 = rCamY + H / zoomMB + 8;
+  const backdropReady = Boolean(backdrop && (backdrop.complete === undefined || backdrop.complete) && backdrop.width > 0);
   for (const sh of shafts) {
-    if (sh.x2 < rCam - 180 || sh.x1 > rCam + W + 180) continue;
-    const spanW = sh.x2 - sh.x1;
-    const spanH = sh.y2 - sh.y1;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(sh.x1, sh.y1, spanW, spanH);
-    ctx.clip();
-
-    const grad = ctx.createLinearGradient(0, sh.y1, 0, sh.y2);
-    grad.addColorStop(0, 'rgba(42, 56, 78, 0.74)');
-    grad.addColorStop(0.5, 'rgba(34, 46, 66, 0.78)');
-    grad.addColorStop(1, 'rgba(26, 36, 52, 0.84)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(sh.x1, sh.y1, spanW, spanH);
-
-    if (backdrop) {
-      const tileW = 480, tileH = 480;
-      for (let gy = sh.y1; gy < sh.y2; gy += tileH) {
-        for (let gx = sh.x1; gx < sh.x2; gx += tileW) {
-          ctx.drawImage(backdrop, gx, gy, tileW, tileH);
-        }
-      }
+    if (sh.x2 < rCam - 180 || sh.x1 > rCam + W + 180) {
+      releaseMonatiumShaftStrips(sh);
+      continue;
     }
-
-    ctx.fillStyle = 'rgba(188, 226, 255, 0.11)';
-    for (const rx of sh.rails) {
-      ctx.fillRect(rx - 30, sh.y1 + 28, 60, spanH - 56);
-    }
-
-    ctx.strokeStyle = 'rgba(160, 200, 235, 0.25)';
-    ctx.lineWidth = 4;
-    for (const rx of sh.rails) {
+    const cx1 = Math.max(sh.x1, Math.floor(viewX1)), cx2 = Math.min(sh.x2, Math.ceil(viewX2));
+    const cy1 = Math.max(sh.y1, Math.floor(viewY1)), cy2 = Math.min(sh.y2, Math.ceil(viewY2));
+    if (cx2 > cx1 && cy2 > cy1) {
+      ctx.save();
       ctx.beginPath();
-      ctx.moveTo(rx, sh.y1 + 40);
-      ctx.lineTo(rx, sh.y2 - 20);
-      ctx.stroke();
+      ctx.rect(cx1, cy1, cx2 - cx1, cy2 - cy1);
+      ctx.clip();
+      if (backdropReady) {
+        const row0 = Math.floor((cy1 - sh.y1) / MB_SHAFT_STRIP_H), row1 = Math.floor((cy2 - 1 - sh.y1) / MB_SHAFT_STRIP_H);
+        for (let row = row0; row <= row1; row++) {
+          const strip = getMonatiumShaftStrip(sh, row, backdrop);
+          ctx.drawImage(strip, sh.x1, sh.y1 + row * MB_SHAFT_STRIP_H);
+        }
+      } else {
+        paintMonatiumShaftInterior(ctx, sh, null, cx1, cy1, cx2, cy2);
+      }
+      if (sh.hasBottomPit) {
+        const pGrad = ctx.createLinearGradient(0, 515, 0, 580);
+        pGrad.addColorStop(0, 'rgba(235, 88, 64, 0.0)');
+        pGrad.addColorStop(1, 'rgba(235, 88, 64, 0.48)');
+        ctx.fillStyle = pGrad;
+        ctx.fillRect(sh.pitX1, 515, sh.pitX2 - sh.pitX1, 65);
+      }
+      ctx.restore();
     }
-
-    if (sh.hasBottomPit) {
-      const pGrad = ctx.createLinearGradient(0, 515, 0, 580);
-      pGrad.addColorStop(0, 'rgba(235, 88, 64, 0.0)');
-      pGrad.addColorStop(1, 'rgba(235, 88, 64, 0.48)');
-      ctx.fillStyle = pGrad;
-      ctx.fillRect(sh.pitX1, 515, sh.pitX2 - sh.pitX1, 65);
-    }
-    ctx.restore();
 
     if (portalArch) {
       for (const pt of sh.portals) {

@@ -47,6 +47,18 @@ async def desktop_checks(pw, want):
             c1 = await pg.evaluate("()=>camY"); await pg.evaluate("()=>releaseInput('ArrowDown','kb_t')")
             check(f'look-down: camera lowers on {name}', c1 - c0 >= 150, f'{round(c0)} -> {round(c1)}')
 
+    if on('hud'):
+        # v1.4 left light text on a cream pill. Contrast is text colour against the first ancestor with a solid fill.
+        await play(pg, 0, 300, 580); await pg.wait_for_timeout(900)
+        r = await pg.evaluate("""()=>{const rgb=s=>(s.match(/[\\d.]+/g)||[]).map(Number);
+          const lum=([r,g,b])=>{const f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(r)+.7152*f(g)+.0722*f(b)};
+          const out={};for(const id of ['zoneTitle','playerHealthCount','dashStatus']){const e=document.getElementById(id);if(!e||!e.offsetParent){out[id]='hidden';continue}
+            let a=e,bg=null;while(a&&a!==document.body){const c=rgb(getComputedStyle(a).backgroundColor);if(c.length>=3&&(c.length<4||c[3]>=.5)){bg=c;break}a=a.parentElement}
+            if(!bg){out[id]='no fill';continue}const L1=lum(rgb(getComputedStyle(e).color)),L2=lum(bg);out[id]=Math.round((Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05)*10)/10}
+          return out}""")
+        nums = [v for v in r.values() if isinstance(v, (int, float))]
+        check('hud: stage name, health count and dash status are readable (contrast >= 4.5)', len(nums) == 3 and min(nums) >= 4.5, json.dumps(r))
+
     if on('dash'):
         await play(pg, 0, 300, 580); await pg.wait_for_timeout(700)
         ok, trace = True, []
