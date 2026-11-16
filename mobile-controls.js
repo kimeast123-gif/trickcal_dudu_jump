@@ -142,12 +142,10 @@ function ensurePaused(reason = 'manual') {
     if (reason === 'portrait') {
       mobileUIState.pausedByPortrait = true;
     }
-    const subtitle = reason === 'portrait'
-      ? '화면을 가로로 돌린 뒤 아래 버튼을 눌러 이어서 플레이하세요.'
-      : '아직 못 가본 발판이 있나요?<br>뒤로 돌아가도 괜찮아요.';
-    const btnLabel = reason === 'portrait' ? '계속 플레이 →' : '계속 모험하기';
+    const subtitle = reason === 'portrait' ? '화면을 가로로 돌리면 계속할 수 있습니다.' : '';
+    const btnLabel = '계속하기';
     if (typeof modal === 'function') {
-      modal('잠깐 쉬어가요', '두두도 숨 고르는 중', subtitle, btnLabel);
+      modal('', '일시정지', subtitle, btnLabel);
     }
     syncMobileViewMode();
     return true;
@@ -399,7 +397,7 @@ function syncAllKeybindLabels() {
   }
   const statusEl = document.getElementById('pcKeybindStatusMsg');
   if (statusEl) {
-    statusEl.textContent = keybindStatusMsg || '바꾸고 싶은 항목을 누른 뒤 원하는 키를 눌러 주세요. (ESC/P 일시정지 호환)';
+    statusEl.textContent = keybindStatusMsg || '';
   }
   // 2. Update modalKeys & below keys bar
   const modalKeysEl = document.querySelector('.modalKeys');
@@ -420,9 +418,9 @@ function syncAllKeybindLabels() {
   }
   // 3. Update retry buttons
   const retryBtn = document.getElementById('retry');
-  if (retryBtn) retryBtn.textContent = `↻ 현재 구간 다시 시작 (${k.retry})`;
+  if (retryBtn) retryBtn.textContent = `현재 구간 다시 시작 (${k.retry})`;
   const chRetryBtn = document.getElementById('chRetryBtn');
-  if (chRetryBtn) chRetryBtn.textContent = `↻ 현재 스테이지 다시 시작 (${k.retry})`;
+  if (chRetryBtn) chRetryBtn.textContent = `현재 스테이지 다시 시작 (${k.retry})`;
 
   // 4. Update Lobby Key Help Modal badges if mounted
   const khMove = document.getElementById('lobbyKeyBadgeMove');
@@ -461,14 +459,14 @@ function ensurePcKeybindSettingsUI() {
   sec.innerHTML = `
     <div class="soundSettingDivider" aria-hidden="true"></div>
     <div class="pcKeybindHeaderRow">
-      <span class="mobileSettingLabel pcKeybindSectionTitle">⌨️ PC 키보드 조작 설정</span>
+      <span class="mobileSettingLabel pcKeybindSectionTitle">PC 키보드 조작 설정</span>
       <button type="button" class="pcKeybindResetBtn" id="resetPcKeybindsBtn">기본값 복원</button>
     </div>
     <div class="pcKeybindGrid" role="group" aria-label="PC 조작키 설정">
       ${rowsHtml}
     </div>
     <div class="pcKeybindHintRow">
-      <span id="pcKeybindStatusMsg" class="pcKeybindStatusMsg">바꾸고 싶은 항목을 누른 뒤 원하는 키를 눌러 주세요. (통과: 아래보기+점프)</span>
+      <span id="pcKeybindStatusMsg" class="pcKeybindStatusMsg" aria-live="polite"></span>
     </div>
   `;
   // [#6 P2 Fix]: Place PC Keybind settings right below Sound Volume on PC (above Mobile Controller section) so no scrolling is required on PC

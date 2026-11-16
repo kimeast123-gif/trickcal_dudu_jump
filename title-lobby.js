@@ -300,12 +300,12 @@
       <div class="lobbyPanelHost" id="lobbyPanelHost" hidden>
         <div class="lobbyKeyHelpCard" role="dialog" aria-modal="true" aria-labelledby="lobbyKeyHelpTitle">
           <div class="lobbyKeyHelpHeader">
-            <h3 id="lobbyKeyHelpTitle">🎮 두두의 조작키 & 모험 가이드</h3>
+            <h3 id="lobbyKeyHelpTitle">조작키 안내</h3>
             <button type="button" class="lobbyKeyHelpCloseBtn" id="closeLobbyKeyHelpBtn">닫기 (ESC)</button>
           </div>
           <div class="lobbyKeyGrid">
             <div class="lobbyKeySection">
-              <h4>⌨️ PC 키보드 조작 (게임옵션에서 변경 가능)</h4>
+              <h4>PC 키보드 조작 (게임 옵션에서 변경 가능)</h4>
               <div class="lobbyKeyRow"><span>좌우 이동</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeMove">← / → (보조 A / D)</span></div>
               <div class="lobbyKeyRow"><span>점프 / 2단 점프</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeJump">SPACE</span></div>
               <div class="lobbyKeyRow"><span>순간 대시</span><span class="lobbyKeyBadge" id="lobbyKeyBadgeDash">L SHIFT</span></div>
@@ -315,7 +315,7 @@
               <div class="lobbyKeyRow"><span>일시정지 / 메뉴</span><span class="lobbyKeyBadge" id="lobbyKeyBadgePause">ESC / P</span></div>
             </div>
             <div class="lobbyKeySection">
-              <h4>📱 모바일 터치 조작</h4>
+              <h4>모바일 터치 조작</h4>
               <div class="lobbyKeyRow"><span>이동 / 아래보기</span><span class="lobbyKeyBadge">좌측 360° 가상 스틱</span></div>
               <div class="lobbyKeyRow"><span>점프 / 2단 점프</span><span class="lobbyKeyBadge">우측 점프 버튼</span></div>
               <div class="lobbyKeyRow"><span>순간 대시</span><span class="lobbyKeyBadge">우측 대시 버튼</span></div>
@@ -326,10 +326,10 @@
           <div class="lobbyKeyFooter">
             <div>
               <span>💡 스토리 모드를 완주하면 <b>월드맵(수인숲 나들이)</b>이 해금됩니다.</span><br>
-              <small style="color:#b2f2bb;opacity:0.88">※ 본 게임은 에피드게임즈 〈트릭컬 리바이브〉 2차 창작 가이드라인을 준수하는 비영리 팬게임입니다.</small>
+              <small style="color:#68756A">※ 본 게임은 에피드게임즈 〈트릭컬 리바이브〉 2차 창작 가이드라인을 준수하는 비영리 팬게임입니다.</small>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
-              <button type="button" class="lobbyKeyHelpCloseBtn" id="openKeybindFromHelpBtn">⚙️ 키 설정 열기</button>
+              <button type="button" class="lobbyKeyHelpCloseBtn" id="openKeybindFromHelpBtn">키 설정 열기</button>
               <button type="button" class="lobbyKeyHelpCloseBtn" id="confirmLobbyKeyHelpBtn">확인</button>
             </div>
           </div>
@@ -356,19 +356,18 @@
 
   // [§5-5 C04] In-Game Options -> `로비로 복귀` Button & Confirmation Dialog preserving ALL localStorage keys
   function mountReturnToLobbyOptionUI() {
-    const optModal = $id('mobileSettingsModal');
-    const resetBtn = $id('confirmMobileOptBtn') || optModal?.querySelector('.mobileSettingsFooter button');
+    const restartBtn = $id('restart');
     const viewport = $id('gameViewport') || document.body;
-    if (!optModal || !resetBtn) return;
+    if (!restartBtn) return;
 
     if (!$id('returnToLobbyFromOptBtn')) {
       const retBtn = document.createElement('button');
       retBtn.type = 'button';
       retBtn.id = 'returnToLobbyFromOptBtn';
       retBtn.className = 'secondary returnLobbyOptBtn';
-      retBtn.textContent = '🏠 로비로 복귀';
+      retBtn.textContent = '메인화면으로';
       retBtn.hidden = true;
-      resetBtn.parentElement.insertBefore(retBtn, resetBtn);
+      restartBtn.insertAdjacentElement('afterend', retBtn);
 
       retBtn.addEventListener('click', () => {
         if (isLobbyCurrentlyActive()) return;
@@ -391,8 +390,8 @@
       confirmModal.setAttribute('aria-labelledby', 'returnLobbyConfirmTitle');
       confirmModal.innerHTML = `
         <div class="returnLobbyConfirmCard">
-          <h4 id="returnLobbyConfirmTitle">🏠 로비로 돌아갈까요?</h4>
-          <p>현재 진행 중인 플레이를 종료하고 로비로 돌아갈까요?<br><small style="color:#5c745e">(이미 달성한 스토리 완주·월드맵 해금·황금 크레파스·사운드/컨트롤 설정은 모두 보존됩니다.)</small></p>
+          <h4 id="returnLobbyConfirmTitle">메인화면으로 돌아갈까요?</h4>
+          <p>현재 플레이는 종료됩니다.<br>해금 기록과 설정은 유지됩니다.</p>
           <div class="returnLobbyConfirmActions">
             <button type="button" class="btnCancelReturnLobby" id="cancelReturnToLobbyBtn">취소</button>
             <button type="button" class="btnConfirmReturnLobby" id="confirmReturnToLobbyBtn">로비로 복귀</button>
@@ -408,7 +407,8 @@
         cancelBtn.addEventListener('click', () => {
           confirmModal.hidden = true;
           const closeOptBtn = $id('closeMobileOptBtn');
-          if (closeOptBtn) closeOptBtn.focus();
+          const pauseReturnBtn = $id('returnToLobbyFromOptBtn');
+          if (pauseReturnBtn && !pauseReturnBtn.hidden) pauseReturnBtn.focus();
         });
       }
 
@@ -424,12 +424,14 @@
     const retBtn = $id('returnToLobbyFromOptBtn');
     const confirmModal = $id('returnToLobbyConfirmModal');
     if (!retBtn) return;
-    const inLobby = isLobbyCurrentlyActive() || (typeof state !== 'undefined' && (state === 'ready' || state === 'loading'));
-    retBtn.hidden = Boolean(inLobby);
-    if (inLobby && confirmModal && !confirmModal.hidden) {
+    const isPausedNow = typeof state !== 'undefined' && state === 'paused' && !isLobbyCurrentlyActive();
+    retBtn.hidden = !isPausedNow;
+    if (!isPausedNow && confirmModal && !confirmModal.hidden) {
       confirmModal.hidden = true;
     }
   }
+
+  window.syncPauseReturnButton = syncReturnToLobbyOptionBtnVisibility;
 
   function executeReturnToLobbySafely() {
     if (_isReturningToLobby || _isTransitioning) return;

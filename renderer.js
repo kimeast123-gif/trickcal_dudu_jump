@@ -1796,88 +1796,16 @@ function drawPlatform(a) {
   }
 
   if (a.behavior === 'blink') {
-    const prog = Math.max(0, Math.min(1, a.blinkStateProgress ?? 0));
-    const imminent = Boolean(a.blinkImminent);
-    ctx.save();
+    // [P0 §2-1 & §2-2]: Removed all blinking timer bars, return progress gauges, corner brackets, and dashed timer slots.
+    // Only the platform's natural visibility (ON / WARNING shake+alpha fade / OFF disappeared) and pass/lock notch remain.
     if (a.blinkState === 'off') {
-      if (a.silentBlink) {
-        // [B-02.5]: Silent-blink OFF keeps its stealth identity while showing minimal corner return markers (brightening when <= 0.28s before return)
-        const alpha = imminent ? 0.68 : 0.22;
-        ctx.strokeStyle = imminent ? `rgba(255, 243, 191, ${alpha})` : `rgba(186, 230, 255, ${alpha})`;
-        ctx.lineWidth = imminent ? 2.4 : 1.5;
-        const xL = drawX + 4, xR = drawX + a.w - 4, yT = drawY + 1, yB = drawY + 13;
-        ctx.beginPath();
-        ctx.moveTo(xL, yT + 5); ctx.lineTo(xL, yT); ctx.lineTo(xL + 6, yT);
-        ctx.moveTo(xR - 6, yT); ctx.lineTo(xR, yT); ctx.lineTo(xR, yT + 5);
-        ctx.moveTo(xL, yB - 5); ctx.lineTo(xL, yB); ctx.lineTo(xL + 6, yB);
-        ctx.moveTo(xR - 6, yB); ctx.lineTo(xR, yB); ctx.lineTo(xR, yB - 5);
-        ctx.stroke();
-        if (imminent) {
-          const barW = Math.max(6, Math.round((a.w - 12) * prog));
-          ctx.fillStyle = 'rgba(255, 236, 153, 0.72)';
-          ctx.fillRect(drawX + 6, drawY + 5, barW, 3);
-        }
-        ctx.restore();
-        return;
-      }
-      // [B-02.3 & B-02.4]: Standard Blink OFF — hollow dashed outline + fill-up return gauge bar + imminent-return highlight!
-      const boxW = Math.max(12, a.w - 4);
-      ctx.setLineDash(imminent ? [3, 2] : [5, 5]);
-      ctx.strokeStyle = imminent ? '#fff3bf' : (a.ultraFastBlink ? 'rgba(255, 107, 157, 0.68)' : 'rgba(180, 225, 255, 0.72)');
-      ctx.fillStyle = imminent ? 'rgba(255, 243, 191, 0.22)' : 'rgba(180, 225, 255, 0.10)';
-      ctx.lineWidth = imminent ? 2.6 : 2.0;
-      ctx.beginPath();
-      ctx.roundRect(drawX + 2, drawY, boxW, 15, 5);
-      ctx.fill();
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Return progress fill bar inside the ghost slot (0% -> 100% exactly when collidable turns true)
-      const trackW = Math.max(8, boxW - 8);
-      const fillW = Math.max(2, Math.round(trackW * prog));
-      const barX = drawX + 6;
-      const barY = drawY + 5;
-      ctx.fillStyle = 'rgba(18, 28, 38, 0.42)';
-      ctx.fillRect(barX, barY, trackW, 5);
-      ctx.fillStyle = imminent ? '#ffd43b' : '#74c0fc';
-      ctx.fillRect(barX, barY, fillW, 5);
-      ctx.restore();
       return;
     }
-
+    ctx.save();
     const shakeX = (a.blinkState === 'warning' && !a.silentBlink) ? Math.round(Math.sin(time * 55) * 2) : 0;
     ctx.globalAlpha = a.blinkAlpha ?? 1;
     drawThinPlatformVisual(a, drawX + shakeX, drawY);
-
-    // [Priority 1 — Top Slot]: Blinking Platform Corner Brackets (ON) & Shrinking Warning Bar (WARNING)
-    if (!a.silentBlink) {
-      const bx = drawX + shakeX + 3;
-      const bw = Math.max(10, a.w - 6);
-      if (a.blinkState === 'on') {
-        ctx.strokeStyle = a.ultraFastBlink ? '#ff922bcc' : 'rgba(165, 242, 255, 0.85)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(bx, drawY + 6); ctx.lineTo(bx, drawY); ctx.lineTo(bx + 7, drawY);
-        ctx.moveTo(bx + bw - 7, drawY); ctx.lineTo(bx + bw, drawY); ctx.lineTo(bx + bw, drawY + 6);
-        ctx.stroke();
-        const remRatio = Math.max(0, 1 - prog);
-        ctx.fillStyle = 'rgba(165, 242, 255, 0.65)';
-        ctx.fillRect(bx + 3, drawY + 2, Math.round(Math.max(4, bw - 6) * remRatio), 2.5);
-      } else if (a.blinkState === 'warning') {
-        const warnCol = a.ultraFastBlink ? '#ff2b5e' : (a.fastBlink ? '#ff6b4a' : '#ffcf4d');
-        ctx.strokeStyle = warnCol;
-        ctx.lineWidth = 2.6;
-        ctx.setLineDash([6, 3]);
-        ctx.strokeRect(bx, drawY - 1, bw, 20);
-        ctx.setLineDash([]);
-        const remW = Math.max(2, Math.round(Math.max(4, bw - 6) * (1 - prog)));
-        ctx.fillStyle = warnCol;
-        ctx.fillRect(bx + Math.round((bw - remW) * 0.5), drawY + 2, remW, 4);
-      }
-    }
-
-    // [#4 P1 Fix]: Do not return early before rendering Priority 2 (motion cue if moving+blinking) & Priority 3 (pass-through/lock cue)!
-    drawPlatformTypeOverlays(a, drawX + shakeX, drawY, isWorldMode);
+    drawThinPassAndLockCue(a, drawX + shakeX, drawY);
     ctx.restore();
     return;
   }
@@ -1888,105 +1816,45 @@ function drawPlatform(a) {
   } else {
     drawThinPlatformVisual(a, drawX, drawY);
     if (a.rooftop || a.customDecorations) drawPlatformDecorations(a, drawX, drawY);
-    drawPlatformTypeOverlays(a, drawX, drawY, isWorldMode);
+    drawThinPassAndLockCue(a, drawX, drawY);
   }
 }
 
-// [#4 P1 Fix]: Size-adaptive & priority-ordered platform type overlay helper
-// - Priority 1 (Top slot, drawY..drawY+5): Blink timer strip / Motion top trim
-// - Priority 2 (Center slot, drawY+5..drawY+12): Motion direction emblem (standard pill for w>=72, compact micro-arrows for narrow 38..71px; skipped in World 1 to preserve hand-drawn rail aesthetic)
-// - Priority 3 (Bottom lip, drawY+13..drawY+18): Pass-through chevron (▾, standard for w>=72, compact for narrow 38..71px) or non-drop lock bracket
-function drawPlatformTypeOverlays(a, drawX, drawY, isWorldMode) {
-  // Priority 3 (Bottom Lip): Pass-through vs Non-Drop-Through on ALL thin platforms (including narrow 38~71px & moving platforms)
-  if (a.thin && !a.wall && !a.ceiling) {
-    ctx.save();
-    const midX = Math.round(drawX + a.w * 0.5);
-    const isNarrow = a.w < 72;
-    if (a.dropThroughDisabled) {
-      const inset = isNarrow ? 5 : 8;
-      const lockW = Math.max(14, a.w - inset * 2);
-      const lockH = isNarrow ? 4.5 : 6;
-      const lockX = drawX + Math.round((a.w - lockW) * 0.5);
-      ctx.fillStyle = 'rgba(42, 30, 22, 0.84)';
-      ctx.strokeStyle = 'rgba(210, 180, 140, 0.70)';
-      ctx.lineWidth = isNarrow ? 1.2 : 1.5;
-      ctx.beginPath();
-      ctx.roundRect(lockX, drawY + 14, lockW, lockH, 2.5);
-      ctx.fill();
-      ctx.stroke();
-    } else {
-      // Pass-through downward chevron (`▾`) — compact size on narrow platforms (38~71px) so landing surface is never intruded
-      const hw = isNarrow ? 3.2 : 4.8;
-      const topY = isNarrow ? (drawY + 13.5) : (drawY + 12.5);
-      const botY = isNarrow ? (drawY + 17.0) : (drawY + 17.2);
-      ctx.fillStyle = 'rgba(245, 252, 232, 0.78)';
-      ctx.strokeStyle = 'rgba(38, 62, 34, 0.68)';
-      ctx.lineWidth = isNarrow ? 1.0 : 1.2;
-      ctx.beginPath();
-      ctx.moveTo(midX - hw, topY);
-      ctx.lineTo(midX + hw, topY);
-      ctx.lineTo(midX, botY);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // Priority 2 (Center Slot): Moving platform directional cue (respects !isWorldMode so World 1 hand-drawn rails are not duplicated)
-  if (a.motion && !isWorldMode) {
-    ctx.save();
-    const mCol = a.fastMoving ? '#ffbe4d' : '#93e8dd';
-    const isNarrow = a.w < 72;
-    // Top motion trim (only if not already covered by a Blink WARNING border)
-    if (a.behavior !== 'blink') {
-      ctx.strokeStyle = mCol;
-      ctx.lineWidth = isNarrow ? 2.0 : 2.5;
-      ctx.beginPath();
-      ctx.moveTo(drawX + (isNarrow ? 4 : 6), drawY + 1);
-      ctx.lineTo(drawX + a.w - (isNarrow ? 4 : 6), drawY + 1);
-      ctx.stroke();
-    }
-
-    const cx = Math.round(drawX + a.w * 0.5);
-    const cy = drawY + 8.5;
-    const pillW = isNarrow ? 18 : 26;
-    const pillH = isNarrow ? 8.5 : 10;
-    ctx.fillStyle = 'rgba(20, 32, 38, 0.74)';
-    ctx.strokeStyle = mCol;
-    ctx.lineWidth = isNarrow ? 1.1 : 1.3;
+// [P0 §2-2]: Moving platform directional badges, arrows, and top highlight rims are 100% removed.
+// Only the subtle pass-through notch (`▾`) and non-drop lock bracket (`dropThroughDisabled`) are retained.
+function drawThinPassAndLockCue(a, drawX, drawY) {
+  if (!a.thin || a.wall || a.ceiling) return;
+  ctx.save();
+  const midX = Math.round(drawX + a.w * 0.5);
+  const isNarrow = a.w < 72;
+  if (a.dropThroughDisabled) {
+    const inset = isNarrow ? 6 : 10;
+    const lockW = Math.max(12, a.w - inset * 2);
+    const lockH = isNarrow ? 3.5 : 4.5;
+    const lockX = drawX + Math.round((a.w - lockW) * 0.5);
+    ctx.fillStyle = 'rgba(42, 30, 22, 0.72)';
+    ctx.strokeStyle = 'rgba(210, 180, 140, 0.55)';
+    ctx.lineWidth = 1.0;
     ctx.beginPath();
-    ctx.roundRect(cx - pillW * 0.5, cy - pillH * 0.5, pillW, pillH, pillH * 0.5);
+    ctx.roundRect(lockX, drawY + 14.5, lockW, lockH, 2);
     ctx.fill();
     ctx.stroke();
-
-    ctx.fillStyle = '#e6fcf5';
-    const offX = isNarrow ? 5.5 : 8.5;
-    const inX = isNarrow ? 2.0 : 3.8;
-    const halfH = isNarrow ? 2.4 : 3.0;
-    if (a.motion.axis === 'x') {
-      const dirSign = (a.dx > 0.05) ? 1 : ((a.dx < -0.05) ? -1 : 0);
-      ctx.globalAlpha = dirSign <= 0 ? 0.95 : 0.42;
-      ctx.beginPath();
-      ctx.moveTo(cx - offX, cy); ctx.lineTo(cx - inX, cy - halfH); ctx.lineTo(cx - inX, cy + halfH);
-      ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = dirSign >= 0 ? 0.95 : 0.42;
-      ctx.beginPath();
-      ctx.moveTo(cx + offX, cy); ctx.lineTo(cx + inX, cy - halfH); ctx.lineTo(cx + inX, cy + halfH);
-      ctx.closePath(); ctx.fill();
-    } else {
-      const dirSign = (a.dy > 0.05) ? 1 : ((a.dy < -0.05) ? -1 : 0);
-      ctx.globalAlpha = dirSign <= 0 ? 0.95 : 0.42;
-      ctx.beginPath();
-      ctx.moveTo(cx - 3.5, cy - halfH); ctx.lineTo(cx - 6.2, cy + halfH - 0.5); ctx.lineTo(cx - 0.8, cy + halfH - 0.5);
-      ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = dirSign >= 0 ? 0.95 : 0.42;
-      ctx.beginPath();
-      ctx.moveTo(cx + 3.5, cy + halfH); ctx.lineTo(cx + 0.8, cy - halfH + 0.5); ctx.lineTo(cx + 6.2, cy - halfH + 0.5);
-      ctx.closePath(); ctx.fill();
-    }
-    ctx.restore();
+  } else {
+    const hw = isNarrow ? 2.6 : 3.8;
+    const topY = isNarrow ? (drawY + 13.8) : (drawY + 13.0);
+    const botY = isNarrow ? (drawY + 16.6) : (drawY + 16.8);
+    ctx.fillStyle = 'rgba(245, 252, 232, 0.68)';
+    ctx.strokeStyle = 'rgba(38, 62, 34, 0.55)';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.moveTo(midX - hw, topY);
+    ctx.lineTo(midX + hw, topY);
+    ctx.lineTo(midX, botY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
   }
+  ctx.restore();
 }
 
 function drawSpecialCoins() {

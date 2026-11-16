@@ -346,10 +346,6 @@ function loadChallengeStage(stageIdx, { resetTotal = false, customSeed = null, d
 
   gameMode = 'challenge';
   challengeState.active = true;
-  // [P0 result buttons] Story ending / lobby return may have replaced the shared
-  // #start and #restart onclick callbacks. Reclaim them on every challenge entry.
-  $('start').onclick = dispatchPrimaryAction;
-  $('restart').onclick = dispatchRestartAction;
   if (typeof ensureWorldRegionAssets === 'function') {
     Promise.all([
       ensureWorldRegionAssets('forest'),
@@ -717,37 +713,43 @@ function ensureChallengeSelectModalDOM() {
     <div class="chSelectCard">
       <div class="chSelectHeader">
         <div>
-          <span class="chSelectEyebrow">CHALLENGE MODE · 추억의 인내의 숲</span>
-          <h3 id="chSelectModalTitle">🌲 챌린지 난이도 선택</h3>
+          <span class="chSelectEyebrow">추억의 인내의 숲</span>
+          <h3 id="chSelectModalTitle">챌린지 모드</h3>
         </div>
         <button type="button" class="chSelectCloseBtn" id="closeChallengeSelectBtn" aria-label="닫기">✕</button>
       </div>
       <div class="chSelectGrid">
-        <div class="chDiffBox chDiffBoxD1">
-          <div class="chDiffBadge">난이도 1 · 기본 3단계 코스</div>
-          <h4>추억의 인내의 숲 (1-1 ~ 1-3)</h4>
-          <p>가지와 가지 사이(1-1) → 진압반의 징검다리(1-2) → 마요의 바람총 숲(1-3) 연속 완주 코스</p>
+        <div class="chDiffBox chDiffBoxD1 is-selected" id="chDiffCardD1" data-diff="d1">
+          <div class="chDiffTopRow">
+            <span class="chDiffBadge">난이도 1</span>
+            <span class="chDiffStageCount">3개 구간</span>
+          </div>
+          <h4>기본 코스</h4>
+          <p>1-1 ~ 1-3 · 3개 구간</p>
           <div class="chDiffRecord" id="chD1RecordSummary">최고 완주 기록: 기록 없음</div>
           <div class="chStageBtnGroup">
-            <button type="button" class="chLaunchPrimaryBtn" id="chModalStartD1Btn">▶ 난이도 1 시작 (1-1부터 도전)</button>
+            <button type="button" class="chLaunchPrimaryBtn" id="chModalStartD1Btn">난이도 1 시작</button>
             <div class="chStageQuickRow">
-              <button type="button" class="chStageMiniBtn" id="chModalD1S1Btn">1-1 시작</button>
-              <button type="button" class="chStageMiniBtn" id="chModalD1S2Btn">1-2 연습</button>
-              <button type="button" class="chStageMiniBtn" id="chModalD1S3Btn">1-3 연습</button>
+              <button type="button" class="chStageMiniBtn" id="chModalD1S1Btn">1-1</button>
+              <button type="button" class="chStageMiniBtn" id="chModalD1S2Btn">1-2</button>
+              <button type="button" class="chStageMiniBtn" id="chModalD1S3Btn">1-3</button>
             </div>
           </div>
         </div>
-        <div class="chDiffBox chDiffBoxD2">
-          <div class="chDiffBadge chDiffBadgeHard">난이도 2 · 심화 3단계 완결 코스 (2-1 ~ 2-3)</div>
-          <h4>정밀 3층 등반 (2-1) · 가시 덩굴 교량 (2-2) · 바람총 회랑 (2-3)</h4>
-          <p>2-1 정밀 등반 → 2-2 가시 덩굴과 순찰 교량 → 2-3 바람총 회랑과 쌍둥이 승강대 (4단 수평 왕복·9마요·쌍둥이 수직 승강대)</p>
-          <div class="chDiffRecord" id="chD2RecordSummary">2-1 / 2-2 / 2-3 최고 기록: 기록 없음</div>
+        <div class="chDiffBox chDiffBoxD2" id="chDiffCardD2" data-diff="d2">
+          <div class="chDiffTopRow">
+            <span class="chDiffBadge chDiffBadgeHard">난이도 2</span>
+            <span class="chDiffStageCount">3개 구간</span>
+          </div>
+          <h4>심화 코스</h4>
+          <p>2-1 ~ 2-3 · 3개 구간</p>
+          <div class="chDiffRecord" id="chD2RecordSummary">구간별 최고 기록: 기록 없음</div>
           <div class="chStageBtnGroup">
-            <button type="button" class="chLaunchPrimaryBtn chLaunchD2Btn" id="chModalStartD2Btn">🔥 난이도 2-3 바로 시작 (바람총 회랑과 쌍둥이 승강대)</button>
+            <button type="button" class="chLaunchPrimaryBtn chLaunchD2Btn" id="chModalStartD2Btn">난이도 2 시작</button>
             <div class="chStageQuickRow">
-              <button type="button" class="chStageMiniBtn" id="chModalD2S1Btn">2-1 플레이</button>
-              <button type="button" class="chStageMiniBtn" id="chModalD2S2Btn">2-2 플레이</button>
-              <button type="button" class="chStageMiniBtn active" id="chModalD2S3Btn">2-3 플레이 (NEW)</button>
+              <button type="button" class="chStageMiniBtn" id="chModalD2S1Btn">2-1</button>
+              <button type="button" class="chStageMiniBtn" id="chModalD2S2Btn">2-2</button>
+              <button type="button" class="chStageMiniBtn" id="chModalD2S3Btn">2-3</button>
             </div>
           </div>
         </div>
@@ -755,6 +757,18 @@ function ensureChallengeSelectModalDOM() {
     </div>
   `;
   vp.appendChild(el);
+
+  const selectDiffVisual = (d) => {
+    challengeDifficultyId = (d === 'd2') ? 'd2' : 'd1';
+    challengeState.difficultyId = challengeDifficultyId;
+    const c1 = $('chDiffCardD1');
+    const c2 = $('chDiffCardD2');
+    if (c1) c1.classList.toggle('is-selected', challengeDifficultyId === 'd1');
+    if (c2) c2.classList.toggle('is-selected', challengeDifficultyId === 'd2');
+  };
+
+  $('chDiffCardD1')?.addEventListener('pointerdown', () => selectDiffVisual('d1'));
+  $('chDiffCardD2')?.addEventListener('pointerdown', () => selectDiffVisual('d2'));
 
   $('closeChallengeSelectBtn').onclick = () => closeChallengeSelectModal();
   el.addEventListener('click', (e) => {
@@ -772,7 +786,7 @@ function ensureChallengeSelectModalDOM() {
     loadChallengeRecords();
     loadChallengeStage(2, { resetTotal: false, difficultyId: 'd1' });
   };
-  $('chModalStartD2Btn').onclick = () => startChallengeMode(2, null, 'd2');
+  $('chModalStartD2Btn').onclick = () => startChallengeMode(0, null, 'd2');
   $('chModalD2S1Btn').onclick = () => startChallengeMode(0, null, 'd2');
   $('chModalD2S2Btn').onclick = () => startChallengeMode(1, null, 'd2');
   if ($('chModalD2S3Btn')) $('chModalD2S3Btn').onclick = () => startChallengeMode(2, null, 'd2');
@@ -786,23 +800,26 @@ function openChallengeSelectModal() {
     startChallengeMode(0, null, 'd1');
     return;
   }
+  const c1 = $('chDiffCardD1');
+  const c2 = $('chDiffCardD2');
+  if (c1) c1.classList.toggle('is-selected', challengeDifficultyId !== 'd2');
+  if (c2) c2.classList.toggle('is-selected', challengeDifficultyId === 'd2');
+
   const d1Rec = $('chD1RecordSummary');
   if (d1Rec) {
     const bt = challengeState.records.bestTotalTime;
     const cl = challengeState.records.clears || 0;
     d1Rec.textContent = bt !== null
-      ? `3단계 합산 최고: ${formatChallengeStopwatch(bt)} (${cl}회 완주)`
-      : '3단계 합산 최고: 기록 없음';
+      ? `최고 기록  ${formatChallengeStopwatch(bt)}  ·  ${cl}회 완주`
+      : '최고 기록  없음';
   }
   const d2Rec = $('chD2RecordSummary');
   if (d2Rec) {
-    const bt1 = challengeState.d2Records.bestStage1Time;
-    const bt2 = challengeState.d2Stage2Records.bestStage2Time;
-    const bt3 = challengeState.d2Stage3Records.bestStage3Time;
-    const s1Txt = bt1 !== null ? formatChallengeStopwatch(bt1) : '없음';
-    const s2Txt = bt2 !== null ? formatChallengeStopwatch(bt2) : '없음';
-    const s3Txt = bt3 !== null ? formatChallengeStopwatch(bt3) : '없음';
-    d2Rec.textContent = `2-1: ${s1Txt} · 2-2: ${s2Txt} · 2-3: ${s3Txt}`;
+    const bt = challengeState.d2Stage3Records.bestThreeStageTotalTime;
+    const cl = challengeState.d2Stage3Records.clears || 0;
+    d2Rec.textContent = bt !== null
+      ? `최고 기록  ${formatChallengeStopwatch(bt)}  ·  ${cl}회 완주`
+      : '최고 기록  없음';
   }
   modalEl.hidden = false;
 }
@@ -836,21 +853,6 @@ window.closeChallengeSelectModal = closeChallengeSelectModal;
 
   $('start').onclick = dispatchPrimaryAction;
   $('restart').onclick = dispatchRestartAction;
-  // [P0 result buttons] `event.js` and `title-lobby.js` also write to these
-  // shared onclick properties. While in challenge mode, capture the real user
-  // click before any stale story callback can run. Story/world modes are untouched.
-  $('start').addEventListener('click', (event) => {
-    if (typeof gameMode === 'undefined' || gameMode !== 'challenge') return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    dispatchPrimaryAction();
-  }, true);
-  $('restart').addEventListener('click', (event) => {
-    if (typeof gameMode === 'undefined' || gameMode !== 'challenge') return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    dispatchRestartAction();
-  }, true);
   const chBtn = $('startChallengeBtn');
   if (chBtn) chBtn.onclick = () => openChallengeSelectModal();
   const modalBack = $('modalBackStoryBtn');

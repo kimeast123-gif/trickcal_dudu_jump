@@ -175,6 +175,7 @@
     }
     ov.dataset.modalKind = kind;
     syncUiModeAttributes();
+    window.syncPauseReturnButton?.();
   }
   window.modal = enhancedModal;
   try { modal = enhancedModal; } catch (e) {}
@@ -358,19 +359,20 @@
     const totalCols = Object.values(w1.stages).reduce((acc, s) => acc + (s.collectibles ? s.collectibles.length : 0), 0);
 
     const storageNotice = !worldMapStorageAvailable
-      ? `<div class="wmStorageWarn" id="wmStorageWarn">⚠️ 브라우저 저장소(localStorage)가 제한되어 현재 세션 동안만 진행 기록이 유지됩니다.</div>`
+      ? `<div class="wmStorageWarn" id="wmStorageWarn">브라우저 저장소(localStorage)가 제한되어 현재 세션 동안만 진행 기록이 유지됩니다.</div>`
       : '';
 
     const cardsHtml = WORLDMAP_CARDS.map((card, idx) => {
       const isComingSoon = card.implementationStatus === 'coming_soon';
-      const regionTag = card.id === 'story_replay'
-        ? 'STORY MODE · 6 REGIONS'
-        : `WORLD ${idx} · ${isComingSoon ? 'COMING SOON' : 'EXPEDITION'}`;
-      const extraProgress = card.id === 'world1_beastforest'
-        ? `<div class="wmCardMeta"><span class="wmMetaPill">진행 ${clearedCount}/5</span><span class="wmMetaPill wmMetaGold">황금 크레파스 ${totalCols}/2</span>${w1.regionCleared ? '<span class="wmMetaPill wmMetaClear">★완주</span>' : ''}</div>`
+      const statusText = isComingSoon ? '준비 중' : (card.id === 'world1_beastforest' && w1.regionCleared ? '완주 달성' : '진입 가능');
+      const progressText = card.id === 'world1_beastforest'
+        ? `스테이지 ${clearedCount}/5 클리어 · 황금 크레파스 ${totalCols}/2`
         : (card.id === 'story_replay'
-          ? `<div class="wmCardMeta"><span class="wmMetaPill">6개 지역</span><span class="wmMetaPill">왕사탕 135</span><span class="wmMetaPill wmMetaGold">크레파스 12</span></div>`
-          : `<div class="wmCardMeta"><span class="wmMetaPill wmMetaLocked">${card.isPlaceholderArt ? '미공개 탐험지 · 준비 중' : '준비 중'}</span></div>`);
+          ? '본편 6개 지역 · 왕사탕 135 · 크레파스 12'
+          : '추후 업데이트 예정 지역');
+      const actionLabel = isComingSoon
+        ? '준비 중'
+        : (card.id === 'story_replay' ? '본편 다시 시작 →' : '스테이지 선택 →');
 
       return `
         <button type="button"
@@ -382,14 +384,17 @@
                 onclick="handleWorldMapCardAction('${card.id}')">
           <div class="wmCardThumbWrap">
             <img class="wmCardThumb" src="${card.thumbnail}" alt="${card.title}" onerror="this.onerror=null;this.src='${card.fallbackThumb}';">
-            <div class="wmCardThumbScrim"></div>
-            <span class="wmRegionIndex">${regionTag}</span>
-            <span class="wmCardBadge ${isComingSoon ? 'badgeSoon' : 'badgePlay'}">${card.statusBadge}</span>
+            <span class="wmCardBadge ${isComingSoon ? 'badgeSoon' : 'badgePlay'}">${statusText}</span>
           </div>
           <div class="wmCardBody">
-            <strong class="wmCardTitle">${card.title}</strong>
+            <div class="wmCardTopRow">
+              <strong class="wmCardTitle">${card.title}</strong>
+            </div>
             <p class="wmCardSub">${card.subtitle}</p>
-            ${extraProgress}
+            <div class="wmCardMeta">${progressText}</div>
+            <div class="wmCardActionRow">
+              <span class="wmCardActionLabel ${isComingSoon ? 'is-disabled' : 'is-primary'}">${actionLabel}</span>
+            </div>
           </div>
         </button>
       `;
@@ -399,13 +404,13 @@
       <div class="wmPanel wmExpeditionModal" role="dialog" aria-modal="true" aria-labelledby="wmHeaderTitle">
         <div class="wmHeader">
           <div class="wmHeaderTitleGroup">
-            <span class="wmEyebrow">DUDU’S WORLD EXPEDITION · 7 REGIONS</span>
-            <h2 id="wmHeaderTitle">🗺️ 두두의 세계지도 — 어디로 나들이 갈까요?</h2>
+            <span class="wmEyebrow">지역 선택</span>
+            <h2 id="wmHeaderTitle">두두의 세계지도</h2>
           </div>
           <div class="wmHeaderActions">
             <button type="button" class="wmCarouselBtn" onclick="scrollWorldMapCards(-1)" aria-label="이전 지역 보기">◀</button>
             <button type="button" class="wmCarouselBtn" onclick="scrollWorldMapCards(1)" aria-label="다음 지역 보기">▶</button>
-            <button type="button" class="wmBackBtn" id="wmBackToMainBtn" onclick="backFromWorldMapToMainMenu()">← 타이틀로</button>
+            <button type="button" class="wmBackBtn" id="wmBackToMainBtn" onclick="backFromWorldMapToMainMenu()">타이틀로 돌아가기</button>
           </div>
         </div>
         ${storageNotice}
@@ -421,7 +426,6 @@
   window.renderWorldMap7CardsUI = enhancedRenderWorldMap7CardsUI;
   try { renderWorldMap7CardsUI = enhancedRenderWorldMap7CardsUI; } catch (e) {}
 
-  // Keep periodic lightweight attribute sync on animation frames
   function uiTickLoop() {
     syncUiModeAttributes();
     requestAnimationFrame(uiTickLoop);

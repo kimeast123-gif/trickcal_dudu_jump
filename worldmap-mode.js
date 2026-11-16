@@ -1793,7 +1793,7 @@ function handleWorldMapCardAction(cardId) {
   if (!card) return;
   if (card.implementationStatus === 'coming_soon' || card.action === 'showComingSoon') {
     const banner = $('worldmapNoticeBanner');
-    const msg = `🔒 「${card.title}」은(는) 현재 준비 중인 지역입니다. (로더 호출 차단됨)`;
+    const msg = `「${card.title}」은(는) 현재 준비 중인 지역입니다.`;
     if (banner) {
       banner.textContent = msg;
       banner.hidden = false;
@@ -1941,11 +1941,11 @@ function openWorld1StageSelect() {
     <div class="wmPanel" role="dialog" aria-modal="true" aria-labelledby="wmStageHeaderTitle">
       <div class="wmHeader">
         <div>
-          <span class="wmEyebrow">WORLD 1 · SUIN FOREST OUTING</span>
-          <h2 id="wmStageHeaderTitle">🌳 수인숲 나들이 — 스테이지 선택 (1-1 ~ 1-5)</h2>
+          <span class="wmEyebrow">월드 1 · 스테이지 선택</span>
+          <h2 id="wmStageHeaderTitle">수인숲 나들이 (1-1 ~ 1-5)</h2>
         </div>
         <div class="wmHeaderActions">
-          <button type="button" class="wmBackBtn" id="wmBackToWorldMapBtn" onclick="openWorldMapMenu({forceDevOpen:true})">← 월드맵(7카드)으로</button>
+          <button type="button" class="wmBackBtn" id="wmBackToWorldMapBtn" onclick="openWorldMapMenu({forceDevOpen:true})">← 세계지도로</button>
         </div>
       </div>
       <div class="wmStageGrid" id="wmStageGrid">
@@ -1988,8 +1988,8 @@ function renderWorld1ClearModal(stg, rec, hasNextStage, exitRoute = 'default', n
     <div class="wmPanel wmClearPanel" role="dialog" aria-modal="true">
       <div class="wmHeader">
         <div>
-          <span class="wmEyebrow">${isFinalStage ? 'WORLD 1 COMPLETE!' : 'STAGE CLEAR!'}</span>
-          <h2>${isFinalStage ? '🎉 수인숲 나들이 전체 완주 완료!' : `✨ ${stg.name} 클리어!`}</h2>
+          <span class="wmEyebrow">${isFinalStage ? '월드 1 완주 달성' : '스테이지 클리어'}</span>
+          <h2>${isFinalStage ? '수인숲 나들이 전체 완주!' : `${stg.name} 클리어`}</h2>
         </div>
       </div>
       <p class="wmClearSummary">
@@ -1999,7 +1999,7 @@ function renderWorld1ClearModal(stg, rec, hasNextStage, exitRoute = 'default', n
       <div class="wmClearBtnRow">
         ${hasNextStage ? `<button type="button" class="primary" id="wmNextStageBtn" onclick="startWorld1StageFromMenu(${nextIdx}, true, '${nextEntryRoute}')">다음 스테이지 (1-${nextIdx + 1}${nextEntryRoute === 'upper' ? ' · 상단 루트' : (nextEntryRoute === 'lower' ? ' · 하단 루트' : '')}) 시작 →</button>` : ''}
         <button type="button" class="secondary" id="wmReturnStageSelectBtn" onclick="openWorld1StageSelect()">스테이지 선택 화면으로</button>
-        <button type="button" class="secondary" id="wmReturnWorldMapBtn" onclick="openWorldMapMenu({forceDevOpen:true})">🗺️ 월드맵으로 복귀</button>
+        <button type="button" class="secondary" id="wmReturnWorldMapBtn" onclick="openWorldMapMenu({forceDevOpen:true})">세계지도로</button>
         <button type="button" class="secondary" id="wmReplayCurrentStageBtn" onclick="loadWorld1Stage(${activeWorldStageIndex}, {section:0, entryRoute:'${activeWorldEntryRoute}'})">↻ 다시 플레이</button>
       </div>
     </div>

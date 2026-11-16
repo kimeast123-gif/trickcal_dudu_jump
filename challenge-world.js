@@ -919,7 +919,7 @@ challengeD2Levels.push(chStageD2_2);
 //     - 좌/우 하단 전환 발판 `D2-3-B-LOW-L`, `D2-3-B-LOW-R` + 삼각 징검발판 `D2-3-B-STEP-L`, `D2-3-B-STEP-R`, `D2-3-B-STEP-C`
 //     - 우측 마요 2명 `D2-3-M5` (하단 ←), `D2-3-M6` (상단 ←)
 //   * C구간 (최상단 좌측 마요 2명·우측 마요 1명 + 유사 속도 수직 왕복 발판 2개 + 중앙 고정 차단 구조물 + 상단 중앙 골인):
-//     - 중앙 고정 차단 구조물 없음 (사용자 QA 요청에 따라 제거됨)
+//     - 중앙 고정 차단 구조물 `D2-3-C-BLOCK` (x=795, y=-1230, w=170, h=450, 숲 지형 스킨 접합 · 중앙 직상승 스킵 차단)
 //     - 좌측 수직 왕복 발판 `D2-3-VL` (axis='y', range=220, period=4.80, 평균속도 183.3px/s)
 //     - 우측 수직 왕복 발판 `D2-3-VR` (axis='y', range=220, period=5.00, 평균속도 176.0px/s · 속도차 4.0%)
 //     - 좌측 마요 2명 `D2-3-M7` (하단 →), `D2-3-M8` (상단 →) + 우측 마요 1명 `D2-3-M9` (상단 ←)
@@ -1061,7 +1061,14 @@ chSurface(chStageD2_3, 1106, -535, 88, 'grass', {
   role: 'M6 B구간 우측 위 마요 포대 전용 비충돌 받침대'
 });
 
-// --- C구간: 최상단 좌우 마요 3명 + 수직 왕복 플랫폼 2개 + 최상단 골인 (y = -760 -> -1330) ---
+// --- C구간: 최상단 좌우 마요 3명 + 수직 왕복 플랫폼 2개 + 중앙 차단 구조물 + 최상단 골인 (y = -760 -> -1330) ---
+// 중앙 고정 차단 구조물 (`D2-3-C-BLOCK`, 숲 지형 스킨 접합 · 중앙 직상승 스킵 원천 차단)
+chSurface(chStageD2_3, 560, -1230, 160, 'grass', {
+  id: 'D2-3-C-BLOCK', tier: 4, h: 450, thin: false, wall: true, noTopLand: true,
+  sketchRegion: 'C', previous: 'NONE', nextTarget: 'NONE',
+  role: 'C구간 중앙 세로형 고정 차단 구조물 (숲 지형 스킨 접합 · 하단 직상승 골인 차단)'
+});
+
 // 좌/우 수직 왕복 플랫폼 2개 (`D2-3-VL`, `D2-3-VR` — 평균속도 183.3px/s vs 176.0px/s, 속도차 4.0%)
 chSurface(chStageD2_3, 340, -980, 120, 'grass', {
   id: 'D2-3-VL', tier: 4, useSmallVisual: true, behavior: 'moving', noGuideLine: true,

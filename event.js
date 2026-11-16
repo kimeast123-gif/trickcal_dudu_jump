@@ -115,18 +115,39 @@ function setStoryCinemaVideo(kind,session){
  const v=$('storyVideo'),story=$('story');
  if(!v||!story)return;
  const filename=storyCinemaByKind[kind];
- if(!filename)return;
- v.onloadeddata=()=>{
-  if(storySessionId!==session||activeStoryKind!==kind)return;
+ if(!filename){story.classList.remove('cinema-loading');return;}
+ let settled=false;
+ const isCurrent=()=>storySessionId===session&&activeStoryKind===kind;
+ const revealFrame=()=>{
+  if(settled||!isCurrent())return;
+  settled=true;
   story.classList.add('hasVideo');
+  story.classList.remove('cinema-loading');
  };
- v.onerror=()=>{if(storySessionId===session){story.classList.remove('hasVideo');}};
+ const showMatchingStill=()=>{
+  if(settled||!isCurrent())return;
+  settled=true;
+  v.pause();
+  v.onloadeddata=null;v.onerror=null;
+  v.removeAttribute('src');v.load();
+  story.classList.remove('hasVideo','cinema-loading');
+ };
+ v.onloadeddata=()=>{
+  if(!isCurrent()||settled)return;
+  // Never expose an uninitialized video frame or the previous scene's cached frame.
+  if(typeof v.requestVideoFrameCallback==='function'){
+   v.requestVideoFrameCallback(()=>{revealFrame();});
+  }else{
+   requestAnimationFrame(()=>{revealFrame();});
+  }
+ };
+ v.onerror=showMatchingStill;
  v.muted=true;v.playsInline=true;v.loop=false;v.preload='auto';
- v.src=storyCinemaRoot+filename+'?v=27_ending';
+ v.src=storyCinemaRoot+filename+'?v=261116_cinema_f2';
  v.load();
- // Keep original event.png visible until the movie has a decoded first frame.
- // After the last video frame, leave it on screen (do not restart with a visible jump).
- v.play().catch(()=>{story.classList.remove('hasVideo');});
+ v.play().catch(showMatchingStill);
+ // Slow/unavailable videos settle on the correct still without a later flash to MP4.
+ setTimeout(showMatchingStill,2400);
 }
 function showGoldRewardArtwork(){
  storyRewardShowing=true;
@@ -193,33 +214,25 @@ function showStory(kind){
  const baseEl=$('storyBase'),motionEl=$('storyMotion'),storyEl=$('story');
  $('storyText').textContent='';
  $('storyHint').textContent='클릭 · 대사 완성 / 다음';
- const reveal=()=>{
-  if(session!==storySessionId||activeStoryKind!==kind)return;
-  $('launchScene').hidden=true;
-  $('launchScene').classList.remove('starting');
-  $('overlay').hidden=true;
-  storyEl.className='story '+kind;
-  storyEl.hidden=false;
-  storyEl.focus();
-  if(storyScript.length)syncStoryScriptStep();
-  // Video is always muted; preserve the existing opening/ending BGM tracks.
-  setStoryCinemaVideo(kind,session);
-  if(kind==='special'){
-   const reward=$('storyRewardArt');
-   if(reward&&!reward.getAttribute('src'))reward.src=reward.dataset.src;
-   notify(`황금 크레파스 ${TOTAL_SPECIAL_COINS}/${TOTAL_SPECIAL_COINS} 올 컬렉션 달성! 전용 엔딩 연출로 연결됩니다.`);
-  }
- };
+ // Commit the correct scene in the same JS turn: never uncover the canvas or the
+ // old lobby/intro while waiting for an image load or MP4 decode.
+ $('launchScene').hidden=true;
+ $('launchScene').classList.remove('starting');
+ $('overlay').hidden=true;
+ storyEl.className='story '+kind+' cinema-loading';
+ storyEl.hidden=false;
  baseEl.src=src;
  motionEl.src=src;
- if(baseEl.complete&&motionEl.complete){
-  reveal();
- }else{
-  let done=false;
-  const check=()=>{if(!done&&baseEl.complete&&motionEl.complete){done=true;reveal();}};
-  baseEl.onload=check;motionEl.onload=check;
-  setTimeout(()=>{if(!done){done=true;reveal();}},120);
+ storyEl.focus();
+ if(storyScript.length)syncStoryScriptStep();
+ if(kind==='special'){
+  const reward=$('storyRewardArt');
+  if(reward&&!reward.getAttribute('src'))reward.src=reward.dataset.src;
+  notify(`황금 크레파스 ${TOTAL_SPECIAL_COINS}/${TOTAL_SPECIAL_COINS} 올 컬렉션 달성! 전용 엔딩 연출로 연결됩니다.`);
  }
+ // Display the film only after its *own* decoded first frame. Matching PNG is
+ // reserved for genuine video failure, not for a brief visual flash.
+ setStoryCinemaVideo(kind,session);
 }
 
 function finishStoryModal(){
@@ -233,15 +246,15 @@ function finishStoryModal(){
  state='eventDone';
  const wmUnlocked=(typeof isWorldMapUnlocked==='function')&&isWorldMapUnlocked();
  modal(
-  wasSpecial?'황금 크레파스 올 컬렉션 달성!':wasCandy?'왕사탕 올 컬렉션 달성!':'산책 이야기 끝',
+  wasSpecial?'올 컬렉션':wasCandy?'왕사탕 올 컬렉션':'모험 완료',
   wasLate?'조금 늦어버렸어요':wasSpecial?'두두, 모든 황금 크레파스를 선물하러 가요!':wasCandy?'두두, 왕사탕을 하나도 놓치지 않았어요!':'두두, 무사히 집에 도착!',
-  `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wmUnlocked?'✨ <b>월드맵이 영구 해금되었습니다!</b> 월드맵으로 이동하거나 스토리를 다시 즐길 수 있어요.':'시간 초과(late)로 인해 월드맵이 해금되지 않았습니다. 제한 시간 안에 엄마의 방에 도착해 보세요!'}`,
-  wmUnlocked?'🗺️ 월드맵으로 가기':'다시 산책하기 →'
+  `남은 시간 <b>${clockText(wasLate?0:LIMIT-eventElapsed)}</b> · 황금 크레파스 <b>${secCount}/${TOTAL_SPECIAL_COINS}</b> · 왕사탕 <b>${candyCount}/${candyTotal}</b><br>${wmUnlocked?'월드맵 해금 완료':'제한 시간 안에 도착하면 월드맵이 해금됩니다.'}`,
+  wmUnlocked?'월드맵':'다시 시작'
  );
  if(wmUnlocked){
   $('start').onclick=()=>{openWorldMapMenu();};
   $('restart').hidden=false;
-  $('restart').textContent='스토리 다시하기 →';
+  $('restart').textContent='스토리 다시하기';
   $('restart').onclick=()=>{ $('start').onclick=()=>start(); beginEvent(); };
  }else{
   $('start').onclick=()=>start();

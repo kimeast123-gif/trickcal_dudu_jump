@@ -908,29 +908,24 @@ body[data-game-state="ready"] .practiceHUD {
 }
 
 /* ============================================================================
-   5. IN-GAME OPTIONS -> `로비로 복귀` BUTTON & CONFIRMATION DIALOG (§5-5 C04)
+   5. IN-GAME OPTIONS -> `로비로 복귀` BUTTON & CONFIRMATION DIALOG
    ============================================================================ */
 .returnLobbyOptBtn {
-  background: linear-gradient(180deg, #ff9248 0%, #e05e1b 100%) !important;
-  border: 1.5px solid #ffd8a8 !important;
-  color: #fffdf5 !important;
-  border-radius: 999px !important;
-  padding: 8px 16px !important;
-  font-family: var(--lobby-font) !important;
-  font-size: 13px !important;
-  font-weight: 400 !important;
-  box-shadow: 0 3px 0 #8f3608 !important;
+  background: #F2EDE2;
+  border: 1px solid rgba(41, 55, 46, 0.20);
+  color: #29372E;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: none;
   cursor: pointer;
-  transition: transform 120ms ease, filter 120ms ease;
+  transition: background-color 160ms ease;
 }
 
 .returnLobbyOptBtn:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-
-.returnLobbyOptBtn:active {
-  transform: translateY(1px);
+  background: #E6DFD1;
 }
 
 .returnLobbyConfirmModal {
@@ -939,87 +934,89 @@ body[data-game-state="ready"] .practiceHUD {
   z-index: 28;
   display: grid;
   place-items: center;
-  background: rgba(8, 18, 14, 0.72);
-  backdrop-filter: blur(4px);
-  padding: 18px;
+  background: rgba(20, 30, 24, 0.56);
+  backdrop-filter: blur(3px);
+  padding: 16px;
 }
 
 .returnLobbyConfirmCard {
-  width: min(410px, 92%);
-  background: #fffdf6;
-  border: 3px solid #6b965e;
-  border-radius: 24px;
+  width: min(400px, 92%);
+  background: #FAF6EE;
+  border: 1.5px solid rgba(41, 55, 46, 0.18);
+  border-radius: 20px;
   padding: 22px 24px 18px;
   text-align: center;
-  color: #243627;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.52);
-  font-family: var(--lobby-font) !important;
+  color: #29372E;
+  box-shadow: 0 14px 36px rgba(20, 32, 24, 0.26);
 }
 
 .returnLobbyConfirmCard h4 {
-  margin: 0 0 10px;
-  font-size: 20px;
+  margin: 0 0 8px;
+  font-family: var(--lobby-font);
+  font-size: 19px;
   font-weight: 400;
-  color: #1f3624;
+  color: #29372E;
 }
 
 .returnLobbyConfirmCard p {
-  margin: 0 0 18px;
-  font-size: 13.5px;
+  margin: 0 0 16px;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+  font-size: 13px;
   line-height: 1.55;
-  color: #495e4c;
+  color: #68756A;
 }
 
 .returnLobbyConfirmActions {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .returnLobbyConfirmActions button {
-  min-width: 120px;
-  min-height: 42px;
-  padding: 9px 18px !important;
-  border-radius: 999px !important;
-  font-family: var(--lobby-font) !important;
-  font-size: 14px !important;
-  font-weight: 400 !important;
+  min-width: 112px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .btnCancelReturnLobby {
-  background: #eef5ea !important;
-  border: 1.5px solid #bdd4b5 !important;
-  color: #2c4730 !important;
+  background: #F2EDE2;
+  border: 1px solid rgba(41, 55, 46, 0.18);
+  color: #29372E;
 }
 
 .btnConfirmReturnLobby {
-  background: linear-gradient(180deg, #ff883d 0%, #d95316 100%) !important;
-  border: 1.5px solid #ffd8a8 !important;
-  color: #fffdf5 !important;
-  box-shadow: 0 3px 0 #8a3208 !important;
+  background: #BC6057;
+  border: 1px solid transparent;
+  color: #FAF6EE;
 }
 
 /* ============================================================================
-   6. LOBBY LOCK TOAST & LIGHTWEIGHT KEY HELP PANEL (`.lobbyPanelHost`)
+   6. LOBBY LOCK TOAST & UNIFIED WARM CREAM KEY HELP PANEL (`.lobbyPanelHost`)
    ============================================================================ */
 .lobbyToastBanner {
   position: absolute;
   left: 50%;
   bottom: 4.5%;
-  transform: translateX(-50%) translateY(12px);
-  background: rgba(14, 34, 28, 0.94);
-  border: 2px solid #9ef868;
-  color: #fffdf5;
-  padding: 10px 22px;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(33, 47, 38, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #FAF6EE;
+  padding: 9px 20px;
   border-radius: 999px;
-  font-size: clamp(12px, 1.2vw, 15.5px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 16px rgba(158, 248, 104, 0.32);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+  font-size: clamp(12px, 1.1vw, 14px);
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
   z-index: 22;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition: opacity 180ms ease, transform 180ms ease;
   white-space: nowrap;
 }
 
@@ -1034,9 +1031,9 @@ body[data-game-state="ready"] .practiceHUD {
   z-index: 20;
   display: grid;
   place-items: center;
-  background: rgba(6, 18, 18, 0.68);
-  backdrop-filter: blur(4px);
-  padding: 18px;
+  background: rgba(20, 30, 24, 0.56);
+  backdrop-filter: blur(3px);
+  padding: 16px;
   animation: lobbyFadeIn 180ms ease both;
 }
 
@@ -1044,42 +1041,57 @@ body[data-game-state="ready"] .practiceHUD {
   width: min(560px, 92%);
   max-height: 88%;
   overflow-y: auto;
-  background: linear-gradient(180deg, #13352f 0%, #0c2422 100%);
-  border: 2.5px solid #8cf59e;
-  border-radius: 26px;
+  background: #FAF6EE;
+  border: 1.5px solid rgba(41, 55, 46, 0.18);
+  border-radius: 20px;
   padding: 20px 24px 18px;
-  color: #f6fff8;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.62), 0 0 24px rgba(112, 245, 152, 0.25);
+  color: #29372E;
+  box-shadow: 0 14px 36px rgba(20, 32, 24, 0.28);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
 }
 
 .lobbyKeyHelpHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1.5px solid rgba(140, 245, 158, 0.28);
+  border-bottom: 1px solid rgba(41, 55, 46, 0.12);
   padding-bottom: 10px;
   margin-bottom: 14px;
 }
 
 .lobbyKeyHelpHeader h3 {
   margin: 0;
-  font-size: clamp(18px, 1.8vw, 23px);
+  font-family: var(--lobby-font);
+  font-size: clamp(17px, 1.7vw, 21px);
   font-weight: 400;
-  color: #e8ff98;
+  color: #29372E;
 }
 
 .lobbyKeyHelpCloseBtn {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border: 1.5px solid rgba(180, 255, 195, 0.55) !important;
-  color: #fffdf5 !important;
-  border-radius: 999px !important;
-  padding: 6px 14px !important;
-  font-size: 13px !important;
+  background: #F2EDE2;
+  border: 1px solid rgba(41, 55, 46, 0.18);
+  color: #29372E;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 160ms ease;
 }
 
 .lobbyKeyHelpCloseBtn:hover {
-  background: rgba(140, 245, 158, 0.28) !important;
+  background: #E6DFD1;
+}
+
+#confirmLobbyKeyHelpBtn {
+  background: #5F965B;
+  border-color: transparent;
+  color: #FAF6EE;
+}
+
+#confirmLobbyKeyHelpBtn:hover {
+  background: #52854E;
 }
 
 .lobbyKeyGrid {
@@ -1089,17 +1101,17 @@ body[data-game-state="ready"] .practiceHUD {
 }
 
 .lobbyKeySection {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(162, 242, 178, 0.26);
-  border-radius: 16px;
+  background: #F2EDE2;
+  border: 1px solid rgba(41, 55, 46, 0.10);
+  border-radius: 14px;
   padding: 12px 14px;
 }
 
 .lobbyKeySection h4 {
   margin: 0 0 10px;
-  font-size: 14px;
-  font-weight: 400;
-  color: #9ef87a;
+  font-size: 13px;
+  font-weight: 700;
+  color: #29372E;
 }
 
 .lobbyKeyRow {
@@ -1108,8 +1120,9 @@ body[data-game-state="ready"] .practiceHUD {
   justify-content: space-between;
   gap: 8px;
   padding: 5px 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.10);
+  border-bottom: 1px solid rgba(41, 55, 46, 0.08);
   font-size: 12.5px;
+  color: #29372E;
 }
 
 .lobbyKeyRow:last-child {
@@ -1118,54 +1131,69 @@ body[data-game-state="ready"] .practiceHUD {
 
 .lobbyKeyBadge {
   display: inline-block;
-  padding: 3px 9px;
-  border-radius: 8px;
-  background: rgba(224, 255, 148, 0.18);
-  border: 1px solid rgba(212, 255, 148, 0.55);
-  color: #f2ffad;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #FFFFFF;
+  border: 1px solid rgba(41, 55, 46, 0.18);
+  color: #29372E;
   font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .lobbyKeyFooter {
   margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(41, 55, 46, 0.10);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   font-size: 11.5px;
-  color: rgba(215, 245, 224, 0.80);
+  color: #68756A;
 }
 
 /* ============================================================================
-   7. RESPONSIVE MOBILE LANDSCAPE (`844x390` / `800x450`) & REDUCED MOTION
+   7. RESPONSIVE MOBILE LANDSCAPE (`844x390` / `740x320`) & REDUCED MOTION
    ============================================================================ */
 @media (max-height: 500px), (max-width: 920px) {
   .lobbyMenu {
     right: 2.2%;
-    top: 8.5%;
-    bottom: 6.5%;
-    width: min(33.0%, 296px);
-    min-width: 192px;
+    top: 8.0%;
+    bottom: 6.0%;
+    width: min(32.5%, 280px);
+    min-width: 184px;
     gap: 5px;
   }
-  .lobbyMenuBtnWrap {
-    min-height: 44px;
+  .lobbyMenuBtnWrap,
+  .lobbyMenuBtnWrap[style*="--btn-idx:0"],
+  .lobbyMenuBtnWrap[style*="--btn-idx:3"],
+  .lobbyMenuBtnWrap[style*="--btn-idx:4"] {
+    height: auto;
+    flex: 1 1 0;
+    min-height: 36px;
+    max-height: 48px;
+    margin-bottom: 0;
   }
   .lobbyCapsuleBtn {
-    min-height: 44px;
-    padding: 0 14px 0 12px !important;
-    font-size: clamp(13.5px, 1.9vw, 17px) !important;
-    gap: 8px !important;
+    min-height: 36px;
+    padding: 0 12px 0 10px;
+    border-radius: 11px;
+    font-size: clamp(13px, 1.8vw, 16px);
+    gap: 8px;
   }
   .lobbyCapsuleBtn.btn-play {
-    font-size: clamp(14.5px, 2.1vw, 18.5px) !important;
+    font-size: clamp(14px, 2.0vw, 17.5px);
+  }
+  .lobbyCapsuleBtn.btn-keyhelp,
+  .lobbyCapsuleBtn.btn-options {
+    font-size: clamp(12.5px, 1.65vw, 15px);
   }
   .lobbyBtnIcon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
-  .lobbyStickerItem { width: 100%; }
-  .lobbyCelestialSticker { width: 78%; height: 78%; }
   .lobbyKeyGrid {
     grid-template-columns: 1fr;
   }
@@ -1177,11 +1205,83 @@ body[data-game-state="ready"] .practiceHUD {
   display: none !important;
 }
 
-/* [v5 §4.3 & §4.4 L14] Keep lobby animations, 7-scene cross-dissolve, and 35s Day/Night transitions
-   active even when Windows OS "Show animations in Windows" is turned off (prefers-reduced-motion: reduce),
-   only toning down fast exit/entry scale jumps. */
 @media (prefers-reduced-motion: reduce) {
   .lobbySlideLayer {
     transition: opacity var(--lobby-slide-dissolve-ms) ease-in-out !important;
   }
+}
+
+/* ============================================================================
+   FIX4 · 2026-11-16 · Restore original bright, large capsule buttons and hover
+   while keeping the FIX3 dispersed menu spacing and smaller mobile layout.
+   Important: Only title lobby presentation changes. Game mechanics untouched.
+   ============================================================================ */
+.lobbyMenu {
+  right: 3%;
+  top: 13%;
+  bottom: 10%;
+  width: min(29.8%, 408px);
+  justify-content: space-between;
+  gap: clamp(10px, 1.7vh, 16px);
+}
+.lobbyMenuBtnWrap {
+  flex: 0 1 72px;
+  height: clamp(54px, 9.3vh, 74px);
+  max-height: 74px;
+  min-height: 44px;
+  margin-bottom: 0;
+}
+.lobbyMenuBtnWrap[style*="--btn-idx:0"] {
+  flex-basis: 76px;
+  max-height: 76px;
+}
+.lobbyCapsuleBtn {
+  transform-origin: 50% 50%;
+}
+.lobbyCapsuleBtn:focus-visible {
+  outline: 2px solid #ffe78a;
+  outline-offset: 3px;
+}
+@media (max-height: 500px), (max-width: 920px) {
+  .lobbyMenu {
+    right: 2.2%;
+    top: 6%;
+    bottom: 6%;
+    width: min(33.0%, 296px);
+    min-width: 192px;
+    gap: 6px;
+    justify-content: space-between;
+  }
+  .lobbyMenuBtnWrap,
+  .lobbyMenuBtnWrap[style*="--btn-idx:0"] {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 34px;
+    max-height: 49px;
+  }
+  .lobbyCapsuleBtn {
+    min-height: 34px;
+    padding: 0 12px 0 10px !important;
+    font-size: clamp(13px, 1.85vw, 17px) !important;
+    gap: 8px !important;
+  }
+  .lobbyCapsuleBtn.btn-play {
+    font-size: clamp(14px, 2.0vw, 19px) !important;
+  }
+  .lobbyBtnIcon { width: 22px; height: 22px; }
+  .lobbyBtnLabel { padding-right: 3px; }
+  .lobbyCapsuleBtn:hover:not(:disabled),
+  .lobbyCapsuleBtn:focus-visible:not(:disabled),
+  .lobbyCapsuleBtn.is-hovered:not(:disabled) {
+    transform: translate3d(-3px,-1px,0) scale(1.025) !important;
+  }
+}
+@media (max-height: 350px) {
+  .lobbyMenu { gap: 4px; }
+  .lobbyMenuBtnWrap,
+  .lobbyMenuBtnWrap[style*="--btn-idx:0"] {
+    min-height: 30px;
+    max-height: 44px;
+  }
+  .lobbyCapsuleBtn { min-height: 30px; }
 }
