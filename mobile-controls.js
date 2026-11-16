@@ -413,7 +413,17 @@ function duduKeyText(text) {
 }
 window.duduKeyText = duduKeyText;
 
+// v1.4: the summary is rebuilt only when a binding actually changes (it was rebuilt several times per frame).
+const _kbSummaryCache = { keys: null, val: null };
 function getKeybindSummaryLabels() {
+  const k = pcKeybinds, c = _kbSummaryCache.keys;
+  if (c && c[0] === k.MOVE_LEFT && c[1] === k.MOVE_RIGHT && c[2] === k.DOWN_LOOK && c[3] === k.JUMP && c[4] === k.DASH && c[5] === k.RETRY && c[6] === k.PAUSE) return _kbSummaryCache.val;
+  const val = computeKeybindSummaryLabels();
+  _kbSummaryCache.keys = [k.MOVE_LEFT, k.MOVE_RIGHT, k.DOWN_LOOK, k.JUMP, k.DASH, k.RETRY, k.PAUSE];
+  _kbSummaryCache.val = val;
+  return val;
+}
+function computeKeybindSummaryLabels() {
   const l = formatKeyCodeLabel(pcKeybinds.MOVE_LEFT);
   const r = formatKeyCodeLabel(pcKeybinds.MOVE_RIGHT);
   const d = formatKeyCodeLabel(pcKeybinds.DOWN_LOOK);
@@ -1312,6 +1322,10 @@ function setupTouchInputLayer() {
     document.addEventListener(type, e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   }
   document.addEventListener('dblclick', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  // iOS loupe and callout: block text selection and the long-press menu while the game is in landscape play.
+  const inGame = () => document.body.classList.contains('mobile-game-landscape');
+  document.addEventListener('selectstart', e => { if (inGame() && !(e.target.closest && e.target.closest('input, textarea'))) e.preventDefault(); });
+  document.addEventListener('contextmenu', e => { if (inGame()) e.preventDefault(); });
   // Two-finger pinch on browsers without gesture events
   document.addEventListener('touchmove', e => {
     if (e.touches && e.touches.length > 1 && e.scale !== undefined && e.scale !== 1 && e.cancelable) e.preventDefault();

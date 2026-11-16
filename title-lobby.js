@@ -425,7 +425,7 @@
     const confirmModal = $id('returnToLobbyConfirmModal');
     if (!retBtn) return;
     const isPausedNow = typeof state !== 'undefined' && state === 'paused' && !isLobbyCurrentlyActive();
-    retBtn.hidden = !isPausedNow;
+    if (retBtn.hidden !== !isPausedNow) retBtn.hidden = !isPausedNow;
     if (!isPausedNow && confirmModal && !confirmModal.hidden) {
       confirmModal.hidden = true;
     }

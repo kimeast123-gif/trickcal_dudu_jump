@@ -438,6 +438,18 @@ function computeInitialCameraForPoint(px,py){
 
 function platformStep(){
  for(const a of platforms){
+  // v1.4: platforms that neither move nor blink keep their values; rewriting the same decimals 120 times a second
+  // for ~200 platforms made the engine allocate a fresh number box each time (about 1MB of garbage per second).
+  if(!a.motion&&!a.blink){
+   if(a.prevX!==a.x)a.prevX=a.x;
+   if(a.prevY!==a.y)a.prevY=a.y;
+   const col=!(a.nonCollidable||a.hidden);
+   if(a.collidable!==col)a.collidable=col;
+   if(a.blinkState!=='on'){a.blinkState='on';a.blinkAlpha=1;a.blinkRemaining=0;a.blinkStateProgress=0;a.blinkImminent=false;}
+   if(a.dx!==0)a.dx=0;
+   if(a.dy!==0)a.dy=0;
+   continue;
+  }
   a.prevX=a.x;
   a.prevY=a.y;
   if(a.motion){
@@ -1051,6 +1063,8 @@ function update(dt){
   camY+=(desiredY-camY)*(1-Math.exp(-dt*7.2));
  }
 
+ // v1.4: HUD text and bars are refreshed once per rendered frame, not on every 120Hz physics step.
+ if(window.__hudFrame!==debugMetrics.renderFrames){window.__hudFrame=debugMetrics.renderFrames;
  let progPct=0;
  if(typeof gameMode!=='undefined'&&(gameMode==='challenge'||gameMode==='world')){
   progPct=Math.max(0,Math.min(100,(p.x/Math.max(1,END))*100));
@@ -1063,7 +1077,7 @@ function update(dt){
   }
   progPct=totalW>0?((prefixW+p.x)/totalW*100):0;
  }
- const nextProgStr=progPct.toFixed(2)+'%';
+ const nextProgStr=(Math.round(progPct*4)/4).toFixed(2)+'%';// v1.4: quarter-percent steps, so the bar is not rewritten every frame
  if(_hudDomCache.progW!==nextProgStr){_hudDomCache.progW=nextProgStr;$('progress').style.width=nextProgStr;}
  const kb=(typeof getKeybindSummaryLabels==='function')?getKeybindSummaryLabels():{dash:'L SHIFT',j:'SPACE',d:'↓'};
  const nextDashTxt=p.guardStun>0?`경직 중 (${p.guardStun.toFixed(1)}s)`:p.dash>0?'대시 중':p.airDashUsed&&!p.ground?'대시 (착지 후 충전)':p.dashCooldown>0?'대시 충전 중':`${kb.dash} 대시 준비됨`;
@@ -1072,6 +1086,7 @@ function update(dt){
  if(_hudDomCache.jumpW!==nextJumpW){_hudDomCache.jumpW=nextJumpW;$('jumpMeter').style.width=nextJumpW;}
  const nextJumpTxt=lookDownHold>0.10?`${kb.d} 아래쪽을 살펴보는 중`:`${kb.j} 점프, ${kb.d} 아래보기`;
  if(_hudDomCache.jumpTxt!==nextJumpTxt){_hudDomCache.jumpTxt=nextJumpTxt;$('jumpInfo').textContent=nextJumpTxt;}
+ }
  updateRest(dt,dir);updateShadow(dt);updateAnimation(dt);
  if(dashing)trail.push({x:p.x,y:p.y,life:.13,face:p.dashDir});
  if(trail.length){

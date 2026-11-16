@@ -276,6 +276,10 @@ function getPrescaledPanorama(bgKey, im) {
   octx.imageSmoothingEnabled = true;
   octx.imageSmoothingQuality = 'high';
   octx.drawImage(im, 0, 0, effectiveImgW, im.height, 0, 0, scaledW, targetH);
+  // v1.4: split the cache into GPU-friendly tiles right away, then release the oversized canvas.
+  if (scaledW > 4096 && typeof window.duduTileSource === 'function') {
+    window.duduTileSource(off, true);
+  }
   cached = { canvas: off, width: scaledW, height: targetH, lastUsed: ++_panoramaCacheClock };
   _prescaledPanoramaCache[cacheKey] = cached;
   prunePanoramaCanvasCache(cacheKey);
@@ -1189,10 +1193,16 @@ function drawMonatiumRoadPavementTransitionSeam(seamX, seamY) {
 
 // RENEWAL: gaps between ground slabs fall into shadow, so a pit reads as a drop instead of a lower meadow.
 function drawPitShade(viewW, viewH) {
+  if (window.duduLightMode) return;
   if (typeof gameMode !== 'undefined' && gameMode !== 'story') return;
-  const grounds = platforms
-    .filter(a => a.groundTile && a.y >= 480 && a.y <= 600 && a.x + a.w >= rCam - 400 && a.x <= rCam + viewW + 400)
-    .sort((a, b) => a.x - b.x);
+  // v1.4: the sorted ground list is built once per map, not every frame
+  if (drawPitShade._src !== platforms || drawPitShade._len !== platforms.length) {
+    drawPitShade._src = platforms; drawPitShade._len = platforms.length;
+    drawPitShade._all = platforms.filter(a => a.groundTile && a.y >= 480 && a.y <= 600).sort((a, b) => a.x - b.x);
+  }
+  const all = drawPitShade._all, lo = rCam - 400, hi = rCam + viewW + 400;
+  const grounds = [];
+  for (const a of all) { if (a.x + a.w >= lo && a.x <= hi) grounds.push(a); }
   if (grounds.length < 2) return;
   const bottom = rCamY + viewH + 40;
   for (let i = 0; i < grounds.length - 1; i++) {
@@ -1362,7 +1372,7 @@ function drawGroundVisual(a, drawX, drawY) {
   }
 
   // RENEWAL: depth shading. Soil darkens with depth and sits in the lip's shadow, so slabs stop looking pasted on.
-  {
+  if (!window.duduLightMode) {
     const shX1 = drawX + (showCliffLeft ? Math.round(clW * 0.12) : 0);
     const shX2 = drawX + a.w - (showCliffRight ? Math.round(crW * 0.12) : 0);
     const vx1 = Math.max(shX1, Math.floor(viewLeft)), vx2 = Math.min(shX2, Math.ceil(viewRight));
@@ -2132,6 +2142,7 @@ function drawHomeDoor(goal) {
 // v1.2: the first and last stretch of every story map fades into the same soft cloud white the region transition uses,
 // so walking off one map and into the next reads as one continuous journey rather than a hard border.
 function drawMapEdgeMist() {
+  if (window.duduLightMode) return;
   if (typeof gameMode !== 'undefined' && gameMode !== 'story') return;
   if (state !== 'playing' && state !== 'regionTransition' && state !== 'paused') return;
   const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;

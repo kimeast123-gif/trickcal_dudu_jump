@@ -1400,10 +1400,15 @@ function syncSpecialCoinPositions(){
  if(typeof specialCoins==='undefined'||!specialCoins.length)return;
  for(const sc of specialCoins){
   if(sc.parentPlatformId){
-   const pl=platforms.find(a=>a.id===sc.parentPlatformId);
+   // v1.4: remember the parent platform instead of searching ~200 platforms every physics step
+   if(sc.__parentSrc!==platforms||!sc.__parent||sc.__parent.id!==sc.parentPlatformId){
+    sc.__parent=platforms.find(a=>a.id===sc.parentPlatformId)||null;sc.__parentSrc=platforms;
+   }
+   const pl=sc.__parent;
    if(pl){
-    sc.x=Math.round(pl.x+(sc.localOffsetX||0));
-    sc.y=Math.round(pl.y+(sc.localOffsetY||0));
+    const nx=Math.round(pl.x+(sc.localOffsetX||0)),ny=Math.round(pl.y+(sc.localOffsetY||0));
+    if(sc.x!==nx)sc.x=nx;
+    if(sc.y!==ny)sc.y=ny;
    }
   }
  }
@@ -1626,6 +1631,11 @@ function regionTick(dt){
   // v1.2: stay behind the clouds until the next map's backgrounds are decoded (up to 3s), so no placeholder flashes.
   const tl=levels[tr.target];
   const bgReady=!tl||(tl.segments||[]).every(sg=>!sg.bg||worldImages[sg.bg]);
+  if(bgReady&&tl&&!tr.prewarmed&&typeof getPrescaledPanorama==='function'){
+   // v1.4: build the next map's scaled backgrounds now, while the clouds hide the screen, not on its first visible frame
+   tr.prewarmed=true;
+   for(const sg of (tl.segments||[]))if(sg.bg&&worldImages[sg.bg]){try{getPrescaledPanorama(sg.bg,worldImages[sg.bg]);}catch(e){}}
+  }
   if(tr.phaseTime>=tr.holdDur&&(bgReady||tr.phaseTime>=3)){
    if(typeof computeInitialCameraForPoint==='function'){
     try{const c=computeInitialCameraForPoint(p.x,p.y);if(c){cam=c.cam??cam;camY=c.camY??camY;}}catch(err){}
