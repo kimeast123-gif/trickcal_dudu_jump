@@ -1173,7 +1173,7 @@ function triggerMayoCatchReset(a){
    mayoAfter.x=Math.max(minChaseX,p.x-480);
    mayoAfter.prevX=mayoAfter.x;
    mayoAfter.y=580;
-   mayoAfter.prevY=580;
+   mayoAfter.prevY=580;mayoAfter.vy=0;mayoAfter.inAir=false;mayoAfter.supportRef=null;mayoAfter.supportHold=0;// v1.4.1: clear mid-jump state on reset
    mayoAfter.phase='chase';
    mayoAfter.fireCooldown=2.2;
   }else if(p.x<e.mayoActivateX){
@@ -1182,7 +1182,7 @@ function triggerMayoCatchReset(a){
    mayoAfter.x=e.mayoSpawnX??820;
    mayoAfter.prevX=mayoAfter.x;
    mayoAfter.y=580;
-   mayoAfter.prevY=580;
+   mayoAfter.prevY=580;mayoAfter.vy=0;mayoAfter.inAir=false;mayoAfter.supportRef=null;mayoAfter.supportHold=0;// v1.4.1: clear mid-jump state on reset
   }
  }
  notify('마요에게 붙잡혔어요! 체크포인트에서 다시 출발합니다.');
@@ -1528,7 +1528,7 @@ function updateMayo(a,dt){
    const safeSpawnX = Math.max(minChaseX, Math.min(e.mayoSpawnX ?? 820, p.x - 650));
    a.x=safeSpawnX;
    a.prevX=a.x;
-   a.y=580;a.prevY=580;a.vy=0;a.inAir=false;
+   a.y=580;a.prevY=580;a.vy=0;a.inAir=false;a.supportRef=null;a.supportHold=0;
    a.currentSpeed=prof.speedClose;
    a.spawnGrace=1.40;
    a.phase='chase';
@@ -1624,13 +1624,16 @@ function updateMayo(a,dt){
   a.y=Math.min(565,a.y+a.vy*dt);
  }
 
- if(p.x-a.x>760&&a.x<rCam-50){
-  const safeBehindX=Math.max(minChaseX,rCam-45);
+ // v1.4.1: the catch-up warp places Mayo fully off screen (her sprite used to show at the left edge)
+ // and lands her standing on that ground, so she doesn't finish an old jump from there.
+ if(p.x-a.x>760&&a.x<rCam-120){
+  const safeBehindX=Math.max(minChaseX,rCam-100);
   const groundAtBehind=platforms.find(pl=>!pl.wall&&!pl.ceiling&&safeBehindX>=pl.x&&safeBehindX<=pl.x+pl.w);
   a.x=safeBehindX;
   a.prevX=a.x;
   a.y=groundAtBehind?groundAtBehind.y:510;
   a.prevY=a.y;
+  a.vy=0;a.inAir=false;a.supportRef=groundAtBehind||null;a.supportHold=0;
  }
 
  if(a.phase==='attack'){
@@ -2398,7 +2401,7 @@ function practiceEncounter(key){
    mayoAct.x=e.mayoSpawnX??820;
    mayoAct.prevX=mayoAct.x;
    mayoAct.y=580;
-   mayoAct.prevY=580;
+   mayoAct.prevY=580;mayoAct.vy=0;mayoAct.inAir=false;mayoAct.supportRef=null;mayoAct.supportHold=0;
    mayoAct.spawnGrace=1.40;
   }
  }else if(key==='fairies'){
@@ -2411,7 +2414,7 @@ function practiceEncounter(key){
    mayoAct.x=Math.max(e.mayoMinChaseX??80,p.x-480);
    mayoAct.prevX=mayoAct.x;
    mayoAct.y=580;
-   mayoAct.prevY=580;
+   mayoAct.prevY=580;mayoAct.vy=0;mayoAct.inAir=false;mayoAct.supportRef=null;mayoAct.supportHold=0;
    mayoAct.spawnGrace=1.40;
   }
  }else if(key==='marie'){

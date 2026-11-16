@@ -1,4 +1,4 @@
-# 두두의 폴짝폴짝 대모험 v1.4
+# 두두의 폴짝폴짝 대모험 v1.4.1
 
 에피드게임즈 〈트릭컬 리바이브〉의 캐릭터로 만든 비공식 팬게임입니다.
 해가 지기 전에 숲과 마을, 도시를 지나 엄마가 기다리는 집으로 돌아가는 2D 플랫포머입니다.
@@ -41,6 +41,14 @@
 - 점멸 발판은 단단한 발판 사이에 하나씩 두고, 켜짐 시간은 2.6초 이상으로 합니다.
 - 보상 경로는 정상 경로보다 한 번 점프 높이(약 150px) 이상 떨어뜨려, 평범한 점프로 섞이지 않게 합니다.
 - 발판을 옮길 때는 `world.js`의 `relayPlatform()`을 씁니다. 발판 위의 왕사탕과 크레파스가 함께 움직여 개수가 바뀌지 않습니다.
+
+## 개발
+작업 규칙은 `CLAUDE.md`, 이력과 남은 과제는 `docs/HANDOFF.md`에 있습니다.
+```bash
+pip install -r tools/qa/requirements.txt && python -m playwright install chromium
+python tools/qa/regression.py      # 커밋 전 회귀 테스트
+python tools/release.py v1.4.2     # 배포 전 버전과 캐시 키 교체
+```
 
 ## 설정
 `release-config.js`의 `releaseMode`와 `qaBuild`로 배포와 QA 빌드를 전환합니다. QA 빌드에서만 개발용 연습 막대가 보입니다.
