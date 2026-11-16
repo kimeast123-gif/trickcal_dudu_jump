@@ -69,7 +69,9 @@ async def main():
             ys = [y for _, y in seen]
             check('drone: waits out of sight until Dudu is about two platforms away', r0['state'] == 'wait' and r0['y'] > r0['viewBottom'] - 40, r0)
             check('drone: rises from below and stops at its mark', 'rise' in states and ys[0] > ys[-1] and abs(ys[-1] - r0['ty']) <= 6, seen[:6])
-            r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));const hp0=p.hp;let fired=false;
+            r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));const d1=platforms.find(a=>a.id==='NM-DOT1');
+              __night.darts.length=0;p.hp=5;p.invulnerable=0;p.guardStun=0;p.knock=0;p.x=p.prevX=3650;p.y=p.prevY=d1.y;p.on=d1;p.ground=true;p.vx=0;p.vy=0;
+              const hp0=p.hp;let fired=false;
               for(let i=0;i<60;i++){await w(50);if(__night.darts.length)fired=true;if(p.hp<hp0)break;}
               return {fired,hp0,hp:p.hp}}""")
             check('drone: fires wind darts at Dudu and a dart costs 1 health', r['fired'] and r['hp'] == r['hp0'] - 1, r)
@@ -85,6 +87,25 @@ async def main():
             check('drone: landing on top knocks it out (Die motion), no damage', r['state'] in ('dead', 'gone') and r['hp'] == r['hp0'], r)
             r = await pg.evaluate("()=>{retryWorld1StageCheckpoint();return {n:__night.drones.length,ids:new Set(__night.drones.map(d=>d.id)).size,states:__night.drones.map(d=>d.state).join(',')}}")
             check('drone: retry rebuilds the 8 drones without duplicates', r['n'] == 8 and r['ids'] == 8 and set(r['states'].split(',')) == {'wait'}, r)
+
+        if on('drone'):
+            r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));devPracticeNight(3650,335);p.invulnerable=0;
+              const _hit=window.applyStunHit;window.applyStunHit=()=>false; /* darts still fire and hit, Dudu just does not react */
+              const shots=[];let speed=0;const t0=levelClock;
+              for(let i=0;i<180;i++){await w(25);const n=__night.darts.length;if(n&&(!shots.length||__night.darts[n-1]!==shots[shots.length-1].d)){
+                const d=__night.darts[n-1];shots.push({d,t:levelClock-t0});speed=Math.hypot(d.vx,d.vy);}}
+              window.applyStunHit=_hit;
+              const gaps=[];for(let i=1;i<shots.length;i++)gaps.push(+(shots[i].t-shots[i-1].t).toFixed(2));
+              return {gaps,speed:Math.round(speed)}}""")
+            g = [x for x in r['gaps'] if x > 0.5]
+            check('drone: v1.5.1 fires every ~1.66s (was 2.49s) at 600px/s (was 400)', bool(g) and all(1.5 <= x <= 1.85 for x in g) and r['speed'] == 600, r)
+
+        if on('music'):
+            r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));startNightStage();await w(200);const night=musicSelected;
+              const a=tracks[5];a.preload='auto';a.load();for(let i=0;i<60&&!(a.duration>0);i++)await w(100);
+              startWorld1StageFromMenu(0,true);await w(200);const w1=musicSelected;
+              return {night,w1,src:a.src.split('/').pop(),dur:Math.round(a.duration||0)}}""")
+            check('music: night map plays 24. Monatium (track 5), world 1 keeps track 0', r['night'] == 5 and r['w1'] == 0 and r['src'].startswith('monatium.mp3') and r['dur'] > 30, r)
 
         if on('field'):
             await pg.evaluate(PLACE, [6300, 202])

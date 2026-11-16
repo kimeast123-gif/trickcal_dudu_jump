@@ -1595,7 +1595,7 @@ function loadWorld1Stage(stageIdx, opts = {}) {
     spawnY: p.y
   });
 
-  if (typeof playTrack === 'function') playTrack(0, false);
+  if (typeof playTrack === 'function') playTrack(typeof stg.musicTrack === 'number' ? stg.musicTrack : 0, false);
   state = 'playing';
   last = performance.now();
   acc = 0;

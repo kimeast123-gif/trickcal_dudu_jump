@@ -31,11 +31,11 @@ const NIGHT_SPRITES = {
   scizor_sad:   { frames: 14, fps: 12.5, anchor: 126, foot: 240, display: 150 },
   drone_move:   { frames: 21, fps: 25,   anchor: 128, foot: 96,  display: 150 },
   drone_idle:   { frames: 27, fps: 25,   anchor: 128, foot: 96,  display: 150 },
-  drone_attack: { frames: 31, fps: 25,   anchor: 128, foot: 96,  display: 150 },
+  drone_attack: { frames: 31, fps: 37.5,   anchor: 128, foot: 96,  display: 150 },
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_5_0_261117';
+const NIGHT_ASSET_Q = '?v=v1_5_1_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -83,6 +83,7 @@ function buildNightStage() {
   });
   s.worldId = NIGHT_WORLD_ID;
   s.night = true;
+  s.musicTrack = 5; // assets/event/monatium.mp3 (24. Monatium)
   s.startFlag = { x: 70, y: 496 };
   s.customBackground = drawNightBackground;
   s.onLoad = () => loadNightAssets();
@@ -321,7 +322,8 @@ function startRunnerArc(r, x1, y1, final) {
 // Drones: wait below -> rise -> hover at the red square -> aim and fire wind darts -> destroyed / idle.
 // Landing on a drone from above knocks it out (the Die motion); touching it any other way is a hit.
 // ----------------------------------------------------------------------------
-const DRONE = { trigger: 520, riseDur: 1.3, halfW: 46, halfH: 30, fireAt: 0.56, attackDur: 1.24, rest: 1.25, dartSpeed: 400, sleepDist: 1500 };
+// v1.5.1: attack cycle and dart speed both 1.5x (cycle 2.49s -> 1.66s, dart 400 -> 600 px/s)
+const DRONE = { trigger: 520, riseDur: 1.3, halfW: 46, halfH: 30, fireAt: 0.37, attackDur: 0.83, rest: 0.83, firstDelay: 0.37, dartSpeed: 600, sleepDist: 1500 };
 function updateDrone(d, dt) {
   d.prevX = d.x; d.prevY = d.y;
   d.t += dt; d.anim += dt;
@@ -343,7 +345,7 @@ function updateDrone(d, dt) {
     const u = Math.min(1, d.t / DRONE.riseDur);
     const e = 1 - Math.pow(1 - u, 3);
     d.y = d.ty + 560 * (1 - e);
-    if (u >= 1) { d.state = 'hover'; d.t = 0; d.clip = 'drone_idle'; d.anim = 0; d.cooldown = 0.55; }
+    if (u >= 1) { d.state = 'hover'; d.t = 0; d.clip = 'drone_idle'; d.anim = 0; d.cooldown = DRONE.firstDelay; }
   } else {
     d.y = d.ty + Math.sin(night.clock * 2.4 + d.tx) * 4;
     if (Math.abs(dx) > DRONE.sleepDist) { d.state = 'sleep'; return; }

@@ -6,13 +6,14 @@ let eventMode=false,eventElapsed=0,eventLast=0,sceneElapsed=0,typed=0,storyLine=
 let storySessionId=0,activeStoryKind=null;
 const LIMIT=1500,EVENT_ROOT='assets/event/';
 const eventImages={};
-const musicNames=['day','afternoon','sunset','opening','ending'];
+const musicNames=['day','afternoon','sunset','opening','ending','monatium']; /* v1.5.1: 5 = World 2 night map */
 const BGM_LOOP_BOUNDS={
  day:{start:0.05,end:88.85},
  afternoon:{start:0.05,end:73.75},
  sunset:{start:0.05,end:93.35},
  opening:{start:0.05,end:67.60},
- ending:{start:0.05,end:102.75}
+ ending:{start:0.05,end:102.75},
+ monatium:{start:0.05,end:94.45}
 };
 window.__bgmLoopBounds=BGM_LOOP_BOUNDS;
 
@@ -34,7 +35,7 @@ const tracks=musicNames.map(n=>{
  }
  return a;
 });
-let musicSelected=-1;const gains=[0,0,0,0,0];
+let musicSelected=-1;const gains=musicNames.map(()=>0);
 function playTrack(n,restart=false){
  if(n===musicSelected&&!restart)return;
  musicSelected=n;
