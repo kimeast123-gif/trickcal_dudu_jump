@@ -700,7 +700,7 @@ window.addEventListener('keyup',e=>{
 window.addEventListener('blur',()=>{if(typeof ensurePaused==='function')ensurePaused('blur');else if(state==='playing')pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(typeof ensurePaused==='function')ensurePaused('visibility');else if(state==='playing')pause();}});canvas.addEventListener('pointerdown',()=>canvas.focus());
 function beginJump(second){
  if(p.guardStun>0)return;
- p.vy=second?-510:-540;p.jumps=second?2:1;p.ground=false;p.on=null;p.coyote=0;p.buffer=0;p.hold=0;p.jumpHeld=keys.has('Space');p.jumpCut=!p.jumpHeld;p.jumpOrigin=p.y;p.jumpHeight=0;
+ p.touchHoldGrace=0;p.vy=second?-510:-540;p.jumps=second?2:1;p.ground=false;p.on=null;p.coyote=0;p.buffer=0;p.hold=0;p.jumpHeld=keys.has('Space');p.jumpCut=!p.jumpHeld;p.jumpOrigin=p.y;p.jumpHeight=0;
  if(second){
   spin=.36;burst(p.x,p.y-35,'#edc76f',10);
   if(typeof playDuduVoice==='function')playDuduVoice('double_jump');
@@ -730,7 +730,7 @@ function update(dt){
   }
  }
 
- p.buffer=Math.max(0,p.buffer-dt);p.coyote=p.ground?.10:Math.max(0,p.coyote-dt);p.dashCooldown=Math.max(0,p.dashCooldown-dt);
+ if(p.dash<=0)p.buffer=Math.max(0,p.buffer-dt);// v1.1.1: a jump pressed mid-dash waits for the dash to endp.coyote=p.ground?.10:Math.max(0,p.coyote-dt);p.dashCooldown=Math.max(0,p.dashCooldown-dt);
 
  const stunned=p.guardStun>0;
  if(stunned){
@@ -765,7 +765,8 @@ function update(dt){
  }else{
   const target=dir*320,a=dir?(p.ground?(Math.sign(p.vx)!==dir?4000:2200):1700):(p.ground?3200:1700);
   if(p.knock>0){p.knock=Math.max(0,p.knock-dt);p.vx=p.knockVX;}else p.vx+=Math.sign(target-p.vx)*Math.min(Math.abs(target-p.vx),a*dt);
-  const holding=p.jumpHeld&&keys.has('Space')&&p.hold<(p.jumps===2?.22:.24)&&p.vy<0;
+  if(p.touchHoldGrace>0){p.touchHoldGrace-=dt;if(p.touchHoldGrace<=0){p.touchHoldGrace=0;if(!keys.has('Space')){if(p.hold<(p.jumps===2?.22:.24))p.jumpCut=true;p.jumpHeld=false;}}}
+  const holding=p.jumpHeld&&(keys.has('Space')||p.touchHoldGrace>0)&&p.hold<(p.jumps===2?.22:.24)&&p.vy<0;
   p.hold+=dt;const gravity=p.vy<0?(holding?600:(p.jumpCut?3200:2100)):2500;p.vy=Math.min(900,p.vy+gravity*dt);
  }
 
@@ -897,6 +898,9 @@ function update(dt){
  });
  checkJourney();if(state!=='playing')return;updateHazards(dt);
 
+ if((typeof gameMode==='undefined'||gameMode==='story')&&typeof ensureWorldRegionAssets==='function'&&levels[levelIndex+1]&&p.x>END*0.45&&window.__preloadedNext!==levelIndex){
+  window.__preloadedNext=levelIndex;ensureWorldRegionAssets(levels[levelIndex+1].id);
+ }
  const camProfile=getCameraProfile(p.x,p.y);
  debugMetrics.cameraProfile=camProfile;
 
@@ -947,9 +951,16 @@ function update(dt){
   if(typeof window.camBaseY!=='number')window.camBaseY=camY;
   const screenY = p.y - window.camBaseY;
   let desiredBaseY = window.camBaseY;
-  const lowerDeadzone = (camProfile === 'world1_village') ? 570 : (camProfile === 'world1_standard' ? 350 : 510);
+  const lowerDeadzone = (camProfile === 'world1_village') ? 570 : 510;
   const upperDeadzone = (camProfile === 'world1_village') ? 235 : 210;
-  if(screenY < upperDeadzone){
+  if(camProfile === 'world1_standard'){
+   // v1.2: keep Dudu near the middle of the screen. The camera re-centres on each landing and only chases
+   // mid-jump when she nears the top or bottom edge, so jumps don't bob the view.
+   const CENTER = 400;
+   if(p.ground) desiredBaseY = p.y - CENTER;
+   else if(screenY < 230) desiredBaseY = p.y - 230;
+   else if(screenY > 560) desiredBaseY = p.y - 560;
+  }else if(screenY < upperDeadzone){
    desiredBaseY = p.y - upperDeadzone;
   }else if(screenY > lowerDeadzone){
    desiredBaseY = p.y - lowerDeadzone;

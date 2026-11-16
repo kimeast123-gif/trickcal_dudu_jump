@@ -58,7 +58,7 @@ function pressInput(code, sourceId = 'touch') {
   if (wasEmpty) {
     keys.add(code);
     if (typeof p !== 'undefined' && p.guardStun > 0) return;
-    if ((code === 'ArrowLeft' || code === 'ArrowRight') && mobilePrefs.dashMode !== 'button') {
+    if ((code === 'ArrowLeft' || code === 'ArrowRight') && mobilePrefs.dashMode !== 'button' && String(sourceId).startsWith('kb_')) {
       // RENEWAL: double-tap a direction to dash (keyboard and joystick flick share this path).
       // Only a short tap followed quickly by a second press counts, so walking and inching never dash by accident.
       const now = performance.now();
@@ -108,8 +108,14 @@ function releaseInput(code, sourceId = 'touch') {
       keys.delete(code);
       if (doubleTapState[code] && doubleTapState[code].press) doubleTapState[code].release = performance.now();
       if (code === 'Space' && typeof p !== 'undefined') {
-        if (p.hold < (p.jumps === 2 ? 0.22 : 0.24)) p.jumpCut = true;
-        p.jumpHeld = false;
+        // A thumb tap is shorter than a key press; give touch taps a minimum hold so they never feel swallowed.
+        const minHold = String(sourceId).startsWith('touch_') ? 0.11 : 0;
+        if (minHold && p.hold < minHold && p.vy < 0) {
+          p.touchHoldGrace = minHold - p.hold;
+        } else {
+          if (p.hold < (p.jumps === 2 ? 0.22 : 0.24)) p.jumpCut = true;
+          p.jumpHeld = false;
+        }
       }
     }
   } else {
@@ -145,6 +151,11 @@ function releaseAllInputs(reason = 'reset') {
     dashRequest = false;
   }
   resetJoystickVisualAndState();
+  if (typeof VJ !== 'undefined') {
+    VJ.active = false; VJ.pointerId = null; VJ.dirs = { left: false, right: false, down: false };
+    const c = document.getElementById('vjoy-container'); if (c) c.style.transform = '';
+  }
+  if (typeof touchButtonPointers !== 'undefined') touchButtonPointers.clear();
   document.querySelectorAll('.vbtn').forEach(btn => btn.classList.remove('active'));
 }
 
@@ -958,6 +969,7 @@ function setupMobileControls() {
   loadMobilePrefs();
   ensurePcKeybindSettingsUI();
   loadPcKeybinds();
+  setupTouchInputLayer();
 
   // 1. Setup 360° Virtual Joystick (#vjoy-base)
   const joyBase = document.getElementById('vjoy-base');
@@ -1011,12 +1023,14 @@ function setupMobileControls() {
       try { el.setPointerCapture(e.pointerId); } catch (err) {}
       activePointers.add(e.pointerId);
       el.classList.add('active');
+      touchButtonPointers.set(e.pointerId, { code, source: `touch_${e.pointerId}`, el });
       pressInput(code, `touch_${e.pointerId}`);
     });
 
     const onPointerEnd = e => {
       if (activePointers.has(e.pointerId)) {
         activePointers.delete(e.pointerId);
+        touchButtonPointers.delete(e.pointerId);
         releaseInput(code, `touch_${e.pointerId}`);
       }
       if (activePointers.size === 0) {
@@ -1118,4 +1132,161 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', setupMobileControls);
 } else {
   setupMobileControls();
+}
+
+// ============================================================================
+// v1.1.1 TOUCH INPUT LAYER
+// - Floating stick: a touch anywhere in the stick zone becomes the stick's center.
+// - Down only on a deliberate, near-vertical pull, so a diagonal thumb never turns a jump into a drop.
+// - Stick dash only on two deliberate flicks (out, back to center, out again), never on thumb wobble.
+// - Safety net: document-level release tracking, and "no fingers on screen" clears every touch input.
+// ============================================================================
+const VJ = {
+  active: false, pointerId: null, ox: 0, oy: 0, homeX: 0, homeY: 0,
+  dirs: { left: false, right: false, down: false },
+  flick: { phase: 'idle', dir: 0, outAt: 0, lastFlickDir: 0, lastFlickAt: 0, returned: false }
+};
+const VJ_DEAD_ENTER = 12, VJ_DEAD_EXIT = 7;
+const touchButtonPointers = new Map(); // pointerId -> { code, source, el }
+
+function vjRadius() {
+  const c = document.getElementById('vjoy-container');
+  return c ? Math.max(36, c.getBoundingClientRect().width * 0.5) : 54;
+}
+function vjSetVisual(cx, cy, kx, ky) {
+  const c = document.getElementById('vjoy-container');
+  const knob = document.getElementById('vjoy-knob');
+  const base = document.getElementById('vjoy-base');
+  if (c) c.style.transform = (cx === null) ? '' : `translate3d(${(cx - VJ.homeX).toFixed(1)}px, ${(cy - VJ.homeY).toFixed(1)}px, 0)`;
+  if (knob) knob.style.transform = `translate3d(${kx.toFixed(1)}px, ${ky.toFixed(1)}px, 0)`;
+  if (base) base.classList.toggle('active', cx !== null);
+}
+function vjApplyDirs(want) {
+  const prev = VJ.dirs;
+  if (prev.left && !want.left) releaseInput('ArrowLeft', 'vjoy');
+  if (prev.right && !want.right) releaseInput('ArrowRight', 'vjoy');
+  if (prev.down && !want.down) releaseInput('ArrowDown', 'vjoy');
+  if (!prev.left && want.left) pressInput('ArrowLeft', 'vjoy');
+  if (!prev.right && want.right) pressInput('ArrowRight', 'vjoy');
+  if (!prev.down && want.down) pressInput('ArrowDown', 'vjoy');
+  VJ.dirs = want;
+  mobileUIState.activeStickDirs = { ...want };
+  const base = document.getElementById('vjoy-base');
+  if (base) {
+    base.setAttribute('data-dir-left', String(want.left));
+    base.setAttribute('data-dir-right', String(want.right));
+    base.setAttribute('data-dir-down', String(want.down));
+  }
+}
+function vjFlickUpdate(nxAbs, dirSign, now) {
+  if (mobilePrefs.dashMode === 'button') return;
+  const f = VJ.flick;
+  if (nxAbs < 0.3) {
+    if (f.phase === 'out') { f.phase = 'idle'; f.returned = true; }
+    return;
+  }
+  if (nxAbs > 0.72 && f.phase !== 'out') {
+    f.phase = 'out';
+    if (f.returned && f.lastFlickDir === dirSign && now - f.lastFlickAt <= 300 && state === 'playing') {
+      dashRequest = true;
+      f.lastFlickDir = 0; f.lastFlickAt = 0; f.returned = false;
+    } else {
+      f.lastFlickDir = dirSign; f.lastFlickAt = now; f.returned = false;
+    }
+  }
+}
+function vjUpdate(clientX, clientY) {
+  const R = vjRadius();
+  let dx = clientX - VJ.ox, dy = clientY - VJ.oy;
+  let dist = Math.hypot(dx, dy);
+  // The center follows a thumb dragged far past the rim, so reversing direction responds at once.
+  const follow = R * 1.2;
+  if (dist > follow) {
+    const k = (dist - follow) / dist;
+    VJ.ox += dx * k; VJ.oy += dy * k;
+    dx = clientX - VJ.ox; dy = clientY - VJ.oy; dist = Math.hypot(dx, dy);
+  }
+  const prev = VJ.dirs;
+  const hEnter = VJ_DEAD_ENTER, hExit = VJ_DEAD_EXIT;
+  let left = prev.left ? dx < -hExit : dx < -hEnter;
+  let right = prev.right ? dx > hExit : dx > hEnter;
+  if (left && right) { left = dx < 0; right = dx > 0; }
+  // Down: a deliberate pull, at least 55% of the radius and within ~40 degrees of straight down.
+  const steep = dy > 0 && Math.abs(dx) <= dy * 0.84;
+  const down = prev.down ? (dy > R * 0.42 && Math.abs(dx) <= dy * 1.0) : (dy > R * 0.55 && steep);
+  vjApplyDirs({ left, right, down });
+  vjFlickUpdate(Math.abs(dx) / R, Math.sign(dx), performance.now());
+  const kScale = dist > R * 0.62 ? (R * 0.62) / dist : 1;
+  vjSetVisual(VJ.ox, VJ.oy, dx * kScale, dy * kScale);
+  mobileUIState.joyVector = { dx, dy, nx: dx / R, ny: dy / R, angleDeg: (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360 };
+}
+function vjEnd() {
+  if (!VJ.active && !VJ.dirs.left && !VJ.dirs.right && !VJ.dirs.down) return;
+  VJ.active = false; VJ.pointerId = null;
+  mobileUIState.joyActive = false; mobileUIState.joyPointerId = null;
+  vjApplyDirs({ left: false, right: false, down: false });
+  vjSetVisual(null, null, 0, 0);
+  VJ.flick.phase = 'idle';
+}
+function releaseAllTouchSources() {
+  vjEnd();
+  for (const [pid, info] of touchButtonPointers) {
+    releaseInput(info.code, info.source);
+    if (info.el) info.el.classList.remove('active');
+  }
+  touchButtonPointers.clear();
+}
+window.releaseAllTouchSources = releaseAllTouchSources;
+
+function setupTouchInputLayer() {
+  const zone = document.getElementById('vjoy-zone');
+  const container = document.getElementById('vjoy-container');
+  if (!zone || !container) return;
+  const measureHome = () => {
+    container.style.transform = '';
+    const r = container.getBoundingClientRect();
+    VJ.homeX = r.left + r.width / 2; VJ.homeY = r.top + r.height / 2;
+  };
+  zone.addEventListener('pointerdown', e => {
+    if (mobileUIState.viewMode === 'WEB_PORTRAIT') return;
+    if (VJ.active) return; // one thumb drives the stick
+    e.preventDefault(); e.stopPropagation();
+    try { zone.setPointerCapture(e.pointerId); } catch (err) {}
+    measureHome();
+    const R = vjRadius();
+    const zr = zone.getBoundingClientRect();
+    VJ.ox = Math.max(zr.left + R, Math.min(zr.right - R, e.clientX));
+    VJ.oy = Math.max(zr.top + R, Math.min(zr.bottom - R, e.clientY));
+    VJ.active = true; VJ.pointerId = e.pointerId;
+    mobileUIState.joyActive = true; mobileUIState.joyPointerId = e.pointerId;
+    vjUpdate(e.clientX, e.clientY);
+  });
+  zone.addEventListener('pointermove', e => {
+    if (!VJ.active || e.pointerId !== VJ.pointerId) return;
+    e.preventDefault();
+    vjUpdate(e.clientX, e.clientY);
+  });
+  const end = e => { if (VJ.active && e.pointerId === VJ.pointerId) vjEnd(); };
+  zone.addEventListener('pointerup', end);
+  zone.addEventListener('pointercancel', end);
+  zone.addEventListener('lostpointercapture', end);
+
+  // Safety net 1: any pointer that ends anywhere releases whatever it was holding.
+  const docEnd = e => {
+    if (VJ.active && e.pointerId === VJ.pointerId) vjEnd();
+    const info = touchButtonPointers.get(e.pointerId);
+    if (info) {
+      touchButtonPointers.delete(e.pointerId);
+      releaseInput(info.code, info.source);
+      if (info.el && ![...touchButtonPointers.values()].some(v => v.el === info.el)) info.el.classList.remove('active');
+    }
+  };
+  document.addEventListener('pointerup', docEnd, true);
+  document.addEventListener('pointercancel', docEnd, true);
+  // Safety net 2: no fingers on the screen means nothing can be held.
+  const noFingers = e => { if (e.touches && e.touches.length === 0) releaseAllTouchSources(); };
+  document.addEventListener('touchend', noFingers, true);
+  document.addEventListener('touchcancel', noFingers, true);
+  window.addEventListener('orientationchange', releaseAllTouchSources);
+  window.addEventListener('resize', () => { if (!VJ.active) measureHome(); });
 }

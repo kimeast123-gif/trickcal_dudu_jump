@@ -760,13 +760,13 @@ function resetHazards(){
   actors = [
    actor('guard1', 14740, 420, { id: 'G-01', platformId: 'M-G1-LOW1', patrol: 195, baseSpeed: 162, returnSpeed: 132, speedMult: 1.05, patrolDir: -1 }),
    actor('guard2', 16040, 480, { id: 'G-02', platformId: 'M-G1-LOW2', patrol: 215, baseSpeed: 176, returnSpeed: 142, speedMult: 1.08, patrolDir: -1, delay: 0.30 }),
-   actor('guard1', 17905, 420, { id: 'G-03', platformId: 'M-GRD-BR1', patrol: 215, baseSpeed: 172, returnSpeed: 138, speedMult: 1.15, patrolDir: -1 }),
-   actor('guard2', 19285, 460, { id: 'G-04', platformId: 'M-GRD-BR2', patrol: 205, baseSpeed: 182, returnSpeed: 145, speedMult: 1.15, patrolDir: 1, delay: 0.35 }),
-   actor('guard1', 21330, 500, { id: 'G-05', platformId: 'M-G3-MID1', patrol: 195, baseSpeed: 168, returnSpeed: 138, speedMult: 1.08, patrolDir: -1 }),
-   actor('guard2', 21605, 345, { id: 'G-06', platformId: 'M-G3-UPPER', patrol: 205, baseSpeed: 184, returnSpeed: 146, speedMult: 1.10, patrolDir: 1, delay: 0.40 }),
-   actor('guard1', 22960, 515, { id: 'G-06B', platformId: 'M-G3-MID2', patrol: 165, baseSpeed: 172, returnSpeed: 140, speedMult: 1.08, patrolDir: -1, delay: 0.20 }),
-   actor('guard1', 24015, 485, { id: 'G-07-BR3', platformId: 'M-GRD-BR3A', patrol: 205, baseSpeed: 168, returnSpeed: 165, speedMult: 1.5, specialGuard: true, patrolDir: -1, delay: 0.0 }),
-   actor('guard2', 24515, 400, { id: 'G-08-BR3', platformId: 'M-GRD-BR3B', patrol: 210, baseSpeed: 182, returnSpeed: 174, speedMult: 1.5, specialGuard: true, patrolDir: 1, delay: 0.55 }),
+   actor('guard1', 17760, 430, { id: 'G-03', platformId: 'M-GRD-BR1', patrol: 150, baseSpeed: 172, returnSpeed: 138, speedMult: 1.15, patrolDir: -1 }),
+   actor('guard2', 19360, 460, { id: 'G-04', platformId: 'M-GRD-BR2', patrol: 130, baseSpeed: 182, returnSpeed: 145, speedMult: 1.15, patrolDir: 1, delay: 0.35 }),
+   actor('guard1', 21220, 500, { id: 'G-05', platformId: 'M-G3-MID1', patrol: 130, baseSpeed: 168, returnSpeed: 138, speedMult: 1.08, patrolDir: -1 }),
+   actor('guard2', 21650, 420, { id: 'G-06', platformId: 'M-G3-UPPER', patrol: 120, baseSpeed: 184, returnSpeed: 146, speedMult: 1.10, patrolDir: 1, delay: 0.40 }),
+   actor('guard1', 22670, 500, { id: 'G-06B', platformId: 'M-G3-MID2', patrol: 120, baseSpeed: 172, returnSpeed: 140, speedMult: 1.08, patrolDir: -1, delay: 0.20 }),
+   actor('guard1', 23920, 480, { id: 'G-07-BR3', platformId: 'M-GRD-BR3A', patrol: 130, baseSpeed: 168, returnSpeed: 165, speedMult: 1.5, specialGuard: true, patrolDir: -1, delay: 0.0 }),
+   actor('guard2', 24600, 430, { id: 'G-08-BR3', platformId: 'M-GRD-BR3B', patrol: 130, baseSpeed: 182, returnSpeed: 174, speedMult: 1.5, specialGuard: true, patrolDir: 1, delay: 0.55 }),
    actor('president', doorX, 580, { photo: true, cutout: 'president_cutout', patrol: 390, speed: 230, hiddenInDoor: true }),
    actor('vice', doorX, 580, { photo: true, cutout: 'vice_cutout', patrol: 510, speed: 305, hiddenInDoor: true })
   ];
@@ -1204,6 +1204,16 @@ function enterMarieBossArena(){
  p.guardStun = 0; p.guardKnock = 0; p.knock = 0;
  p.invulnerable = 1.2;
  keys.clear();
+ // v1.2: the player is moved to the arena, so the camera cuts once to its final framing behind a short fade
+ // instead of sliding and zooming for a second and then snapping.
+ {
+  const tz = 0.88, tx = e.arenaOrigin || 15700, ty = -98;
+  camZoom = tz; prevCamZoom = tz; if (typeof rCamZoom !== 'undefined') rCamZoom = tz;
+  cam = tx; prevCam = tx; if (typeof rCam !== 'undefined') rCam = tx;
+  camY = ty; prevCamY = ty; if (typeof rCamY !== 'undefined') rCamY = ty;
+  window.camBaseY = ty;
+  window.__screenFade = { start: performance.now(), dur: 520, from: 0.92 };
+ }
 
  windDarts = [];
  bombs = [];
@@ -1570,21 +1580,42 @@ function updateMayo(a,dt){
   }
  }
 
+ // v1.2: Mayo moves between heights like a body, not a teleport. She keeps her current ledge for a moment
+ // while the player is mid-air, hops up in an arc to a higher ledge, and walks off and falls to a lower one.
+ if(support&&a.supportRef&&support!==a.supportRef){
+  const cur=a.supportRef;
+  const stillUnder=a.x>=cur.x-14&&a.x<=cur.x+cur.w+14&&cur.collidable!==false;
+  a.supportHold=(a.supportHold||0)+dt;
+  if(stillUnder&&(a.supportHold<0.35||!p.ground))support=cur;
+  else {a.supportRef=support;a.supportHold=0;}
+ }else if(support){a.supportRef=support;a.supportHold=0;}
+ const GRAV=1900;
  if(support){
-  if(a.y>support.y+6||a.inAir){
-   a.vy=(a.vy||0)+1900*dt;
+  if(a.inAir){
+   const prevY=a.y;
+   a.vy=(a.vy||0)+GRAV*dt;
    a.y+=a.vy*dt;
-   if(a.y>=support.y){
+   if(a.vy>0&&prevY<=support.y+2&&a.y>=support.y){
     a.y=support.y;a.vy=0;a.inAir=false;
+   }else if(a.vy>0&&a.y>support.y+12){
+    // fell below the chosen ledge (it changed mid-fall): hop back up in an arc
+    a.vy=-Math.sqrt(2*GRAV*(a.y-support.y+34));
    }
+   if(a.y>620){a.y=support.y;a.vy=0;a.inAir=false;}
   }else{
-   a.y+=(support.y-a.y)*(1-Math.exp(-dt*16));
-   a.vy=0;a.inAir=false;
-   const nearRightEdge=a.face>0&&support.groundTile&&(a.x>support.x+support.w-38);
-   const playerHigher=p.y<a.y-45&&Math.abs(dxToPlayer)<280;
-   if(nearRightEdge||playerHigher){
-    a.vy=-520;
-    a.inAir=true;
+   const dy=support.y-a.y;
+   if(dy<-6){
+    a.vy=-Math.sqrt(2*GRAV*(-dy+34));a.inAir=true;
+   }else if(dy>6){
+    a.vy=40;a.inAir=true;
+   }else{
+    a.y=support.y;a.vy=0;
+    const nearRightEdge=a.face>0&&support.groundTile&&(a.x>support.x+support.w-38);
+    const playerHigher=p.y<a.y-45&&Math.abs(dxToPlayer)<280&&p.ground;
+    if(nearRightEdge||playerHigher){
+     a.vy=-520;
+     a.inAir=true;
+    }
    }
   }
  }else{

@@ -1034,6 +1034,11 @@ function classifyGroundJoint(a, side) {
   if (typeof platforms === 'undefined' || !platforms) {
     return { kind: 'open_edge', neighbor: null, neighborMat: null };
   }
+  // v1.2: ground that touches the start or end of a story map continues past the edge instead of ending in a cliff cap.
+  if (typeof gameMode === 'undefined' || gameMode === 'story') {
+    if (side === 'left' && a.x <= 2) return { kind: 'wall_butt_join', neighbor: null, neighborMat: null };
+    if (side === 'right' && typeof END === 'number' && a.x + a.w >= END - 2) return { kind: 'wall_butt_join', neighbor: null, neighborMat: null };
+  }
   const cacheProp = side === 'left' ? '_jointCacheL' : '_jointCacheR';
   if (a[cacheProp] && a._jointCacheLen === platforms.length) {
     return a[cacheProp];
@@ -2123,6 +2128,37 @@ function drawHomeDoor(goal) {
   ctx.restore();
 }
 
+
+// v1.2: the first and last stretch of every story map fades into the same soft cloud white the region transition uses,
+// so walking off one map and into the next reads as one continuous journey rather than a hard border.
+function drawMapEdgeMist() {
+  if (typeof gameMode !== 'undefined' && gameMode !== 'story') return;
+  if (state !== 'playing' && state !== 'regionTransition' && state !== 'paused') return;
+  const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+  const viewW = W / zoom;
+  const reach = 360;
+  const leftVis = Math.max(0, reach - rCam);
+  const rightVis = Math.max(0, (rCam + viewW) - (END - reach));
+  ctx.save();
+  if (leftVis > 0 && levelIndex > 0) {
+    const w = leftVis * zoom;
+    const g = ctx.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, 'rgba(246, 250, 255, 0.55)');
+    g.addColorStop(0.4, 'rgba(246, 250, 255, 0.18)');
+    g.addColorStop(1, 'rgba(246, 250, 255, 0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, H);
+  }
+  if (rightVis > 0 && levelIndex < levels.length - 1) {
+    const w = rightVis * zoom;
+    const g = ctx.createLinearGradient(W, 0, W - w, 0);
+    g.addColorStop(0, 'rgba(246, 250, 255, 0.55)');
+    g.addColorStop(0.4, 'rgba(246, 250, 255, 0.18)');
+    g.addColorStop(1, 'rgba(246, 250, 255, 0)');
+    ctx.fillStyle = g; ctx.fillRect(W - w, 0, w, H);
+  }
+  ctx.restore();
+}
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
   renderBackground();
@@ -2260,6 +2296,17 @@ function draw() {
   drawProtection();
   drawDeveloperQaOverlay();
   ctx.restore();
+  drawMapEdgeMist();
+  if (window.__screenFade) {
+    const f = window.__screenFade;
+    const u = Math.min(1, (performance.now() - f.start) / f.dur);
+    ctx.save();
+    ctx.globalAlpha = f.from * Math.pow(1 - u, 1.6);
+    ctx.fillStyle = '#10141c';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    if (u >= 1) window.__screenFade = null;
+  }
   if (state === 'night') {
     ctx.save();
     ctx.globalAlpha = Math.min(0.23, sceneElapsed * 0.15);

@@ -197,6 +197,42 @@ function addSpecialCoinDef(l, id, x, y, label, returnZone, extra = {}) {
  l.specialDefs.push({ id, levelId: l.id, x, y, label, returnZone, ...extra });
 }
 
+
+// ============================================================================
+// v1.2 LEVEL RELAYOUT HELPERS
+// Every platform has one job: a path to the next ground, a bridge over a pit, or a reward route.
+// Moving a platform carries the candies resting on it, so collectible counts never change.
+// ============================================================================
+function relayPlatform(l, id, nx, ny, nw, extra) {
+ const a = l.platforms.find(q => q.id === id);
+ if (!a) { console.warn('[relay] missing', id); return null; }
+ const dx = nx - a.x, dy = ny - a.y;
+ for (const c of l.regularDefs) {
+  if (c.x >= a.x - 30 && c.x <= a.x + a.w + 30 && c.y <= a.y + 4 && c.y >= a.y - 95) {
+   c.x = Math.round(c.x + dx);
+   c.y = Math.round(c.y + dy);
+   if (nw != null) c.x = Math.round(Math.max(nx + 20, Math.min(nx + nw - 20, c.x)));
+  }
+ }
+ for (const s of l.specialDefs) {
+  if (s.parentPlatformId === id) { s.x += dx; s.y += dy; }
+ }
+ a.x = nx; a.y = ny;
+ if (nw != null) a.w = nw;
+ if (extra) Object.assign(a, extra);
+ if (a.visual) a.visual = makeVisualMeta(l, a.x, a.y, a.w, a.skin, a);
+ return a;
+}
+function dropPlatform(l, id) {
+ const i = l.platforms.findIndex(q => q.id === id);
+ if (i >= 0) l.platforms.splice(i, 1); else console.warn('[relay] cannot drop', id);
+}
+function dropCheckpoint(l, x) {
+ const i = l.sections.findIndex(s => Math.abs(s.x - x) < 6);
+ if (i >= 0) l.sections.splice(i, 1); else console.warn('[relay] no checkpoint at', x);
+}
+const SLOW_BLINK = (phase) => ({ on: 2.6, warning: 0.65, off: 1.0, phase });
+
 function addStageProp(l, { id, assetType = 'BACKGROUND_PROP', layer = 'background', key, x, anchorBottom = 580, walkOffset = 180, scale = 0.60, rawW = 300, rawH = 200, pad = 24 }) {
  const dw = Math.round(rawW * scale);
  const dh = Math.round(rawH * scale);
@@ -655,6 +691,60 @@ for(const [idx,[cx,cy]] of [
 ].entries()){
  addCandy(monatium_a,`M-C${String(idx+1).padStart(2,'0')}`,cx,cy,'main');
 }
+
+// v1.2: Monatium A relayout.
+// M1 city entry: an upper overpass route carries the candies; each pit in the road gets a bridge.
+dropPlatform(monatium_a,'M1-LOW-STEP');
+dropPlatform(monatium_a,'M1-FORECOURT-1');
+relayPlatform(monatium_a,'M1-STEP-01',720,500,150);
+relayPlatform(monatium_a,'M1-STEP-02',960,430,190);
+relayPlatform(monatium_a,'M1-OVERPASS-1',1260,420,340);
+relayPlatform(monatium_a,'M1-OVERPASS-2',1700,420,360);
+relayPlatform(monatium_a,'M1-BRIDGE-1',2160,470,340);
+relayPlatform(monatium_a,'M1-BRIDGE-2',2620,420,240);
+relayPlatform(monatium_a,'M1-BRIDGE-3',3320,470,320);
+// Guard blocks: a hanging baffle sits over the middle of each guarded bridge (walk under, can't hop the guard),
+// never at a jump. Blinking relays sit alone between steady platforms and stay on longer.
+const BAFFLE = (l,id,cx,platY) => relayPlatform(l,id,cx-25,platY-85-195,50,{h:195});
+// G2 first bridge
+for (const c of monatium_a.regularDefs) {
+ if (Math.abs(c.x-17810)<3 && Math.abs(c.y-437)<3) { c.x=17640; c.y=392; }
+ if (Math.abs(c.x-18267)<3 && Math.abs(c.y-397)<3) { c.x=18125; c.y=392; }
+}
+relayPlatform(monatium_a,'M-GRD-BR1',17580,430,360);
+BAFFLE(monatium_a,'M-G2-BAFFLE1',17760,430);
+relayPlatform(monatium_a,'M-G2-BLINK1',18050,430,150,{blink:SLOW_BLINK(0.4),fastBlink:false});
+surface(monatium_a,18310,470,160,'steel',{id:'M-G2-STEP2'});
+// G2 maintenance walkway under the bridge: one level row 185px below the deck (a plain jump can't reach the deck),
+// one blinking plank holds the crayon.
+relayPlatform(monatium_a,'M-G2-TRENCH-L',17400,615,240,{behavior:'static',blink:null,fastBlink:false});
+relayPlatform(monatium_a,'M-GUARD-01-P',17740,615,120,{blink:{on:1.9,warning:0.55,off:1.0,phase:0.3},fastBlink:false});
+relayPlatform(monatium_a,'M-G2-TRENCH-R',17960,615,220,{behavior:'static',blink:null,fastBlink:false});
+surface(monatium_a,18300,615,240,'steel',{id:'M-G2-TRENCH-X',useSmallVisual:true});
+// G2 second bridge
+relayPlatform(monatium_a,'M-GRD-BR2',19200,460,320);
+BAFFLE(monatium_a,'M-G2-BAFFLE2',19360,460);
+relayPlatform(monatium_a,'M-G2-BLINK2',19630,450,160,{blink:SLOW_BLINK(1.2),fastBlink:false});
+surface(monatium_a,19900,470,160,'steel',{id:'M-G2-STEP3'});
+// G3 multi-level crossing: three guarded decks in a rising, falling rhythm. No standing walls between decks.
+dropPlatform(monatium_a,'M-G3-STEP-HI');
+relayPlatform(monatium_a,'M-G3-MID1',21060,500,320);
+BAFFLE(monatium_a,'M-G3-BAFFLE1',21220,500);
+relayPlatform(monatium_a,'M-G3-UPPER',21500,420,300);
+BAFFLE(monatium_a,'M-G3-BAFFLE2',21650,420);
+relayPlatform(monatium_a,'M-G3-GND2',21920,580,480);
+relayPlatform(monatium_a,'M-G3-MID2',22520,500,300);
+BAFFLE(monatium_a,'M-G3-BAFFLE3',22670,500);
+relayPlatform(monatium_a,'M-G3-HIGH-EXIT',22930,450,150);
+relayPlatform(monatium_a,'M-G3-GND3',23180,580,220);
+// G4 special guard bridges
+relayPlatform(monatium_a,'M-GRD-BR3A',23760,480,320);
+BAFFLE(monatium_a,'M-G4-BAFFLE1',23920,480);
+relayPlatform(monatium_a,'M-G4-BLINK1',24190,450,140,{blink:SLOW_BLINK(0.4),fastBlink:false});
+relayPlatform(monatium_a,'M-GRD-BR3B',24440,430,320);
+relayPlatform(monatium_a,'M-G4-BLINK2',24870,470,130,{blink:SLOW_BLINK(1.3),fastBlink:false});
+relayPlatform(monatium_a,'M-GUARD-02-P1',24640,300,90,{blink:{on:2.2,warning:0.6,off:1.0,phase:0.45},fastBlink:false});
+relayPlatform(monatium_a,'M-GUARD-02-P',24360,190,80,{blink:{on:2.2,warning:0.6,off:1.0,phase:1.15},fastBlink:false});
 levels.push(monatium_a);
 
 // ============================================================================
@@ -1036,6 +1126,17 @@ wall(erpien_a, 8920, 370, 1120, 26, 'stone', { id: 'EA-WALL-P10-UNDER', ceiling:
 wall(erpien_a, 10040, -950, 76, 1415, 'stone', { id: 'EA-WALL-BARRIER-R', wallSide: 'both', noTopLand: true, role: '우측 상공 스킵 차단 수직 석조 장벽 (하단 통과 유도)' });
 floor(erpien_a, 10200, 1000, 'stone', 580, { id: 'EA-GND-EXIT', checkpointSafe: true, joinRight: true });
 
+
+// v1.2: Erpien A blink timing. Every blinking plank stays on 3s; neighbours fade in a wave that follows the player.
+for (const [id, ph] of [['E-GATE-BLINK-1',0.0],['E-GATE-BLINK-2',0.5],
+  ['EA-B04',0.0],['EA-B03',0.45],['EA-B02',0.9],['EA-B01',1.35],['EA-B05',0.6],
+  ['EA-B07',0.0],['EA-B08',-0.35],['EA-B09',-0.7],['EA-B10',-1.05]]) {
+ const a = erpien_a.platforms.find(q => q.id === id);
+ if (a) a.blink = { on: 3.0, warning: 0.75, off: 0.8, phase: ph };
+}
+// The gate-to-city buffer is a walk with no hazards; its checkpoint flag and the one right after it are removed.
+dropCheckpoint(erpien_a,6350);
+dropCheckpoint(erpien_a,6920);
 levels.push(erpien_a);
 
 
@@ -1226,6 +1327,26 @@ for(const [idx,[cx,cy]] of [
  [12620,542],[13282,472],[13575,317],[14460,542],[15057,447],[15375,357],[18200,542],[19950,542]
 ].entries()){
  addCandy(erpien_b,`E-C${String(idx+1).padStart(2,'0')}`,cx,cy,'main');
+}
+
+// v1.2: Erpien B. The crayon route floats well clear of the main path (no eaves hanging over it),
+// and each pit crossing is a two-step bridge that steps down toward the next street.
+dropPlatform(erpien_b,'E-CITY-C01-EAVES');
+dropPlatform(erpien_b,'E-CITY-C01-WALL');
+relayPlatform(erpien_b,'E-CITY-C01-P1',4060,240,90);
+relayPlatform(erpien_b,'E-CITY-C01-P2',4300,170,84);
+relayPlatform(erpien_b,'E-CITY-C01-P3',4520,150,80);
+relayPlatform(erpien_b,'E-CITY-BRIDGE1',1190,480,200);
+relayPlatform(erpien_b,'E-CITY-03',2560,470,180);
+relayPlatform(erpien_b,'E-CITY-04',2850,430,180);
+relayPlatform(erpien_b,'E-CITY-06',4220,480,180);
+relayPlatform(erpien_b,'E-CITY-06B',4500,450,170);
+// over-street stairs share one rhythm: low step 480, high step 410
+for (const [lo, hi] of [['E-CITY-01','E-CITY-02'],['E-CITY-02B','E-CITY-02C'],['E-CITY-05','E-CITY-05B'],['E-CITY-07','E-CITY-08'],['E-CITY-10','E-CITY-10B'],['E-CITY-12B','E-CITY-12C']]) {
+ const a = erpien_b.platforms.find(q => q.id === lo), b = erpien_b.platforms.find(q => q.id === hi);
+ if (!a || !b) continue;
+ relayPlatform(erpien_b, lo, a.x, 480, 180);
+ relayPlatform(erpien_b, hi, a.x + 180 + 110, 410, 180);
 }
 levels.push(erpien_b);
 // TEST28: Single source of truth for official gold crayon HUD and the priority ending.
@@ -1502,7 +1623,15 @@ function regionTick(dt){
   }
  }else if(tr.phase==='hold'){
   drawCloudTransitionFrame(1,'hold');
-  if(tr.phaseTime>=tr.holdDur){
+  // v1.2: stay behind the clouds until the next map's backgrounds are decoded (up to 3s), so no placeholder flashes.
+  const tl=levels[tr.target];
+  const bgReady=!tl||(tl.segments||[]).every(sg=>!sg.bg||worldImages[sg.bg]);
+  if(tr.phaseTime>=tr.holdDur&&(bgReady||tr.phaseTime>=3)){
+   if(typeof computeInitialCameraForPoint==='function'){
+    try{const c=computeInitialCameraForPoint(p.x,p.y);if(c){cam=c.cam??cam;camY=c.camY??camY;}}catch(err){}
+   }
+   window.camBaseY=camY;prevCam=cam;prevCamY=camY;
+   if(typeof syncRenderCoords==='function')syncRenderCoords();
    tr.phase='opening';
    tr.phaseTime=0;
   }
