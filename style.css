@@ -2191,3 +2191,11 @@ body:not(.is-mobile-device) .mobileSettingsCard { width: min(510px, 95%); }
 .vjoy-container{transition:none}
 .vbtn{-webkit-tap-highlight-color:transparent}
 .vbtn-action{transition:none !important}
+
+/* v1.3: no browser zoom from taps. manipulation keeps page scrolling but drops double-tap zoom everywhere;
+   in the landscape game every touch belongs to the game. */
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html.mobile-landscape-lock,body.mobile-game-landscape{touch-action:none}
+/* Jump and dash take touches a little beyond their drawn circle, so a near miss still counts. */
+.mobileControls .vbtn-action{position:relative}
+.mobileControls .vbtn-action::after{content:"";position:absolute;inset:-16px;border-radius:50%}

@@ -1290,3 +1290,45 @@ function setupTouchInputLayer() {
   window.addEventListener('orientationchange', releaseAllTouchSources);
   window.addEventListener('resize', () => { if (!VJ.active) measureHome(); });
 }
+
+
+// ============================================================================
+// v1.3 NO-ZOOM GUARD AND AUTO FULLSCREEN
+// iOS Safari ignores user-scalable=no, so double-tap and pinch zoom are also blocked here.
+// Android: the first tap on the game in landscape enters native fullscreen once. If the player leaves it,
+// it is not forced again (the fullscreen button still works).
+// ============================================================================
+(function setupNoZoomAndAutoFullscreen() {
+  const INTERACTIVE = 'button, a, input, select, textarea, label, [role="button"], .optChoiceBtn';
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', e => {
+    const now = performance.now();
+    const t = e.target;
+    const interactive = t && t.closest && t.closest(INTERACTIVE);
+    if (!interactive && now - lastTouchEnd < 350 && e.cancelable) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false, capture: true });
+  for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
+    document.addEventListener(type, e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  }
+  document.addEventListener('dblclick', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  // Two-finger pinch on browsers without gesture events
+  document.addEventListener('touchmove', e => {
+    if (e.touches && e.touches.length > 1 && e.scale !== undefined && e.scale !== 1 && e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  let autoFsTried = false;
+  document.addEventListener('touchend', e => {
+    if (autoFsTried) return;
+    if (e.touches && e.touches.length > 0) return; // switch only when no finger is holding a control
+    if (typeof isMobileOrTabletViewport !== 'function' || !isMobileOrTabletViewport()) return;
+    if (window.innerWidth < window.innerHeight) return;
+    if (typeof state === 'undefined' || (state !== 'playing' && state !== 'paused')) return;
+    if (document.fullscreenElement || document.webkitFullscreenElement) { autoFsTried = true; return; }
+    if (window.matchMedia && window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) { autoFsTried = true; return; }
+    const gameEl = document.getElementById('game');
+    if (!gameEl || !(gameEl.requestFullscreen || gameEl.webkitRequestFullscreen)) { autoFsTried = true; return; }
+    autoFsTried = true;
+    if (typeof requestGameFullscreenOrFocus === 'function') requestGameFullscreenOrFocus('auto_first_tap');
+  }, { passive: true });
+})();
