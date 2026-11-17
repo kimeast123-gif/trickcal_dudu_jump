@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_6_2_261117';
+const NIGHT_ASSET_Q = '?v=v1_6_3_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -428,15 +428,7 @@ function updateDrone(d, dt) {
   // body contact and stomp
   const pTop = p.y - 58, pBot = p.y;
   if (p.x + 16 > d.x - DRONE.halfW && p.x - 16 < d.x + DRONE.halfW && pBot > d.y - DRONE.halfH && pTop < d.y + DRONE.halfH) {
-    const fromAbove = p.vy > 60 && (p.prevY ?? p.y) <= d.y - DRONE.halfH + 10;
-    if (fromAbove) {
-      d.state = 'dead'; d.t = 0; d.anim = 0; d.clip = 'drone_die';
-      p.vy = -560; p.ground = false; p.on = null; p.jumps = 1; p.airDashUsed = false;
-      burst(d.x, d.y - 10, '#9be7ff', 14);
-      tone(520, 0.12, 'triangle', 0.05);
-    } else if (p.invulnerable <= 0) {
-      applyStunHit(d.x, 'night_drone');
-    }
+    if (p.invulnerable <= 0) applyStunHit(d.x, 'night_drone');   // v1.6.3: touching is always a hit (no stomping)
   }
 }
 function fireDroneDart(d) {

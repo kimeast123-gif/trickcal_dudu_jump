@@ -4,7 +4,7 @@
  * - 통계(analyticsEnabled)는 사용자 동의 UI 및 공개 프로젝트 토큰이 준비되기 전까지 false(비활성)를 기본값으로 유지합니다.
  */
 window.DUDU_RELEASE = Object.freeze({
-  version: 'v1.6.2',
+  version: 'v1.6.3',
   releaseMode: true,
   qaBuild: false,
   posthogProjectToken: '',

@@ -16,13 +16,14 @@
 
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
-const SM_WIDTH = 2400;
-const SM_ASSET_Q = '?v=v1_6_2_261117'; // rewritten by tools/release.py on every deploy
+const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
+const SM_ASSET_Q = '?v=v1_6_3_261117'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
-  x1: 0, x2: 2275, y1: -6046, y2: -4476,       // the blue zone on the sketch
+  x1: 0, x2: 3467, y1: -6046, y2: -4476,       // the blue zone on the sketch
   intervalMin: 20, intervalMax: 30,             // start-to-start
+  firstMin: 10, firstMax: 15,                   // v1.6.3: the first gust comes soon after arriving, so the gimmick is felt
   durMin: 4, durMax: 6,
   warn: 1.2,                                    // visible warning before a gust, no push
   push: 90,                                     // px/s: in the air the target speed shifts left by this much
@@ -68,60 +69,62 @@ function loadSpiritAssets() {
 // ----------------------------------------------------------------------------
 const SM_PLATFORMS = [
   // B cave maze (the floor below is solid everywhere: no pit in the cave)
-  ['M1', 2143, 408, 111, 'ledge'], ['M2', 1634, 408, 96, 'ledge'], ['M3', 1489, 299, 96, 'ledge'],
-  ['M4', 1744, 282, 96, 'ledge'], ['M5', 2047, 265, 96, 'ledge'], ['M6', 1243, 181, 207, 'ledge'],
-  ['M7', 1867, 173, 156, 'ledge'], ['M8', 2034, -4, 96, 'ledge'], ['M9', 1429, -46, 198, 'ledge'],
-  ['M10', 2152, -117, 153, 'ledge'], ['M11', 1705, -142, 165, 'ledge'], ['M12', 1232, -159, 96, 'ledge'],
-  ['M13', 1596, -243, 96, 'ledge'], ['M14', 2164, -306, 102, 'ledge'], ['M15', 1664, -432, 96, 'ledge'],
-  ['M16', 2149, -495, 99, 'ledge'], ['M17', 1447, -567, 174, 'ledge'], ['M18', 1783, -567, 180, 'ledge'],
-  ['M19', 2002, -663, 117, 'ledge'], ['M20', 1648, -747, 96, 'ledge'], ['M21', 1258, -764, 171, 'ledge'],
-  ['M22', 1462, -831, 96, 'ledge'], ['M23', 2191, -852, 111, 'ledge'], ['M24', 1879, -1003, 222, 'ledge'],
-  ['M25', 1912, -1176, 144, 'ledge'],
+  ['M1', 3265, 408, 170, 'ledge'], ['M2', 2524, 408, 69, 'ledge'], ['M3', 2299, 299, 73, 'ledge'],
+  ['M4', 2690, 282, 73, 'ledge'], ['M5', 3159, 265, 64, 'ledge'], ['M6', 1885, 181, 317, 'ledge'],
+  ['M7', 2841, 173, 240, 'ledge'], ['M8', 3136, -4, 69, 'ledge'], ['M9', 2170, -46, 303, 'ledge'],
+  ['M10', 3278, -117, 235, 'ledge'], ['M11', 2593, -142, 253, 'ledge'], ['M12', 1875, -159, 134, 'ledge'],
+  ['M13', 2464, -243, 69, 'ledge'], ['M14', 3297, -306, 156, 'ledge'], ['M15', 2570, -432, 69, 'ledge'],
+  ['M16', 3274, -495, 152, 'ledge'], ['M17', 2197, -567, 267, 'ledge'], ['M18', 2713, -567, 276, 'ledge'],
+  ['M19', 3048, -663, 180, 'ledge'], ['M20', 2542, -747, 74, 'ledge'], ['M21', 1908, -764, 262, 'ledge'],
+  ['M22', 2253, -831, 82, 'ledge'], ['M23', 3338, -852, 170, 'ledge'], ['M24', 2860, -1003, 340, 'ledge'],
+  ['M25', 2910, -1176, 221, 'ledge'],
   // left exit through the doorway to Gabia's rest
-  ['E1', 850, -310, 285, 'ledge'], ['E2', 520, -382, 264, 'ledge'], ['E3', 118, -449, 321, 'rest'],
+  ['E1', 1282, -310, 437, 'ledge'], ['E2', 776, -382, 405, 'ledge'], ['E3', 160, -449, 492, 'rest'],
   // C lava hall
-  ['L0', 1045, -1301, 1278, 'basalt'], ['L1', 1291, -1510, 357, 'basalt'], ['L2', 1789, -1676, 450, 'basalt'],
-  ['L3', 1390, -1906, 111, 'basalt'], ['L4', 1579, -1819, 123, 'basalt'], ['L5', 1579, -2048, 114, 'basalt'],
-  ['L6', 1810, -2073, 96, 'basalt'], ['L7', 1962, -2079, 96, 'basalt'], ['L8', 2130, -2073, 96, 'basalt'],
-  ['L9', 1015, -2104, 486, 'basalt'],
+  ['L0', 1581, -1301, 1960, 'basalt'], ['L1', 1958, -1510, 548, 'basalt'], ['L2', 2722, -1676, 690, 'basalt'],
+  ['L3', 2110, -1906, 170, 'blink'], ['L4', 2400, -1819, 188, 'blink'], ['L5', 2400, -2048, 175, 'blink'],
+  ['L6', 2786, -2073, 83, 'blink'], ['L7', 3012, -2079, 96, 'blink'], ['L8', 3274, -2073, 87, 'blink'],
+  ['L9', 1535, -2104, 745, 'basalt'],
   // Ifrit's rest outside, then the climb over the roof of the hall
-  ['I0', 796, -1896, 204, 'rest'], ['I1', 496, -2023, 192, 'snow'],
-  ['O1', 289, -2204, 180, 'snow'], ['O2', 112, -2356, 138, 'snow'], ['O3', 283, -2530, 144, 'snow'],
-  ['O4', 451, -2713, 162, 'snow'], ['O5', 664, -2910, 168, 'snow'], ['O6', 901, -3028, 96, 'snow'],
-  ['O7', 1040, -2922, 96, 'snow'], ['O8', 1196, -2922, 96, 'snow'], ['O9', 1352, -2922, 96, 'snow'],
-  ['O10', 1508, -2926, 96, 'snow'], ['O11', 1626, -3047, 96, 'snow'], ['O12', 1795, -3051, 195, 'snow'],
-  ['O13', 1942, -3218, 114, 'snow'], ['O14', 1930, -3348, 117, 'snow'], ['O15', 1924, -3469, 111, 'snow'],
-  ['O16', 1915, -3617, 123, 'snow'], ['O17', 1672, -3781, 555, 'snow'],
-  ['U1', 1436, -3959, 96, 'snow'], ['U2', 1226, -3876, 96, 'snow'], ['U3', 1032, -4066, 96, 'snow'],
-  ['U4', 658, -4108, 96, 'snow'], ['U5', 331, -4229, 180, 'ice'], ['U6', 854, -4237, 96, 'ice'],
-  ['U7', 178, -4374, 96, 'snow'], ['U8', 732, -4389, 96, 'snow'], ['U9', 1392, -4354, 96, 'snow'],
-  ['U10', 1030, -4468, 96, 'snow'], ['U11', 1214, -4480, 96, 'ice'], ['U12', 1513, -4526, 96, 'ice'],
+  ['I0', 1199, -1896, 313, 'rest'], ['I1', 739, -2023, 295, 'snow'],
+  ['O1', 422, -2204, 276, 'snow'], ['O2', 150, -2356, 212, 'snow'], ['O3', 413, -2530, 220, 'snow'],
+  ['O4', 670, -2713, 249, 'snow'], ['O5', 997, -2910, 257, 'snow'], ['O6', 1397, -3028, 74, 'snow'],
+  ['O7', 1604, -2922, 87, 'snow'], ['O8', 1848, -2922, 78, 'snow'], ['O9', 2082, -2922, 88, 'snow'],
+  ['O10', 2317, -2926, 97, 'snow'], ['O11', 2501, -3047, 87, 'snow'], ['O12', 2731, -3051, 299, 'snow'],
+  ['O13', 2956, -3218, 175, 'snow'], ['O14', 2938, -3348, 179, 'snow'], ['O15', 2929, -3469, 170, 'snow'],
+  ['O16', 2915, -3617, 189, 'snow'], ['O17', 2542, -3781, 851, 'snow'],
+  ['U1', 2202, -3959, 106, 'snow'], ['U2', 1875, -3876, 115, 'snow'], ['U3', 1567, -4066, 134, 'snow'],
+  ['U4', 988, -4108, 147, 'snow'], ['U5', 486, -4229, 276, 'blink'], ['U6', 1305, -4237, 115, 'blink'],
+  ['U7', 265, -4374, 120, 'snow'], ['U8', 1112, -4389, 124, 'snow'], ['U9', 2138, -4354, 96, 'snow'],
+  ['U10', 1590, -4468, 83, 'snow'], ['U11', 1875, -4480, 79, 'blink'], ['U12', 2326, -4526, 92, 'blink'],
   // D wind zone
-  ['V1', 100, -4582, 96, 'ice'], ['V2', 306, -4620, 96, 'snow'], ['V3', 544, -4628, 96, 'snow'],
-  ['V4', 901, -4655, 96, 'ice'], ['V5', 1381, -4731, 96, 'snow'], ['V6', 410, -4810, 96, 'ice'],
-  ['V7', 721, -4830, 96, 'snow'], ['V8', 1756, -4959, 96, 'snow'], ['V9', 1528, -4951, 96, 'ice'],
-  ['V10', 920, -5008, 96, 'snow'], ['V11', 102, -5008, 96, 'ice'], ['V12', 1201, -5069, 96, 'snow'],
-  ['V13', 1033, -5190, 96, 'ice'], ['V14', 1380, -5202, 96, 'ice'], ['V15', 1651, -5194, 96, 'ice'],
-  ['V16', 94, -5255, 96, 'ice'], ['V17', 1194, -5381, 96, 'snow'], ['V18', 1494, -5411, 96, 'snow'],
-  ['V19', 940, -5552, 96, 'snow'], ['V20', 1314, -5570, 96, 'snow'], ['V21', 1669, -5574, 96, 'snow'],
-  ['V22', 1081, -5763, 96, 'snow'], ['V23', 1464, -5798, 96, 'snow'], ['V24', 1236, -5981, 96, 'snow'],
-  ['V25', 1225, -6148, 96, 'snow'],
+  ['V1', 146, -4582, 119, 'blink'], ['V2', 468, -4620, 106, 'snow'], ['V3', 836, -4628, 101, 'snow'],
+  ['V4', 1388, -4655, 92, 'blink'], ['V5', 2128, -4731, 83, 'snow'], ['V6', 647, -4810, 69, 'blink'],
+  ['V7', 1112, -4830, 92, 'snow'], ['V8', 2703, -4959, 83, 'snow'], ['V9', 2358, -4951, 74, 'blink'],
+  ['V10', 1420, -5008, 87, 'snow'], ['V11', 169, -5008, 78, 'blink'], ['V12', 1848, -5069, 92, 'snow'],
+  ['V13', 1604, -5190, 64, 'blink'], ['V14', 2124, -5202, 87, 'blink'], ['V15', 2547, -5194, 74, 'blink'],
+  ['V16', 160, -5255, 73, 'blink'], ['V17', 1825, -5381, 115, 'snow'], ['V18', 2299, -5411, 87, 'snow'],
+  ['V19', 1443, -5552, 101, 'snow'], ['V20', 2004, -5570, 124, 'snow'], ['V21', 2552, -5574, 119, 'snow'],
+  ['V22', 1668, -5763, 83, 'snow'], ['V23', 2253, -5798, 87, 'snow'], ['V24', 1898, -5981, 97, 'snow'],
+  ['V25', 1885, -6148, 92, 'snow'],
   // E summit
-  ['S0', 850, -6350, 894, 'summit']
+  ['S0', 1282, -6350, 1371, 'summit']
 ];
 // Solid rock: [id, x, y, w, h]. The mountain's outer wall (with the cave mouth at the floor, the doorway to Gabia's
 // rest and the doorway from the lava hall out to Ifrit), the brown pillars of the sketch and the roof of the hall.
 const SM_WALLS = [
-  ['MW1', 1135, -134, 90, 1384],   // lower outer wall, down to the bottom (v1.6.2: no cave mouth; the climb starts outside)
-  ['MW2', 1135, -1163, 105, 672],  // upper outer wall; the doorway to Gabia is y -491..-134
-  ['MW3', 1000, -2080, 45, 830],   // lava hall left wall below L9
-  ['MW4', 961, -2705, 39, 371],    // wall above the doorway out to Ifrit (doorway y -2334..-2104)
-  ['B1', 1651, -71, 51, 256], ['B2', 1831, -424, 48, 277], ['B3', 1906, -882, 63, 315],
-  ['B5', 1804, -1236, 63, 283], ['B6', 1210, -2073, 45, 267], ['B7', 988, -2846, 60, 217]
+  ['MW1', 1719, -134, 138, 1384],   // lower outer wall, down to the bottom (v1.6.2: no cave mouth; the climb starts outside)
+  ['MW2', 1719, -1163, 161, 672],  // upper outer wall; the doorway to Gabia is y -491..-134
+  ['MW3', 1512, -2080, 69, 830],   // lava hall left wall below L9
+  ['MW4', 1452, -2705, 60, 371],    // wall above the doorway out to Ifrit (doorway y -2334..-2104)
+  ['B1', 2510, -71, 78, 256], ['B2', 2786, -424, 74, 277], ['B3', 2901, -882, 97, 315],
+  ['B5', 2745, -1236, 97, 283], ['B6', 1834, -2073, 69, 267], ['B7', 1494, -2846, 92, 217]
 ];
-const SM_ROOF = { x: 1078, y: -2705, w: 1251, h: 120 };
-const SM_LAVA = [ { x1: 1340, x2: 1460 }, { x1: 1620, x2: 1740 } ];   // pools lying on the hall floor L0
+const SM_ROOF = { x: 1632, y: -2705, w: 1918, h: 120 };   // v1.6.3: drawn only; the strip above it is a fall zone
+const SM_LAVA = [ { x1: 2033, x2: 2217 }, { x1: 2463, x2: 2647 } ];   // pools lying on the hall floor L0
 const SM_FLOOR_Y = 580;
+const SM_WALL_X = 1719;      // the mountain's outer wall (start outside on its left, Gabia's cave on its right)
+const SM_LAVA_WALL_X = 1512; // the lava hall's left wall
 
 function buildSpiritStage() {
   const s = makeWorldStage({
@@ -133,10 +136,10 @@ function buildSpiritStage() {
     minCamY: -6870,
     maxCamY: 120,
     cameraProfile: 'world1_standard',
-    entrySpawns: { default: { route: 'default', platformId: 'SM-E3', x: 259, feetY: -449 } },
+    entrySpawns: { default: { route: 'default', platformId: 'SM-E3', x: 376, feetY: -449 } },
     segments: [{ start: 0, end: SM_WIDTH, bg: 'spirit' }],
     backgroundRanges: {},
-    goal: { id: 'spirit-summit', exitRoute: 'default', x: 1594, y: -6350, w: 60, h: 120, hidden: true }
+    goal: { id: 'spirit-summit', exitRoute: 'default', x: 2423, y: -6350, w: 60, h: 120, hidden: true }
   });
   s.worldId = SM_WORLD_ID;
   s.spirit = true;
@@ -150,30 +153,35 @@ function buildSpiritStage() {
   s.killYAt = spiritKillY;
 
   // the cave floor (inside the mountain only): the maze has no pit
-  wFloor(s, 1135, SM_WIDTH - 1135, 'grass', SM_FLOOR_Y, { id: 'SM-FLOOR', h: 700, smDraw: 'floor' });
+  wFloor(s, SM_WALL_X, SM_WIDTH - SM_WALL_X, 'grass', SM_FLOOR_Y, { id: 'SM-FLOOR', h: 700, smDraw: 'floor' });
+  let blinkN = 0;
   for (const [id, x, y, w, kind] of SM_PLATFORMS) {
-    if (kind === 'basalt' && id === 'L0') wSurface(s, x, y, w, 'grass', { id: 'SM-' + id, smDraw: kind });
-    else wSurface(s, x, y, w, 'grass', { id: 'SM-' + id, smDraw: kind, small: w <= 100 });
+    if (kind === 'blink') {
+      // v1.6.3: every grey box of the sketch blinks (story rule: on 2.6s, then 0.55s warning, off 1.0s)
+      blinkN++;
+      wSurface(s, x, y, w, 'grass', { id: 'SM-' + id, smDraw: 'blink', behavior: 'blink',
+        blink: { on: 2.6, warning: 0.55, off: 1.0, phase: (blinkN * 0.43) % 4.15 } });
+    } else wSurface(s, x, y, w, 'grass', { id: 'SM-' + id, smDraw: kind });
   }
   for (const [id, x, y, w, h] of SM_WALLS) wWall(s, x, y, w, h, 'grass', { id: 'SM-' + id, noTopLand: id.startsWith('MW'), smDraw: id.startsWith('B') ? 'pillar' : 'rock' });
-  wWall(s, SM_ROOF.x, SM_ROOF.y, SM_ROOF.w, SM_ROOF.h, 'grass', { id: 'SM-ROOF', smDraw: 'roof' });
+  wWall(s, SM_ROOF.x, SM_ROOF.y, SM_ROOF.w, SM_ROOF.h, 'grass', { id: 'SM-ROOF', smDraw: 'roof', nonCollidable: true });
 
   // Checkpoints: the sketch's green flags, shown as the zone's shrine (the plain flag is hidden). Order matters
   // for spiritKillY below.
-  wCheckpoint(s, '정령호수', 259, -449);
-  wCheckpoint(s, '동굴 끝', 1990, -1003);
-  wCheckpoint(s, '이프리트의 쉼터', 604, -2023);
-  wCheckpoint(s, '눈 덮인 산길', 2059, -3781);
-  wCheckpoint(s, '정상', 1594, -6350);
+  wCheckpoint(s, '정령호수', 376, -449);
+  wCheckpoint(s, '동굴 끝', 3030, -1003);
+  wCheckpoint(s, '이프리트의 쉼터', 905, -2023);
+  wCheckpoint(s, '눈 덮인 산길', 3136, -3781);
+  wCheckpoint(s, '정상', 2423, -6350);
   for (const sec of s.sections) sec.hiddenFlag = true;
   s.smShrines = ['shrine_lake', 'shrine_cave', 'shrine_lava', 'shrine_snow', 'shrine_top'];
 
   s.smNpcs = [
-    { id: 'SM-NPC-NAIA',  kind: 'naia',  name: '나이아',   x: 370,  y: -449,       idle: 'naia_idle',  near: 'naia_happy',  dialogue: '안녕! 처음보는 용족이네 퓨퓨! 앞으로 잘 지내보자!' },
-    { id: 'SM-NPC-GABIA', kind: 'gabia', name: '가비아',   x: 1975, y: SM_FLOOR_Y, idle: 'gabia_idle', near: 'gabia_happy', dialogue: '응... 용...족... 어두...운데... 조심... 해' },
-    { id: 'SM-NPC-IFRIT', kind: 'ifrit', name: '이프리트', x: 874,  y: -1896,      idle: 'ifrit_idle', near: 'ifrit_sorry', dialogue: '뭐야? 용족이 왜 여기에 있어? 빨리 안나가?' },
-    { id: 'SM-NPC-SYLLA', kind: 'sylla', name: '실라',     x: 949,  y: -6350,      idle: 'sylla_idle', near: 'sylla_happy', dialogue: '꼬마 용족이 여기까지 오다니. 대견하구나.' },
-    { id: 'SM-NPC-AYA',   kind: 'aya',   name: '아야',     x: 1069, y: -6350,      idle: 'aya_idle',   near: 'aya_happy',   dialogue: '힘이 넘치는걸? 특히 저 통통한 꼬리. 매끄럽고 탄탄하고... 참, 어서 가보렴 후훗.' }
+    { id: 'SM-NPC-NAIA',  kind: 'naia',  name: '나이아',   x: 546,  y: -449,       idle: 'naia_idle',  near: 'naia_happy',  dialogue: '안녕! 처음보는 용족이네 퓨퓨! 앞으로 잘 지내보자!' },
+    { id: 'SM-NPC-GABIA', kind: 'gabia', name: '가비아',   x: 3007, y: SM_FLOOR_Y, idle: 'gabia_idle', near: 'gabia_happy', dialogue: '응... 용...족... 어두...운데... 조심... 해' },
+    { id: 'SM-NPC-IFRIT', kind: 'ifrit', name: '이프리트', x: 1319,  y: -1896,      idle: 'ifrit_idle', near: 'ifrit_sorry', dialogue: '뭐야? 용족이 왜 여기에 있어? 빨리 안나가?' },
+    { id: 'SM-NPC-SYLLA', kind: 'sylla', name: '실라',     x: 1434,  y: -6350,      idle: 'sylla_idle', near: 'sylla_happy', dialogue: '꼬마 용족이 여기까지 오다니. 대견하구나.' },
+    { id: 'SM-NPC-AYA',   kind: 'aya',   name: '아야',     x: 1618, y: -6350,      idle: 'aya_idle',   near: 'aya_happy',   dialogue: '힘이 넘치는걸? 특히 저 통통한 꼬리. 매끄럽고 탄탄하고... 참, 어서 가보렴 후훗.' }
   ];
   // Red ellipses: fire wisps in the lava hall. v1.6.2: like the story's fairies they travel their platform edge to
   // edge (wait, warn, rush, rest, walk back), about 25% faster than the fairies.
@@ -186,9 +194,9 @@ function buildSpiritStage() {
   ];
   // Yellow stars: three challenge collectibles (golden crayon art), saved with the stage record.
   s.smStars = [
-    { id: 'SM-STAR-MAZE', x: 1300, y: -814 },
-    { id: 'SM-STAR-LAVA', x: 2178, y: -2123 },
-    { id: 'SM-STAR-WIND', x: 142,  y: -5320 }
+    { id: 'SM-STAR-MAZE', x: 1972, y: -814 },
+    { id: 'SM-STAR-LAVA', x: 3318, y: -2123 },
+    { id: 'SM-STAR-WIND', x: 196,  y: -5320 }
   ];
   s.hudStars = s.smStars.length;
   return s;
@@ -209,7 +217,7 @@ window.isSpiritActive = isSpiritActive;
 // falling about one and a half screens) instead of dropping her all the way down the mountain.
 function spiritKillY(x) {
   if (checkpoint >= 2 && sections[checkpoint]) return sections[checkpoint].y + 1100;
-  if (x < 1135) return 250;   // outside the mountain at the start there is nothing below: back to the lake
+  if (x < SM_WALL_X) return 250;   // outside the mountain at the start there is nothing below: back to the lake
   return 2000;                // inside the cave the floor catches every fall
 }
 
@@ -243,7 +251,7 @@ function resetSpiritRuntime() {
   sm.wind = { rng: smRng(20261117), state: 'outside', entered: false, nextStart: Infinity, start: 0, end: 0, dur: 0, intensity: 0, push: 0 };
   window.__smWindBias = 0;
   // respawning puts the darkness straight to where Dudu now stands (no leftover fade)
-  sm.mask = (p.x > 1135 && p.y < SM_FLOOR_Y - 60 && p.y > -1240) ? 1 : 0;
+  sm.mask = (p.x > SM_WALL_X && p.y < SM_FLOOR_Y - 60 && p.y > -1240) ? 1 : 0;
   const z = spiritBgZone(); for (let i = 0; i < 5; i++) smBgWeights[i] = i === z ? 1 : 0;
 }
 window.resetSpiritRuntime = resetSpiritRuntime;
@@ -257,7 +265,7 @@ function updateSpiritWind(dt) {
   if (!w.entered && inside) {
     // first entry: the first gust follows the same 20-30s rule, so there is never a gust right at the door
     w.entered = true;
-    w.nextStart = t + SM_WIND.intervalMin + w.rng() * (SM_WIND.intervalMax - SM_WIND.intervalMin);
+    w.nextStart = t + SM_WIND.firstMin + w.rng() * (SM_WIND.firstMax - SM_WIND.firstMin);
   }
   if (w.entered) {
     if (t >= w.nextStart) {
@@ -293,7 +301,7 @@ function updateSpiritWind(dt) {
 
 // story fairy timings (fairy1/fairy2 profiles) with the travel speed about 25% higher
 const WISP = { wait: 0.62, warn: 1.0, rest: 1.3, speed: 216, returnSpeed: 170, halfW: 26, halfH: 34 };
-function spiritLavaZone() { return p.x > 1000 && p.y < -1240 && p.y > -2200; }
+function spiritLavaZone() { return p.x > SM_LAVA_WALL_X && p.y < -1240 && p.y > -2200; }
 function updateWisp(w, dt) {
   w.prevX = w.x; w.t += dt; w.anim += dt;
   const span = Math.max(40, w.x2 - w.x1);
@@ -318,13 +326,7 @@ function updateWisp(w, dt) {
   }
   // body: landing on top stuns it; touching it otherwise is a hit (in every phase, like the fairies)
   if (p.x + 16 > w.x - WISP.halfW && p.x - 16 < w.x + WISP.halfW && p.y > w.hy - WISP.halfH && p.y - 58 < w.hy + WISP.halfH) {
-    if (p.vy > 60 && (p.prevY ?? p.y) <= w.hy - WISP.halfH + 10) {
-      w.state = 'stomped'; w.t = 0; w.anim = 0; w.clip = 'wisp_groggy';
-      p.vy = -540; p.ground = false; p.on = null; p.jumps = 1; p.airDashUsed = false;
-      burst(w.x, w.hy - 20, '#ffcf6b', 12); tone(520, 0.1, 'triangle', 0.04);
-    } else if (p.invulnerable <= 0) {
-      applyStunHit(w.x, 'spirit_wisp');
-    }
+    if (p.invulnerable <= 0) applyStunHit(w.x, 'spirit_wisp');   // v1.6.3: touching is always a hit (no stomping)
   }
 }
 function updateLava() {
@@ -366,10 +368,17 @@ function updateSpiritMountain(dt) {
   } else {
     for (const w of sm.wisps) { w.prevX = w.x; w.anim += dt; }
   }
+  // v1.6.3: above the lava hall's roof there is nothing to stand on: dropping into it is a fall
+  if (p.x > SM_ROOF.x && p.x < SM_ROOF.x + SM_ROOF.w && p.y > SM_ROOF.y + 30 && p.y < SM_ROOF.y + 250 && p.vy > 0 && state === 'playing') {
+    deaths++;
+    if (typeof retryWorld1StageCheckpoint === 'function') retryWorld1StageCheckpoint();
+    if (typeof tone === 'function') tone(180, 0.13);
+    return;
+  }
   updateSpiritStars();
   updateSpiritNpcs(dt);
   // cave darkness follows Dudu: full in the maze, none at the start floor, Gabia's rest or the lava hall
-  const inMaze = p.x > 1135 && p.y < SM_FLOOR_Y - 60 && p.y > -1240;
+  const inMaze = p.x > SM_WALL_X && p.y < SM_FLOOR_Y - 60 && p.y > -1240;
   const target = inMaze ? 1 : 0;
   sm.mask += (target - sm.mask) * Math.min(1, dt / 0.35);
 }
@@ -408,7 +417,8 @@ function smZoneOf(id) {
 function smPickTile(a) {
   const z = smZoneOf(a.id);
   if (a.id === 'SM-E3') return 'lake_start';
-  if (a.smDraw === 'ice') return 'snow_ice';
+  if (a.smDraw === 'ice' || (a.smDraw === 'blink' && z === 'snow')) return 'snow_ice';
+  if (a.smDraw === 'blink' && z === 'lava') return 'lava_slab';
   if (z === 'lava' && a.id === 'SM-I0') return 'lava_slab';
   if (a.w >= 700) return z + '_long';
   if (a.w >= 260) return z + '_mid';
@@ -416,6 +426,22 @@ function smPickTile(a) {
 }
 // The tile is scaled to the platform's width and placed so its walkable surface line sits on the platform top.
 function drawSpiritLedge(a, x, y) {
+  if (a.blink) {
+    ctx.save();
+    if (a.blinkState === 'off') {
+      const prog = Math.max(0, Math.min(1, a.blinkStateProgress ?? 0));
+      ctx.globalAlpha = 0.1 + 0.3 * prog * prog;
+    } else {
+      ctx.globalAlpha = a.blinkAlpha ?? 1;
+      if (a.blinkState === 'warning') x += Math.round(Math.sin(time * 55) * 2);
+    }
+    drawSpiritTile(a, x, y);
+    ctx.restore();
+    return;
+  }
+  drawSpiritTile(a, x, y);
+}
+function drawSpiritTile(a, x, y) {
   const key = smPickTile(a), im = smTile(key), m = SM_TILES[key];
   if (!im || !m) { ctx.fillStyle = '#6f6a74'; ctx.fillRect(x, y, a.w, 14); return; }
   const sc = (a.w + 16) / m[0];
@@ -426,7 +452,7 @@ function drawSpiritRock(a, x, y) {
   const v = smView();
   const y1 = Math.max(y, v.y1 - 300), y2 = Math.min(y + a.h, v.y2 + 10);
   if (y2 <= y1) return;
-  if (a.smDraw === 'roof') { drawSpiritLedge({ ...a, smDraw: 'snow', w: a.w, id: 'SM-ROOF' }, x, y); return; }
+  if (a.smDraw === 'roof') { drawSpiritTile({ ...a, smDraw: 'snow', w: a.w, id: 'SM-ROOF' }, x, y); return; }
   const z = smZoneOf(a.id) === 'lava' || a.id === 'SM-MW3' || a.id === 'SM-MW4' || a.id === 'SM-B6' ? 'lava' : (a.id === 'SM-B7' ? 'stone' : 'cave');
   const key = z + '_pillar', im = smTile(key), m = SM_TILES[key];
   if (!im || !m) { ctx.fillStyle = '#4a4652'; ctx.fillRect(x, y1, a.w, y2 - y1); return; }
@@ -480,6 +506,10 @@ function spiritWindVisibility() {
   const ov = Math.max(0, Math.min(v.y2, SM_WIND.y2) - Math.max(v.y1, SM_WIND.y1));
   return Math.min(1, ov / 300);
 }
+function smWindSpawnY(v) {
+  const top = Math.max(SM_WIND.y1 - 120, v.y1), bot = Math.min(SM_WIND.y2 + 120, v.y2);
+  return top + Math.random() * Math.max(1, bot - top);
+}
 function updateWindParticles(fdt) {
   const w = sm.wind; if (!w) return;
   const vis = spiritWindVisibility();
@@ -487,14 +517,14 @@ function updateWindParticles(fdt) {
   const light = !!window.duduLightMode;
   const want = vis <= 0 ? 0 : Math.round((light ? 18 : 34) + (light ? 40 : 90) * w.intensity);
   while (sm.particles.length < want) {
-    sm.particles.push({ x: v.x1 + Math.random() * (v.x2 - v.x1 + 300), y: Math.max(SM_WIND.y1, v.y1) + Math.random() * Math.max(1, Math.min(v.y2, SM_WIND.y2) - Math.max(v.y1, SM_WIND.y1)), s: Math.random(), life: 0 });
+    sm.particles.push({ x: v.x1 + Math.random() * (v.x2 - v.x1 + 300), y: smWindSpawnY(v), s: Math.random(), life: 0 });
   }
   if (sm.particles.length > want + 20) sm.particles.length = want;
   for (const q of sm.particles) {
     const spd = 40 + 1250 * w.intensity * (0.6 + 0.4 * q.s);
     q.x -= spd * fdt; q.y += (8 + 30 * w.intensity) * fdt * (q.s - 0.3); q.life += fdt;
     if (q.x < v.x1 - 140 || q.y < v.y1 - 40 || q.y > v.y2 + 40) {
-      q.x = v.x2 + Math.random() * 200; q.y = Math.max(SM_WIND.y1, v.y1) + Math.random() * Math.max(1, Math.min(v.y2, SM_WIND.y2) - Math.max(v.y1, SM_WIND.y1)); q.life = 0;
+      q.x = v.x2 + Math.random() * 200; q.y = smWindSpawnY(v); q.life = 0;
     }
   }
 }
@@ -515,20 +545,13 @@ function drawWindParticles() {
   if (vis <= 0) return;
   const I = w.intensity;
   ctx.save();
-  if (I > 0.05) {
-    // a pale band of blown snow sweeping right to left across the zone (behind the platforms)
-    const v = smView(); const band = (time * 900) % (v.x2 - v.x1 + 800);
-    const bx = v.x2 + 400 - band;
-    const g = ctx.createLinearGradient(bx - 400, 0, bx + 400, 0);
-    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, `rgba(235,245,255,${0.16 * I * vis})`); g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(bx - 400, Math.max(v.y1, SM_WIND.y1), 800, Math.min(v.y2, SM_WIND.y2) - Math.max(v.y1, SM_WIND.y1));
-  }
   ctx.lineCap = 'round';
   for (const q of sm.particles) {
-    if (q.y < SM_WIND.y1 - 20 || q.y > SM_WIND.y2 + 20) continue;
+    // fade toward the zone's top and bottom so the border never shows as a line
+    const edge = Math.max(0, Math.min(1, (q.y - SM_WIND.y1 + 120) / 360, (SM_WIND.y2 + 120 - q.y) / 360));
+    if (edge <= 0) continue;
     const len = 6 + 150 * I * (0.5 + q.s);
-    const a = vis * (0.3 + 0.6 * I) * (0.55 + 0.45 * q.s);
+    const a = edge * vis * (0.3 + 0.6 * I) * (0.55 + 0.45 * q.s);
     if (len > 14) {
       // streak: the bright head is on the LEFT, the tail trails to the right, so the motion reads right-to-left.
       // Thick enough to read on a phone (the canvas is shown at about 40% there).
@@ -671,10 +694,10 @@ const smBgWeights = [1, 0, 0, 0, 0];
 let smBgLast = 0;
 function spiritBgZone() {
   if (p.y < -6250) return 4;                                  // summit
-  if (p.x >= 1000 && p.y < -1240 && p.y > -2705) return 2;    // lava hall
-  if (p.x < 1000 && p.y < -1240 && p.y > -2150) return 2;     // Ifrit's rest
+  if (p.x >= SM_LAVA_WALL_X && p.y < -1240 && p.y > -2705) return 2;    // lava hall
+  if (p.x < SM_LAVA_WALL_X && p.y < -1240 && p.y > -2150) return 2;     // Ifrit's rest
   if (p.y <= -1240) return 3;                                 // outside climb
-  if (p.x >= 1135) return 1;                                  // Gabia's cave
+  if (p.x >= SM_WALL_X) return 1;                                  // Gabia's cave
   return 0;                                                   // lake start
 }
 const _smBgCache = {};
