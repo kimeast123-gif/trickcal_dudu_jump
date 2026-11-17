@@ -19,7 +19,7 @@ window.__bgmLoopBounds=BGM_LOOP_BOUNDS;
 
 const tracks=musicNames.map(n=>{
  const a=new Audio(EVENT_ROOT+n+'.mp3');
- a.preload=(n==='opening'||n==='day')?'auto':'metadata';
+ a.preload=(n==='opening'||n==='day')?'auto':(n==='monatium'?'none':'metadata'); /* v1.5.4: the night track loads when the night map starts */
  a.loop=true;
  a.volume=0;
  const bounds=BGM_LOOP_BOUNDS[n];

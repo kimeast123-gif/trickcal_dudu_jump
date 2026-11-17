@@ -20,7 +20,7 @@ def manifest():
             if r == 'MANIFEST_SHA256.txt' or r.startswith('docs/') or r == 'CLAUDE.md':
                 continue
             rows.append((r, hashlib.sha256(open(p, 'rb').read()).hexdigest()))
-    with open(os.path.join(ROOT, 'MANIFEST_SHA256.txt'), 'w', encoding='utf8') as fh:
+    with open(os.path.join(ROOT, 'MANIFEST_SHA256.txt'), 'w', encoding='utf8', newline='\n') as fh:
         fh.write(''.join(f'{h}  {r}\n' for r, h in sorted(rows)))
     print(f'MANIFEST_SHA256.txt: {len(rows)} files')
 
@@ -36,7 +36,8 @@ def bump(version):
         if os.path.basename(f) == 'release-config.js':
             n = re.sub(r"version: '[^']*'", f"version: '{version}'", n)
         if n != s:
-            open(f, 'w', encoding='utf8').write(n); changed += 1
+            # newline='\n' keeps LF on Windows too (the repository is LF; CRLF also breaks the manifest hashes)
+            open(f, 'w', encoding='utf8', newline='\n').write(n); changed += 1
     html = open(os.path.join(ROOT, 'index.html'), encoding='utf8').read()
     keys = set(re.findall(r'\.(?:js|css)\?v=([\w]+)', html))
     print(f'{changed} files updated, cache key {key}; script and style keys in index.html: {sorted(keys)}')

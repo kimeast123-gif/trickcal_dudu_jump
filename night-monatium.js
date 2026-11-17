@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_5_3_261117';
+const NIGHT_ASSET_Q = '?v=v1_5_4_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -52,8 +52,7 @@ function loadNightAssets() {
       // decode now so the first frame that shows it does not stall, then prescale backdrops while idle
       try { if (im.decode) await im.decode(); } catch (e) {}
       nightImages[key] = im;
-      if (key === 'bg_street') { idle(() => nightBackdropCanvas('street', false)); idle(() => nightBackdropCanvas('street', true)); }
-      else if (key.startsWith('bg_')) idle(() => nightBackdropCanvas(key.slice(3), false));
+      if (key.startsWith('bg_') && isNightActive()) idle(() => nightBackdropCanvas(key.slice(3), false));
     };
     im.onerror = () => console.warn('[night] failed to load', src);
     im.src = src;
@@ -662,16 +661,6 @@ function drawNightBrownWall(a, x, y) {
   ctx.restore();
 }
 
-// Short see-through grate joining two decks under a shutter.
-function drawNightGrate(a, x, y) {
-  ctx.save();
-  ctx.fillStyle = '#26304c'; ctx.fillRect(x, y, a.w, 10);
-  ctx.fillStyle = 'rgba(160,215,255,0.7)'; ctx.fillRect(x, y, a.w, 2);
-  ctx.fillStyle = 'rgba(10,14,28,0.8)';
-  for (let i = 6; i < a.w - 6; i += 12) ctx.fillRect(x + i, y + 3, 6, 5);
-  ctx.restore();
-}
-
 function drawNightPlaza(a, x, y) {
   const v = viewBounds();
   const x1 = Math.max(x, v.x1 - 20), x2 = Math.min(x + a.w, v.x2 + 20);
@@ -700,7 +689,6 @@ function drawNightPlatform(a, x, y) {
     case 'building': drawNightBuilding(a, x, y); break;
     case 'brown': drawNightBrownWall(a, x, y); break;
     case 'plaza': drawNightPlaza(a, x, y); break;
-    case 'grate': drawNightGrate(a, x, y); break;
     case 'none': break;
     default: drawNightLedge(a, x, y);
   }
@@ -708,8 +696,19 @@ function drawNightPlatform(a, x, y) {
 window.drawNightPlatform = drawNightPlatform;
 
 // World-space pass behind the platforms: the tower body and its interior.
+function releaseNightCaches() {
+  for (const e of _nightCache.values()) { e.canvas.width = 0; e.canvas.height = 0; }
+  _nightCache.clear();
+}
+window.releaseNightCaches = releaseNightCaches;
+
 function drawNightMonatiumBack() {
-  if (!isNightActive()) return;
+  if (!isNightActive()) {
+    // left the night map: give back the ~30MB of prescaled art and never carry the start hold elsewhere
+    if (_nightCache.size) releaseNightCaches();
+    if (window.__duduIntroLock) window.__duduIntroLock = 0;
+    return;
+  }
   const v = viewBounds();
   const T = NIGHT_TOWER;
   if (v.x2 < T.x1 - 40 || v.x1 > T.x2 + 40) return;
@@ -851,11 +850,10 @@ function nightBackdropCanvas(key, flip) {
   if (!im) return null;
   const sc = Math.max(W / im.width, H / im.height) * NIGHT_BG_SCALE;
   const pw = Math.round(im.width * sc), ph = Math.round(im.height * sc);
-  return nightCached(`bg:${key}:${flip ? 1 : 0}`, pw, ph, null, (g, cw, ch) => {
+  // one prescaled canvas per painting; the mirrored zones flip it while blitting (saves ~11MB)
+  return nightCached(`bg:${key}`, pw, ph, null, (g, cw, ch) => {
     g.imageSmoothingQuality = 'high';
-    if (flip) { g.translate(cw, 0); g.scale(-1, 1); }
     g.drawImage(im, 0, 0, cw, ch);
-    g.setTransform(1, 0, 0, 1, 0, 0);
     // night haze toward the bottom keeps the foreground readable
     const haze = g.createLinearGradient(0, ch * 0.35, 0, ch);
     haze.addColorStop(0, 'rgba(10,14,30,0)'); haze.addColorStop(1, 'rgba(10,14,30,0.38)');
@@ -870,9 +868,11 @@ function drawNightBackdrop(key, flip, prog, alpha) {
   const l = nightStage();
   const vProg = Math.max(0, Math.min(1, (rCamY - l.minCamY) / Math.max(1, l.maxCamY - l.minCamY)));
   const sx = Math.round(prog * (c.width - W)), sy = Math.round(vProg * (c.height - H));
-  if (alpha < 1) { ctx.save(); ctx.globalAlpha = alpha; }
+  if (alpha < 1 || flip) ctx.save();
+  if (alpha < 1) ctx.globalAlpha = alpha;
+  if (flip) { ctx.translate(W, 0); ctx.scale(-1, 1); }
   ctx.drawImage(c, sx, sy, W, H, 0, 0, W, H);
-  if (alpha < 1) ctx.restore();
+  if (alpha < 1 || flip) ctx.restore();
   return alpha >= 1;
 }
 function drawNightBackground() {

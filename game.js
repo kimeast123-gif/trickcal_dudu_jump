@@ -746,7 +746,7 @@ function update(dt){
 
  const stunned=p.guardStun>0;
  /* v1.5: the night map holds Dudu still for the first 2 seconds while the lead runners set off */
- const introLock=window.__duduIntroLock>0;
+ const introLock=window.__duduIntroLock>0&&typeof isNightActive==='function'&&isNightActive();
  if(introLock){p.buffer=0;dashRequest=false;}
  if(stunned){
   p.guardStun=Math.max(0,p.guardStun-dt);

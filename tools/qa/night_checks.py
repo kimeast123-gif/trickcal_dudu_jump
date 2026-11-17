@@ -216,6 +216,11 @@ async def main():
             check('clear: reaching the end of the plaza clears the stage and saves it', r['state'] == 'paused' and r['modal'] and r['cleared'], r)
 
         if on('world1'):
+            r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));startNightStage();await w(400);
+              startChallengeMode(0);await w(600);const x0=p.x;pressInput('ArrowRight','kb_ArrowRight');await w(500);releaseInput('ArrowRight','kb_ArrowRight');
+              return {moved:Math.round(p.x-x0),mode:gameMode}}""")
+            check('world1: leaving the night map during the 2s start hold does not freeze Dudu elsewhere (v1.5.4 bug)', r['moved'] > 60, r)
+
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));startWorld1StageFromMenu(0,true);await w(300);
               return {idx:activeWorldStageIndex,actors:actors.length,lock:window.__duduIntroLock,route:document.getElementById('routeLabel').textContent,
                 pill:document.getElementById('specialPill').hidden}}""")
