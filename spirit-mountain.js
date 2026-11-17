@@ -17,7 +17,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_6_3_261117'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_6_4_261117'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
@@ -46,8 +46,8 @@ const SM_SPRITES = {
   wisp_attack:  { frames: 47, fps: 25,   anchor: 110, foot: 130, display: 112 },
   wisp_groggy:  { frames: 34, fps: 25,   anchor: 140, foot: 118, display: 112 }
 };
-// v1.6.2 platform, wall, lava, wind and shrine art cut from 정령산 플랫폼 에셋.zip: [width, height, surface row]
-const SM_TILES = {"lake_long": [1247, 121, 19], "lake_mid": [384, 84, 13], "lake_small": [167, 98, 2], "lake_start": [510, 125, 22], "cave_long": [1299, 161, 39], "cave_mid": [483, 124, 17], "cave_small": [215, 114, 12], "cave_pillar": [155, 245, 2], "cave_floor": [1346, 173, 45], "lava_long": [1391, 180, 53], "lava_mid": [615, 150, 34], "lava_small": [236, 109, 10], "lava_slab": [324, 90, 3], "lava_pillar": [134, 297, 2], "lava_pool": [284, 84, 34], "snow_long": [1313, 156, 38], "snow_mid": [407, 117, 25], "snow_small": [193, 80, 3], "snow_ice": [288, 111, 6], "snow_pillar": [129, 245, 2], "wind_a": [331, 110, 14], "wind_b": [156, 117, 10], "wind_c": [157, 86, 11], "wind_d": [267, 88, 20], "wind_e": [204, 78, 16], "shrine_lake": [256, 170, 99], "shrine_cave": [233, 164, 90], "shrine_lava": [231, 166, 104], "shrine_snow": [233, 170, 102], "shrine_top": [233, 166, 33], "stone_pillar": [122, 205, 1]};
+// v1.6.4 platform, wall, lava and wind art cut from 정령산 에셋 - 새로운거.zip (flat-topped modules): [width, height, surface row]
+const SM_TILES = {"out_long": [1404, 246, 52], "out_tiny": [165, 106, 4], "out_wall": [212, 287, 1], "cave_long": [1419, 237, 47], "cave_tiny": [160, 96, 1], "cave_wall": [212, 296, 2], "lava_long": [1419, 269, 69], "lava_tiny": [165, 96, 2], "snow_long": [1418, 259, 62], "snow_tiny": [157, 101, 1], "cave_glow": [305, 127, 42], "lava_glow": [272, 86, 2], "snow_glow": [362, 132, 18], "lava_strip": [452, 52, 21], "wind_1": [349, 107, 30], "wind_2": [341, 110, 26], "wind_3": [320, 106, 17], "wind_4": [284, 96, 17]};   // v1.6.4: flat-topped sheets [w, h, surface row]
 const smImages = {};
 let _smAssetsRequested = false;
 function loadSpiritAssets() {
@@ -166,15 +166,13 @@ function buildSpiritStage() {
   for (const [id, x, y, w, h] of SM_WALLS) wWall(s, x, y, w, h, 'grass', { id: 'SM-' + id, noTopLand: id.startsWith('MW'), smDraw: id.startsWith('B') ? 'pillar' : 'rock' });
   wWall(s, SM_ROOF.x, SM_ROOF.y, SM_ROOF.w, SM_ROOF.h, 'grass', { id: 'SM-ROOF', smDraw: 'roof', nonCollidable: true });
 
-  // Checkpoints: the sketch's green flags, shown as the zone's shrine (the plain flag is hidden). Order matters
+  // Checkpoints: the sketch's green flags, drawn with the story checkpoint flag (v1.6.4). Order matters
   // for spiritKillY below.
   wCheckpoint(s, '정령호수', 376, -449);
   wCheckpoint(s, '동굴 끝', 3030, -1003);
   wCheckpoint(s, '이프리트의 쉼터', 905, -2023);
   wCheckpoint(s, '눈 덮인 산길', 3136, -3781);
   wCheckpoint(s, '정상', 2423, -6350);
-  for (const sec of s.sections) sec.hiddenFlag = true;
-  s.smShrines = ['shrine_lake', 'shrine_cave', 'shrine_lava', 'shrine_snow', 'shrine_top'];
 
   s.smNpcs = [
     { id: 'SM-NPC-NAIA',  kind: 'naia',  name: '나이아',   x: 546,  y: -449,       idle: 'naia_idle',  near: 'naia_happy',  dialogue: '안녕! 처음보는 용족이네 퓨퓨! 앞으로 잘 지내보자!' },
@@ -406,25 +404,50 @@ function drawSpiritSprite(key, t, x, y, face, alpha = 1) {
 function smRand(i) { const v = Math.sin(i * 91.7 + 13.3) * 43758.5453; return v - Math.floor(v); }
 
 function smTile(k) { return smImages['t_' + k] || null; }
-// Which zone art a platform uses, from its id: E = lake start, M = Gabia's cave, L / I0 = Ifrit's lava, the rest snow.
-function smZoneOf(id) {
-  const k = id.replace('SM-', '');
-  if (k[0] === 'E') return 'lake';
+// Which zone art a platform uses: E = outside start, M = Gabia's cave, L / I / anything in the lava band = lava, the rest snow.
+function smZoneOf(a) {
+  const k = a.id.replace('SM-', '');
+  if (k[0] === 'E') return 'out';
   if (k[0] === 'M' || k === 'FLOOR') return 'cave';
-  if (k[0] === 'L' || k === 'I0') return 'lava';
+  if (k[0] === 'L' || k[0] === 'I' || a.y > -2250) return 'lava';   // Ifrit's rest is in the lava band too
   return 'snow';
 }
-function smPickTile(a) {
-  const z = smZoneOf(a.id);
-  if (a.id === 'SM-E3') return 'lake_start';
-  if (a.smDraw === 'ice' || (a.smDraw === 'blink' && z === 'snow')) return 'snow_ice';
-  if (a.smDraw === 'blink' && z === 'lava') return 'lava_slab';
-  if (z === 'lava' && a.id === 'SM-I0') return 'lava_slab';
-  if (a.w >= 700) return z + '_long';
-  if (a.w >= 260) return z + '_mid';
-  return z + '_small';
+// v1.6.4: every ledge is drawn at one fixed scale so all of them share the same slim thickness, and the tile's
+// walkable top line sits exactly on the platform top (feet never float). Long ledges are 3-sliced from the long
+// module (left cap, repeated middle, right cap); short ones use the tiny module.
+const SM_LEDGE_SC = 0.34;        // long module: about 66px of rock under the surface
+const SM_CAP = 130;              // source px kept for each end cap
+function drawSpiritTile(a, x, y, zone) {
+  const z = zone || smZoneOf(a), w = a.w;
+  if (w < 120) {
+    const key = z + '_tiny', im = smTile(key), m = SM_TILES[key];
+    if (!im || !m) { ctx.fillStyle = '#6f6a74'; ctx.fillRect(x, y, w, 14); return; }
+    const sc = (w + 10) / m[0];
+    ctx.drawImage(im, x - 5, y - m[2] * sc, m[0] * sc, m[1] * sc);
+    return;
+  }
+  const key = z + '_long', im = smTile(key), m = SM_TILES[key];
+  if (!im || !m) { ctx.fillStyle = '#6f6a74'; ctx.fillRect(x, y, w, 14); return; }
+  const sc = SM_LEDGE_SC, top = y - m[2] * sc, h = m[1] * sc;
+  const x0 = x - 6, x1 = x + w + 6;                 // the art overhangs the hitbox a little on both sides
+  const cap = Math.min(SM_CAP * sc, (x1 - x0) / 2);
+  const capSrc = cap / sc;
+  ctx.drawImage(im, 0, 0, capSrc, m[1], x0, top, cap, h);
+  ctx.drawImage(im, m[0] - capSrc, 0, capSrc, m[1], x1 - cap, top, cap, h);
+  const midSrc = m[0] - 2 * SM_CAP, midW = midSrc * sc;
+  for (let tx = x0 + cap; tx < x1 - cap - 0.5; tx += midW) {
+    const dw = Math.min(midW, x1 - cap - tx);
+    ctx.drawImage(im, SM_CAP, 0, dw / sc, m[1], tx, top, dw + 0.6, h);
+  }
 }
-// The tile is scaled to the platform's width and placed so its walkable surface line sits on the platform top.
+// Blinking platforms use the zone's glowing slab and show their state: fade, warning shake, faint ghost while off.
+function drawSpiritGlow(a, x, y) {
+  const z = smZoneOf(a), key = (z === 'lava' ? 'lava' : z === 'snow' ? 'snow' : 'cave') + '_glow';
+  const im = smTile(key), m = SM_TILES[key];
+  if (!im || !m) { ctx.fillStyle = '#7fd8ff'; ctx.fillRect(x, y, a.w, 12); return; }
+  const sx = (a.w + 10) / m[0], sy = Math.min(sx, 0.42);
+  ctx.drawImage(im, x - 5, y - m[2] * sy, m[0] * sx, m[1] * sy);
+}
 function drawSpiritLedge(a, x, y) {
   if (a.blink) {
     ctx.save();
@@ -435,33 +458,51 @@ function drawSpiritLedge(a, x, y) {
       ctx.globalAlpha = a.blinkAlpha ?? 1;
       if (a.blinkState === 'warning') x += Math.round(Math.sin(time * 55) * 2);
     }
-    drawSpiritTile(a, x, y);
+    drawSpiritGlow(a, x, y);
     ctx.restore();
     return;
   }
   drawSpiritTile(a, x, y);
 }
-function drawSpiritTile(a, x, y) {
-  const key = smPickTile(a), im = smTile(key), m = SM_TILES[key];
-  if (!im || !m) { ctx.fillStyle = '#6f6a74'; ctx.fillRect(x, y, a.w, 14); return; }
-  const sc = (a.w + 16) / m[0];
-  ctx.drawImage(im, x - 8, y - m[2] * sc, m[0] * sc, m[1] * sc);
+// Walls: one clean rock block per zone, tiled down the wall at the wall's width. Landable pillars get a ledge cap.
+function smWallZone(id) {
+  if (id === 'SM-MW1') return 'out';
+  if (id === 'SM-MW3' || id === 'SM-MW4' || id === 'SM-B6') return 'lava';
+  if (id === 'SM-B7') return 'snow';
+  return 'cave';
 }
-// Walls and the brown pillars of the sketch: the zone's pillar art stacked to the wall's height.
+// One seamless rock texture per wall art, cut from the inside of the wall block (no tile outlines), so tall walls
+// read as a single face of rock instead of a stack of blocks.
+const _smWallPat = {};
+function smWallPattern(key) {
+  if (_smWallPat[key]) return _smWallPat[key];
+  const im = smTile(key), m = SM_TILES[key];
+  if (!im || !m || !im.complete || !im.naturalWidth) return null;
+  const sw = m[0] - 40, sh = m[1] - 50, sc = 0.55;
+  const c = document.createElement('canvas'); c.width = Math.round(sw * sc); c.height = Math.round(sh * sc);
+  c.getContext('2d').drawImage(im, 20, 25, sw, sh, 0, 0, c.width, c.height);
+  return (_smWallPat[key] = ctx.createPattern(c, 'repeat'));
+}
 function drawSpiritRock(a, x, y) {
+  if (a.smDraw === 'roof') return;   // v1.6.4: the lava hall's roof is not drawn; the space above it is an open drop
   const v = smView();
   const y1 = Math.max(y, v.y1 - 300), y2 = Math.min(y + a.h, v.y2 + 10);
-  if (y2 <= y1) return;
-  if (a.smDraw === 'roof') { drawSpiritTile({ ...a, smDraw: 'snow', w: a.w, id: 'SM-ROOF' }, x, y); return; }
-  const z = smZoneOf(a.id) === 'lava' || a.id === 'SM-MW3' || a.id === 'SM-MW4' || a.id === 'SM-B6' ? 'lava' : (a.id === 'SM-B7' ? 'stone' : 'cave');
-  const key = z + '_pillar', im = smTile(key), m = SM_TILES[key];
-  if (!im || !m) { ctx.fillStyle = '#4a4652'; ctx.fillRect(x, y1, a.w, y2 - y1); return; }
-  const sc = (a.w + 14) / m[0], th = m[1] * sc - 4;
+  if (y2 <= y1 || x + a.w < v.x1 - 20 || x > v.x2 + 20) return;
+  const z = smWallZone(a.id), pat = smWallPattern(z === 'out' ? 'out_wall' : 'cave_wall');
   ctx.save();
-  ctx.beginPath(); ctx.rect(x - 10, y - 2, a.w + 20, a.h + 4); ctx.clip();
-  const start = y + Math.floor((y1 - y) / th) * th;
-  for (let ty = start; ty < y2; ty += th) ctx.drawImage(im, x - 7, ty, m[0] * sc, m[1] * sc);
+  ctx.fillStyle = pat || '#4a4652';
+  ctx.fillRect(x, y1, a.w, y2 - y1);
+  const tint = z === 'lava' ? 'rgba(255,96,40,0.16)' : z === 'snow' ? 'rgba(210,230,255,0.18)' : null;
+  if (tint) { ctx.fillStyle = tint; ctx.fillRect(x, y1, a.w, y2 - y1); }
+  // soft shading on both sides so the wall has volume, and a dark outline like the platform art
+  const g = ctx.createLinearGradient(x, 0, x + a.w, 0);
+  g.addColorStop(0, 'rgba(20,16,30,0.45)'); g.addColorStop(0.18, 'rgba(20,16,30,0)');
+  g.addColorStop(0.82, 'rgba(20,16,30,0)'); g.addColorStop(1, 'rgba(20,16,30,0.5)');
+  ctx.fillStyle = g; ctx.fillRect(x, y1, a.w, y2 - y1);
+  ctx.fillStyle = 'rgba(28,22,38,0.85)';
+  ctx.fillRect(x, y1, 2, y2 - y1); ctx.fillRect(x + a.w - 2, y1, 2, y2 - y1);
   ctx.restore();
+  if (a.smDraw === 'pillar' && y > v.y1 - 80) drawSpiritTile({ w: a.w + 8 }, x - 4, y, z === 'out' ? 'cave' : z);
 }
 function drawSpiritFloor(a, x, y) {
   const v = smView();
@@ -469,12 +510,8 @@ function drawSpiritFloor(a, x, y) {
   const h = Math.min(a.h, v.y2 - y + 10);
   if (x2 <= x1 || h <= 0) return;
   ctx.save();
-  ctx.fillStyle = '#2c2a36'; ctx.fillRect(x1, y + 30, x2 - x1, h - 30);
-  const im = smTile('cave_floor'), m = SM_TILES.cave_floor;
-  if (im && m) {
-    const sc = 0.6, tw = m[0] * sc - 6;
-    for (let tx = x + Math.floor((x1 - x) / tw) * tw; tx < x2; tx += tw) ctx.drawImage(im, tx, y - m[2] * sc, m[0] * sc, m[1] * sc);
-  }
+  ctx.fillStyle = '#2c2a36'; ctx.fillRect(x1, y + 40, x2 - x1, h - 40);
+  drawSpiritTile({ w: x2 - x1 + 12 }, x1 - 6, y, 'cave');
   ctx.restore();
 }
 function drawSpiritPlatform(a, x, y) {
@@ -483,21 +520,6 @@ function drawSpiritPlatform(a, x, y) {
   else drawSpiritLedge(a, x, y);
 }
 window.drawSpiritPlatform = drawSpiritPlatform;
-
-// Checkpoint shrines (one per zone) stand where the sketch's green flags are.
-function drawSpiritShrines() {
-  const v = smView(), s = spiritStage();
-  sections.forEach((sec, i) => {
-    if (sec.x < v.x1 - 200 || sec.x > v.x2 + 200 || sec.y < v.y1 - 50 || sec.y > v.y2 + 250) return;
-    const key = s.smShrines[i], im = smTile(key), m = SM_TILES[key];
-    if (!im || !m) return;
-    const sc = 160 / m[0];
-    ctx.save();
-    if (i > 0 && checkpoint < i) ctx.globalAlpha = 0.85;
-    ctx.drawImage(im, sec.x - 80, sec.y - m[1] * sc + 14, m[0] * sc, m[1] * sc);
-    ctx.restore();
-  });
-}
 
 // --- wind particles: world-space streaks drawn behind the platforms, flowing right to left ---
 function spiritWindVisibility() {
@@ -515,7 +537,7 @@ function updateWindParticles(fdt) {
   const vis = spiritWindVisibility();
   const v = smView();
   const light = !!window.duduLightMode;
-  const want = vis <= 0 ? 0 : Math.round((light ? 18 : 34) + (light ? 40 : 90) * w.intensity);
+  const want = vis <= 0 ? 0 : Math.round((light ? 8 : 14) + (light ? 16 : 30) * w.intensity);   // v1.6.4: calmer
   while (sm.particles.length < want) {
     sm.particles.push({ x: v.x1 + Math.random() * (v.x2 - v.x1 + 300), y: smWindSpawnY(v), s: Math.random(), life: 0 });
   }
@@ -551,28 +573,27 @@ function drawWindParticles() {
     const edge = Math.max(0, Math.min(1, (q.y - SM_WIND.y1 + 120) / 360, (SM_WIND.y2 + 120 - q.y) / 360));
     if (edge <= 0) continue;
     const len = 6 + 150 * I * (0.5 + q.s);
-    const a = edge * vis * (0.3 + 0.6 * I) * (0.55 + 0.45 * q.s);
+    const a = 0.65 * edge * vis * (0.3 + 0.6 * I) * (0.55 + 0.45 * q.s);
     if (len > 14) {
       // streak: the bright head is on the LEFT, the tail trails to the right, so the motion reads right-to-left.
       // Thick enough to read on a phone (the canvas is shown at about 40% there).
-      const th = 2.5 + 3.5 * q.s * I;
+      const th = 2 + 2 * q.s * I;
       ctx.globalAlpha = Math.min(1, a);
       ctx.drawImage(smStreak(), q.x, q.y - th / 2, len, th);
       ctx.globalAlpha = 1;
     }
-    if (q.s > 0.8 && I > 0.3) {
-      // a few of the supplied wind swirls, mirrored so they read as blowing from the right
-      const keys = ['wind_a', 'wind_b', 'wind_c', 'wind_d', 'wind_e'], key = keys[Math.floor(q.s * 1000) % 5];
-      const im = smTile(key), m = SM_TILES[key];
+    if (q.s > 0.9 && I > 0.5) {
+      // v1.6.4: a few soft gust sprites, mirrored so they blow from the right, kept faint
+      const key = 'wind_' + (1 + Math.floor(q.s * 1000) % 4), im = smTile(key), m = SM_TILES[key];
       if (im && m) {
-        const sc = 0.5 + 0.3 * q.s;
-        ctx.save(); ctx.globalAlpha = Math.min(1, a * 1.3); ctx.translate(q.x, q.y); ctx.scale(-1, 1);
+        const sc = 0.5;
+        ctx.save(); ctx.globalAlpha = Math.min(0.45, a * 0.6); ctx.translate(q.x, q.y); ctx.scale(-1, 1);
         ctx.drawImage(im, -m[0] * sc / 2, -m[1] * sc / 2, m[0] * sc, m[1] * sc); ctx.restore();
         continue;
       }
     }
-    ctx.fillStyle = `rgba(255,255,255,${Math.min(0.9, a + 0.15)})`;
-    ctx.beginPath(); ctx.arc(q.x, q.y, 1.6 + 1.6 * q.s, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `rgba(255,255,255,${Math.min(0.7, a + 0.1)})`;
+    ctx.beginPath(); ctx.arc(q.x, q.y, 1.4 + 1.2 * q.s, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
 }
@@ -589,11 +610,11 @@ function drawSpiritBack() {
 window.drawSpiritBack = drawSpiritBack;
 
 function drawLavaPools() {
-  const imP = smTile('lava_pool'), mP = SM_TILES.lava_pool;
+  const imP = smTile('lava_strip'), mP = SM_TILES.lava_strip;
   if (imP && mP) {
     for (const l of SM_LAVA) {
-      const w = l.x2 - l.x1 + 24, sc = w / mP[0];
-      ctx.drawImage(imP, l.x1 - 12, -1301 - mP[2] * sc + 4, w, mP[1] * sc);
+      const w = l.x2 - l.x1 + 8, sy = 0.6;
+      ctx.drawImage(imP, l.x1 - 4, -1301 - mP[2] * sy + 6, w, mP[1] * sy);
     }
     return;
   }
@@ -623,7 +644,6 @@ function drawLavaPools() {
 function drawSpiritFront() {
   if (!isSpiritActive()) return;
   const v = smView();
-  drawSpiritShrines();
   drawLavaPools();
   for (const w of sm.wisps) {
     const x = w.prevX + (w.x - w.prevX) * renderAlpha, y = w.hy + Math.sin(time * 2.4 + w.home) * 5;
