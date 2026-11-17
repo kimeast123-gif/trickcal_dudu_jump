@@ -53,22 +53,41 @@ TABLE = [
     ('deck 2 up to 3',     'NM-TD2', 'NM-TD3', 9420, 'double', {}),
     ('deck 3 to B8',       'NM-TD3', 'NM-B8', 10495, 'single', {}),
     ('to P71',             'NM-B8', 'NM-P71', 10945, 'single', {}),
-    ('W1: walk into shutter', 'NM-P71', 'stay', 11300, 'walk', {}),
-    ('W1: jump',           'NM-P71', 'stay', 11330, 'single', {}),
-    ('W1: double',         'NM-P71', 'stay', 11330, 'double', {}),
-    ('W1: run + double',   'NM-P71', 'stay', 11150, 'double', {}),
-    ('W1: dash',           'NM-P71', 'NM-P72', 11340, 'dash', {}),
-    ('W1: dash too early', 'NM-P71', 'stay', 11220, 'dash', {}),
-    ('W1: dash 70px back', 'NM-P71', 'NM-P72', 11300, 'dash', {}),
-    ('W1: run + dash',     'NM-P71', 'NM-P72', 11270, 'dashrun', {}),
-    ('W2: double',         'NM-BR2', 'stay', 11750, 'double', {}),
-    ('W2: dash + jump',    'NM-P72', 'NM-P73', 11700, 'dashjump', {}),
-    ('W3: double',         'NM-BR3', 'stay', 12130, 'double', {}),
-    ('W3: dash, drop',     'NM-P73', 'NM-P74', 12080, 'dashrun', {}),
-    ('W4: double',         'NM-BR4', 'stay', 12590, 'double', {}),
-    ('W4: dash',           'NM-P74', 'NM-P75', 12540, 'dash', {}),
-    ('W5: double',         'NM-BR5', 'stay', 12960, 'double', {}),
-    ('W5: dash + jump',    'NM-P75', 'NM-P76', 12910, 'dashjump', {}),
+    ('W1: walk into shutter', 'NM-P71', 'stay', 11280, 'walk', {}),
+    ('W1: jump',           'NM-P71', 'stay', 11375, 'single', {}),
+    ('W1: double',         'NM-P71', 'stay', 11375, 'double', {}),
+    ('W1: run + double',   'NM-P71', 'stay', 11200, 'double', {}),
+    ('W1: dash at shutter', 'NM-P71', 'NM-P72', 11380, 'dash', {}),
+    ('W1: dash 80px back', 'NM-P71', 'NM-P72', 11300, 'dash', {}),
+    ('W1: dash too early', 'NM-P71', 'stay', 11210, 'dash', {}),
+    ('W2: walk into shutter', 'NM-P72', 'stay', 11656, 'walk', {}),
+    ('W2: jump',           'NM-P72', 'stay', 11751, 'single', {}),
+    ('W2: double',         'NM-P72', 'stay', 11751, 'double', {}),
+    ('W2: run + double',   'NM-P72', 'stay', 11576, 'double', {}),
+    ('W2: dashjump at shutter', 'NM-P72', 'NM-P73', 11756, 'dashjump', {}),
+    ('W2: dashjump 80px back', 'NM-P72', 'NM-P73', 11676, 'dashjump', {}),
+    ('W2: dash too early', 'NM-P72', 'stay', 11586, 'dash', {}),
+    ('W3: walk into shutter', 'NM-P73', 'stay', 11992, 'walk', {}),
+    ('W3: jump',           'NM-P73', 'stay', 12087, 'single', {}),
+    ('W3: double',         'NM-P73', 'stay', 12087, 'double', {}),
+    ('W3: run + double',   'NM-P73', 'stay', 11912, 'double', {}),
+    ('W3: dash at shutter', 'NM-P73', 'NM-P74', 12092, 'dash', {}),
+    ('W3: dash 80px back', 'NM-P73', 'NM-P74', 12012, 'dash', {}),
+    ('W3: dash too early', 'NM-P73', 'stay', 11922, 'dash', {}),
+    ('W4: walk into shutter', 'NM-P74', 'stay', 12368, 'walk', {}),
+    ('W4: jump',           'NM-P74', 'stay', 12463, 'single', {}),
+    ('W4: double',         'NM-P74', 'stay', 12463, 'double', {}),
+    ('W4: run + double',   'NM-P74', 'stay', 12288, 'double', {}),
+    ('W4: dash at shutter', 'NM-P74', 'NM-P75', 12468, 'dash', {}),
+    ('W4: dash 80px back', 'NM-P74', 'NM-P75', 12388, 'dash', {}),
+    ('W4: dash too early', 'NM-P74', 'stay', 12298, 'dash', {}),
+    ('W5: walk into shutter', 'NM-P75', 'stay', 12744, 'walk', {}),
+    ('W5: jump',           'NM-P75', 'stay', 12839, 'single', {}),
+    ('W5: double',         'NM-P75', 'stay', 12839, 'double', {}),
+    ('W5: run + double',   'NM-P75', 'stay', 12664, 'double', {}),
+    ('W5: dashjump at shutter', 'NM-P75', 'NM-P76', 12844, 'dashjump', {}),
+    ('W5: dashjump 80px back', 'NM-P75', 'NM-P76', 12764, 'dashjump', {}),
+    ('W5: dash too early', 'NM-P75', 'stay', 12674, 'dash', {}),
     ('to B9 (double)',     'NM-P76', 'NM-B9', 13315, 'double', {}),
     ('stairs 1',           'NM-B9', 'NM-E1', 13735, 'single', {}),
     ('stairs 2',           'NM-E1', 'NM-E2', 13945, 'single', {}),
@@ -91,7 +110,7 @@ JS = """async([A,B,sx,mode,frozen])=>{const w=m=>new Promise(r=>setTimeout(r,m))
  else if(mode==='double'){await jump(260);await w(30);await jump(220);}
  else if(mode==='dash'){await w(20);dash();}
  else if(mode==='dashrun'){await w(120);dash();}
- else if(mode==='dashjump'){await w(20);dash();await w(60);await jump(260);}
+ else if(mode==='dashjump'){await w(20);dash();await w(60);await jump(450);}
  else if(mode==='walkairjump'){await w(420);await jump(260);}
  else if(mode==='dashdouble'){await w(20);dash();await w(60);await jump(260);await w(30);await jump(220);}
  let land=null;const y0=p.y;const tr=[];
@@ -101,7 +120,7 @@ JS = """async([A,B,sx,mode,frozen])=>{const w=m=>new Promise(r=>setTimeout(r,m))
   if(p.y>800||(p.on&&p.on.id==='NM-B0'&&A!=='NM-B0')){land='fall';break;}
   if(p.ground&&i>8&&p.on&&p.on!==a&&p.on.nightDraw!=='grate'){land=p.on.id;break;}
   if(p.ground&&i>40&&(p.on===a||(p.on&&p.on.nightDraw==='grate'))&&Math.abs(p.vx)<5){land='stayed';break;}}
- if(B==='stay'){const sh=platforms.filter(q=>q.dashUnder).sort((u,v)=>Math.abs(u.x-sx)-Math.abs(v.x-sx))[0];
+ if(B==='stay'){const sh=platforms.filter(q=>q.dashUnder&&q.x>sx).sort((u,v)=>u.x-v.x)[0];
   land=(sh&&p.x+19<=sh.x+2&&p.y<800)?'stayed':'passed x'+Math.round(p.x);}
  releaseAllInputs();return (land||'air')+(window.__hopTrace?' '+tr.join(' '):'')}"""
 

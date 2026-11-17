@@ -16,6 +16,7 @@
 const NIGHT_WORLD_ID = 'world2_monatium_night';
 const NIGHT_STAGE_CODE = '2-1';
 const NIGHT_END = 16400;
+const NIGHT_SAFE_X = 14990;           // the plaza is a safe zone: no drone rises or fires once Dudu is on it
 const NIGHT_HALL_FADE = [15150, 15450];   // camera-centre range where the city hall backdrop fades in (last stretch only)
 const NIGHT_RUNNER_SPEED = 345;          // Mayo's top chase speed is 314 px/s; runners use ~1.10x
 const NIGHT_INTRO_HOLD = 2.0;            // seconds Dudu cannot move at the start flag
@@ -35,7 +36,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_5_1_261117';
+const NIGHT_ASSET_Q = '?v=v1_5_2_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -144,28 +145,23 @@ function buildNightStage() {
   ledge('NM-TD3', 9500, 190, 1000, { nightDraw: 'tdeck', poleX: 9970 });
   bld('NM-B8', 10650, 300, 190);
   wCheckpoint(s, '고가 끝', 10760, 190);
-  // Section 7 — brown anti-jump shutters. Each hangs over a short grate between two decks with its lower edge
-  // 44px above the walkway: Dudu (60px standing) bumps into it and it is far too tall to jump over, but a dash
-  // (32px) slips under. A dash that ends half under a shutter is carried through (game.js).
+  // Section 7 — brown anti-jump shutters over fall gaps (v1.5.2). Each shutter fills the whole gap between two decks
+  // and hangs with its lower edge 44px above the near deck: Dudu (60px standing) bumps into it, it is far too tall to
+  // jump over, and below it is a pit. A dash (32px) slips under, and a dash that ends half under a shutter is carried
+  // through until Dudu is clear (game.js), which puts her straight onto the next deck.
   // W2 and W5 lead to a higher deck, so the dash must be followed by a jump; W3 drops to a lower deck.
-  const shutter = (id, x, deckY) => wWall(s, x, deckY - 480, 44, 480 - 44, 'wood', { id, noTopLand: true, dashUnder: true, nightDraw: 'brown' });
-  const grate = (id, x, y, w) => ledge(id, x, y, w, { nightDraw: 'grate' });
-  ledge('NM-P71', 11080, 175, 260);
-  grate('NM-BR1', 11340, 175, 140);
-  shutter('NM-W1', 11388, 175);
-  ledge('NM-P72', 11480, 175, 260);
-  grate('NM-BR2', 11740, 175, 130);
-  shutter('NM-W2', 11780, 175);
-  ledge('NM-P73', 11890, 95, 220);
-  grate('NM-BR3', 12110, 95, 150);
-  shutter('NM-W3', 12160, 95);
-  ledge('NM-P74', 12330, 300, 240);
-  grate('NM-BR4', 12570, 300, 140);
-  shutter('NM-W4', 12618, 300);
-  ledge('NM-P75', 12710, 300, 240);
-  grate('NM-BR5', 12950, 300, 130);
-  shutter('NM-W5', 12990, 300);
-  ledge('NM-P76', 13100, 223, 220);
+  const shutter = (id, x, deckY) => wWall(s, x, deckY - 480, 76, 480 - 44, 'wood', { id, noTopLand: true, dashUnder: true, nightDraw: 'brown' });
+  ledge('NM-P71', 11080, 175, 320);
+  shutter('NM-W1', 11400, 175);
+  ledge('NM-P72', 11476, 175, 300);
+  shutter('NM-W2', 11776, 175);
+  ledge('NM-P73', 11852, 95, 260);
+  shutter('NM-W3', 12112, 95);
+  ledge('NM-P74', 12188, 300, 300);
+  shutter('NM-W4', 12488, 300);
+  ledge('NM-P75', 12564, 300, 300);
+  shutter('NM-W5', 12864, 300);
+  ledge('NM-P76', 12940, 223, 380);
   bld('NM-B9', 13440, 300, 40);
   wCheckpoint(s, '시청 가는 길', 13540, 40);
   // Section 8 — stairs down to the city hall plaza (safe zone, last ~1.1 screens)
@@ -185,7 +181,11 @@ function buildNightStage() {
     { id: 'NM-D5', x: 9060, y: 205 },
     { id: 'NM-D6', x: 9840, y: -60 },
     { id: 'NM-D7', x: 10200, y: -60 },
-    { id: 'NM-D8', x: 12640, y: -230 }
+    { id: 'NM-D8', x: 12700, y: -230 },
+    { id: 'NM-D9', x: 11990, y: -140 },   // v1.5.2: second drone over the middle of the shutter run
+    { id: 'NM-D10', x: 14030, y: -40 },   // v1.5.2: one drone per two stairs down to the plaza
+    { id: 'NM-D11', x: 14490, y: 150 },
+    { id: 'NM-D12', x: 14850, y: 280 }
   ];
   // Red ellipses: one riot-squad member per deck; the black line is the patrol span.
   s.nightPatrols = [
@@ -329,7 +329,7 @@ function updateDrone(d, dt) {
   d.t += dt; d.anim += dt;
   const dx = p.x - d.tx;
   if (d.state === 'wait') {
-    if (Math.abs(dx) < DRONE.trigger && Math.abs(p.y - d.ty) < 760) {
+    if (Math.abs(dx) < DRONE.trigger && Math.abs(p.y - d.ty) < 760 && p.x < NIGHT_SAFE_X) {
       d.state = 'rise'; d.t = 0; d.anim = 0; d.clip = 'drone_move';
     }
     return;
@@ -353,7 +353,7 @@ function updateDrone(d, dt) {
     if (d.state === 'hover') {
       d.cooldown -= dt;
       const inRange = Math.abs(dx) < 900 && Math.abs(p.y - d.y) < 640;
-      if (d.cooldown <= 0 && inRange && p.invulnerable <= 0.3) {
+      if (d.cooldown <= 0 && inRange && p.invulnerable <= 0.3 && p.x < NIGHT_SAFE_X) {
         d.state = 'attack'; d.t = 0; d.anim = 0; d.clip = 'drone_attack'; d.fired = false;
       }
     } else if (d.state === 'attack') {
@@ -394,7 +394,7 @@ function updateNightDarts(dt) {
       continue;
     }
     for (const pl of platforms) {
-      if (pl.collidable === false || pl.thin) continue;
+      if (pl.collidable === false || pl.thin || pl.dashUnder) continue; /* v1.5.2: darts fly through the brown shutters */
       if (pl.x > Math.max(wd.x, wd.prevX) || pl.x + pl.w < Math.min(wd.x, wd.prevX)) continue;
       const h = segmentIntersectsBox(wd.prevX, wd.prevY, wd.x, wd.y, pl.x, pl.y, pl.x + pl.w, pl.y + pl.h);
       if (h.hit) { wd.hit = true; burst(h.x, h.y, '#b8f7e8', 5); break; }

@@ -22,8 +22,8 @@ ROUTE = [
     ('NM-T-M1', None, 'drop'), ('NM-T-M2', None, 'drop'), ('NM-T-M3', None, 'drop'), ('NM-T-M4', None, 'drop'),
     ('NM-G1', None, 'ferry'), ('NM-G2', 7295, 'single'), ('NM-G3', 7365, 'singleleft'), ('NM-G4', 7295, 'single'),
     ('NM-B7', 7455, 'single'), ('NM-TD1', 7835, 'single'), ('NM-TD2', 8700, 'walk'), ('NM-TD3', 9420, 'double'),
-    ('NM-B8', 10495, 'single'), ('NM-P71', 10945, 'single'), ('NM-P72', 11330, 'dash'), ('NM-P73', 11720, 'dashjump'),
-    ('NM-P74', 12100, 'dashrun'), ('NM-P75', 12560, 'dash'), ('NM-P76', 12930, 'dashjump'), ('NM-B9', 13315, 'double'),
+    ('NM-B8', 10495, 'single'), ('NM-P71', 10945, 'single'), ('NM-P72', 11378, 'dash'), ('NM-P73', 11754, 'dashjump'),
+    ('NM-P74', 12090, 'dash'), ('NM-P75', 12466, 'dash'), ('NM-P76', 12842, 'dashjump'), ('NM-B9', 13315, 'double'),
     ('NM-E1', 13735, 'single'), ('NM-E2', 13975, 'single'), ('NM-E3', 14195, 'single'), ('NM-E4', 14425, 'single'),
     ('NM-E5', 14665, 'single'), ('NM-PLAZA', 14905, 'single'), ('CLEAR', None, 'walk_end'),
 ]
@@ -79,7 +79,7 @@ JS = r"""async([route,god])=>{
    else if(m==='double'){await jump(260);await w(30);await jump(220);}
    else if(m==='dash'){await w(20);dash();}
    else if(m==='dashrun'){await w(120);dash();}
-   else if(m==='dashjump'){await w(20);dash();await w(60);await jump(260);}
+   else if(m==='dashjump'){await w(20);dash();await w(60);await jump(450);}
    else if(m==='dashdouble'){await w(20);dash();await w(60);await jump(260);await w(30);await jump(220);}
    ok=await landOn(id);
   }

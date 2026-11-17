@@ -86,7 +86,7 @@ async def main():
               return {hp0,hp:p.hp,state:d.state}}""")
             check('drone: landing on top knocks it out (Die motion), no damage', r['state'] in ('dead', 'gone') and r['hp'] == r['hp0'], r)
             r = await pg.evaluate("()=>{retryWorld1StageCheckpoint();return {n:__night.drones.length,ids:new Set(__night.drones.map(d=>d.id)).size,states:__night.drones.map(d=>d.state).join(',')}}")
-            check('drone: retry rebuilds the 8 drones without duplicates', r['n'] == 8 and r['ids'] == 8 and set(r['states'].split(',')) == {'wait'}, r)
+            check('drone: retry rebuilds the 12 drones without duplicates', r['n'] == 12 and r['ids'] == 12 and set(r['states'].split(',')) == {'wait'}, r)
 
         if on('drone'):
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));devPracticeNight(3650,335);p.invulnerable=0;
@@ -99,6 +99,23 @@ async def main():
               return {gaps,speed:Math.round(speed)}}""")
             g = [x for x in r['gaps'] if x > 0.5]
             check('drone: v1.5.1 fires every ~1.66s (was 2.49s) at 600px/s (was 400)', bool(g) and all(1.5 <= x <= 1.85 for x in g) and r['speed'] == 600, r)
+
+        if on('drone'):
+            r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));devPracticeNight(11900,95);p.invulnerable=99;
+              const sh=platforms.find(a=>a.id==='NM-W3');__night.darts.length=0;
+              __night.darts.push({x:sh.x-60,y:sh.y+sh.h-80,prevX:sh.x-60,prevY:sh.y+sh.h-80,vx:600,vy:0,age:0,maxAge:3,radius:10,hit:false});
+              await w(400);const d=__night.darts[0];return {alive:!!d&&!d.hit,x:d?Math.round(d.x):null,wallRight:sh.x+sh.w}}""")
+            check('drone: v1.5.2 darts fly through the brown shutters', r['alive'] and r['x'] > r['wallRight'], r)
+            r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));const s=world1Stages[NIGHT_STAGE_INDEX];
+              const dash=s.nightDrones.filter(d=>d.x>11000&&d.x<13350).map(d=>d.id);
+              const stairs=['NM-E1','NM-E2','NM-E3','NM-E4','NM-E5'].map(id=>platforms.find(a=>a.id===id));
+              const stairDrones=s.nightDrones.filter(d=>d.x>13800&&d.x<14990);
+              const perPair=[[0,1],[2,3],[4,4]].map(([a,b])=>stairDrones.filter(d=>d.x>=stairs[a].x-120&&d.x<=stairs[b].x+stairs[b].w+120).length);
+              devPracticeNight(15100,580);p.invulnerable=0;await w(4000);
+              const plaza={darts:__night.darts.length,hp:p.hp,awake:__night.drones.filter(d=>d.tx>13800&&d.state!=='wait').length};
+              return {dash,perPair,plaza}}""")
+            check('drone: two drones over the shutter run, one per two stairs, none fire into the plaza',
+                  len(r['dash']) == 2 and r['perPair'] == [1, 1, 1] and r['plaza']['darts'] == 0 and r['plaza']['hp'] == 5 and r['plaza']['awake'] == 0, r)
 
         if on('music'):
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));startNightStage();await w(200);const night=musicSelected;
