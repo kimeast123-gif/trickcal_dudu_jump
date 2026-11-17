@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_6_4_261117';
+const NIGHT_ASSET_Q = '?v=v1_6_5_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -93,9 +93,11 @@ function buildNightStage() {
     if (typeof TERRAIN_ASSET_LIST !== 'undefined' && typeof _loadSingleWorldImg === 'function') {
       for (const k of TERRAIN_ASSET_LIST) if (k.startsWith('monatium/')) _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=31R', true);
     }
+    night.dashHintShown = false;   // once per stage entry (a checkpoint retry does not show it again)
   };
   s.onReset = () => resetNightRuntime();
   s.onComplete = () => completeNightStage();
+  s.nightDashHintX = 11080;   // v1.6.5: first deck of the shutter run
   s.routeLabel = '월드 2';
 
   const bld = (id, x, w, y, extra = {}) => wFloor(s, x, w, 'steel', y, { id, h: 1250 - y, nightDraw: 'building', ...extra });
@@ -487,6 +489,11 @@ function updateNightNpcs(dt) {
 function updateNightMonatium(dt) {
   if (!isNightActive()) return;
   night.clock += dt;
+  // v1.6.5: the first time Dudu reaches the shutter run, the story tutorial toast explains the dash
+  if (!night.dashHintShown && p.x >= nightStage().nightDashHintX && p.x < nightStage().nightDashHintX + 600) {
+    night.dashHintShown = true;
+    if (typeof notify === 'function') { notify('셔터 밑은 {DASH}로 쏙! 멈추지 말고 빠져나가자'); toastTime = 3.6; }
+  }
   if (window.__duduIntroLock > 0) window.__duduIntroLock = Math.max(0, window.__duduIntroLock - dt);
   for (const r of night.runners) updateRunner(r, dt);
   updateNightFields();

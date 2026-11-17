@@ -17,16 +17,16 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_6_4_261117'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_6_5_261117'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
   x1: 0, x2: 3467, y1: -6046, y2: -4476,       // the blue zone on the sketch
-  intervalMin: 20, intervalMax: 30,             // start-to-start
-  firstMin: 10, firstMax: 15,                   // v1.6.3: the first gust comes soon after arriving, so the gimmick is felt
-  durMin: 4, durMax: 6,
+  intervalMin: 10, intervalMax: 10,             // start-to-start (v1.6.5: a gust every 10s)
+  firstMin: 10, firstMax: 10,                   // first gust 10s after arriving in the zone
+  durMin: 3, durMax: 3,                         // v1.6.5: each gust blows for 3s
   warn: 1.2,                                    // visible warning before a gust, no push
-  push: 90,                                     // px/s: in the air the target speed shifts left by this much
+  push: 104,                                    // px/s (v1.6.5: 15% stronger than 90): in the air the target speed shifts left by this much
   rampIn: 0.25, rampOut: 0.45
 };
 
@@ -68,16 +68,17 @@ function loadSpiritAssets() {
 // Layout (generated from the sketch, then hand-checked). [id, x, y, w, kind]
 // ----------------------------------------------------------------------------
 const SM_PLATFORMS = [
-  // B cave maze (the floor below is solid everywhere: no pit in the cave)
+  // B cave maze (the floor below is solid everywhere: no pit in the cave). v1.6.5: ledges next to a wall or pillar
+  // run right up to it, so nothing slips through the seam.
   ['M1', 3265, 408, 170, 'ledge'], ['M2', 2524, 408, 69, 'ledge'], ['M3', 2299, 299, 73, 'ledge'],
-  ['M4', 2690, 282, 73, 'ledge'], ['M5', 3159, 265, 64, 'ledge'], ['M6', 1885, 181, 317, 'ledge'],
-  ['M7', 2841, 173, 240, 'ledge'], ['M8', 3136, -4, 69, 'ledge'], ['M9', 2170, -46, 303, 'ledge'],
-  ['M10', 3278, -117, 235, 'ledge'], ['M11', 2593, -142, 253, 'ledge'], ['M12', 1875, -159, 134, 'ledge'],
+  ['M4', 2690, 282, 73, 'ledge'], ['M5', 3159, 265, 64, 'ledge'], ['M6', 1857, 181, 345, 'ledge'],
+  ['M7', 2841, 173, 240, 'ledge'], ['M8', 3136, -4, 69, 'ledge'], ['M9', 2170, -46, 340, 'ledge'],
+  ['M10', 3278, -117, 235, 'ledge'], ['M11', 2593, -142, 253, 'ledge'], ['M12', 1857, -159, 152, 'ledge'],
   ['M13', 2464, -243, 69, 'ledge'], ['M14', 3297, -306, 156, 'ledge'], ['M15', 2570, -432, 69, 'ledge'],
   ['M16', 3274, -495, 152, 'ledge'], ['M17', 2197, -567, 267, 'ledge'], ['M18', 2713, -567, 276, 'ledge'],
-  ['M19', 3048, -663, 180, 'ledge'], ['M20', 2542, -747, 74, 'ledge'], ['M21', 1908, -764, 262, 'ledge'],
-  ['M22', 2253, -831, 82, 'ledge'], ['M23', 3338, -852, 170, 'ledge'], ['M24', 2860, -1003, 340, 'ledge'],
-  ['M25', 2910, -1176, 221, 'ledge'],
+  ['M19', 2998, -663, 230, 'ledge'], ['M20', 2542, -747, 74, 'ledge'], ['M21', 1880, -764, 290, 'ledge'],
+  ['M22', 2253, -831, 82, 'ledge'], ['M23', 3338, -852, 170, 'ledge'], ['M24', 2842, -1003, 358, 'ledge'],
+  ['M25', 2842, -1176, 289, 'ledge'],
   // left exit through the doorway to Gabia's rest
   ['E1', 1282, -310, 437, 'ledge'], ['E2', 776, -382, 405, 'ledge'], ['E3', 160, -449, 492, 'rest'],
   // C lava hall
@@ -160,7 +161,10 @@ function buildSpiritStage() {
       // v1.6.3: every grey box of the sketch blinks (story rule: on 2.6s, then 0.55s warning, off 1.0s)
       blinkN++;
       wSurface(s, x, y, w, 'grass', { id: 'SM-' + id, smDraw: 'blink', behavior: 'blink',
-        blink: { on: 2.6, warning: 0.55, off: 1.0, phase: (blinkN * 0.43) % 4.15 } });
+        blink: y < -2250
+          // v1.6.5: on the mountain climb every blinking ledge keeps its own random count
+          ? { on: 2.6 + Math.random() * 0.8, warning: 0.55, off: 0.9 + Math.random() * 0.4, phase: Math.random() * 4.5 }
+          : { on: 2.6, warning: 0.55, off: 1.0, phase: (blinkN * 0.43) % 4.15 } });
     } else wSurface(s, x, y, w, 'grass', { id: 'SM-' + id, smDraw: kind });
   }
   for (const [id, x, y, w, h] of SM_WALLS) wWall(s, x, y, w, h, 'grass', { id: 'SM-' + id, noTopLand: id.startsWith('MW'), smDraw: id.startsWith('B') ? 'pillar' : 'rock' });
@@ -297,8 +301,9 @@ function updateSpiritWind(dt) {
   w.intensity += (vis - w.intensity) * Math.min(1, dt / 0.15);
 }
 
-// story fairy timings (fairy1/fairy2 profiles) with the travel speed about 25% higher
-const WISP = { wait: 0.62, warn: 1.0, rest: 1.3, speed: 216, returnSpeed: 170, halfW: 26, halfH: 34 };
+// story fairy pattern; v1.6.5: travel 1.2x faster and a 0.5s pause at each end of the ledge
+// (home end: the attack pose is the pause, far end: the groggy pose)
+const WISP = { wait: 0, warn: 0.5, rest: 0.5, speed: 259, returnSpeed: 204, halfW: 26, halfH: 34 };
 function spiritLavaZone() { return p.x > SM_LAVA_WALL_X && p.y < -1240 && p.y > -2200; }
 function updateWisp(w, dt) {
   w.prevX = w.x; w.t += dt; w.anim += dt;
@@ -404,12 +409,12 @@ function drawSpiritSprite(key, t, x, y, face, alpha = 1) {
 function smRand(i) { const v = Math.sin(i * 91.7 + 13.3) * 43758.5453; return v - Math.floor(v); }
 
 function smTile(k) { return smImages['t_' + k] || null; }
-// Which zone art a platform uses: E = outside start, M = Gabia's cave, L / I / anything in the lava band = lava, the rest snow.
+// Which zone art a platform uses: E = outside start, M = Gabia's cave, L and Ifrit's ledge I0 = lava, the rest snow.
 function smZoneOf(a) {
   const k = a.id.replace('SM-', '');
   if (k[0] === 'E') return 'out';
   if (k[0] === 'M' || k === 'FLOOR') return 'cave';
-  if (k[0] === 'L' || k[0] === 'I' || a.y > -2250) return 'lava';   // Ifrit's rest is in the lava band too
+  if (k[0] === 'L' || k === 'I0') return 'lava';   // v1.6.5: lava art stops at Ifrit's own ledge
   return 'snow';
 }
 // v1.6.4: every ledge is drawn at one fixed scale so all of them share the same slim thickness, and the tile's
@@ -483,11 +488,77 @@ function smWallPattern(key) {
   c.getContext('2d').drawImage(im, 20, 25, sw, sh, 0, 0, c.width, c.height);
   return (_smWallPat[key] = ctx.createPattern(c, 'repeat'));
 }
+// v1.6.5: the mountain's outer walls are painted as one natural rock face (uneven edges, light on the side
+// that faces the open sky, dark toward the cave), not made of pasted tiles.
+const SM_WALL_COLORS = {
+  out:  ['#7d8796', '#646c7b', '#525968', '#4a505e'],   // ends on the mountain body's colour
+  lava: ['#6b4640', '#4c3130', '#33211f', '#221617']
+};
+function drawSpiritOuterWall(a, x, y, v) {
+  const lava = a.id === 'SM-MW3' || a.id === 'SM-MW4', c = SM_WALL_COLORS[lava ? 'lava' : 'out'];
+  const y1 = Math.max(y, v.y1 - 40), y2 = Math.min(y + a.h, v.y2 + 40);
+  const step = 26, k0 = Math.floor((y1 - y) / step), k1 = Math.ceil((y2 - y) / step);
+  const seed = a.x * 0.37;
+  const jag = (k, side) => (smRand(seed + k * 3.1 + side * 71) - 0.5) * 12;
+  ctx.save();
+  ctx.beginPath();
+  for (let k = k0; k <= k1; k++) {
+    const yy = Math.min(y + a.h, y + k * step), ends = (k === 0 || y + k * step >= y + a.h);
+    ctx.lineTo(x + 3 + (ends ? 4 : jag(k, 0)), yy);
+  }
+  for (let k = k1; k >= k0; k--) {
+    const yy = Math.min(y + a.h, y + k * step), ends = (k === 0 || y + k * step >= y + a.h);
+    ctx.lineTo(x + a.w - 3 + (ends ? -4 : jag(k, 1)), yy);
+  }
+  ctx.closePath();
+  const g = ctx.createLinearGradient(x - 6, 0, x + a.w + 6, 0);
+  g.addColorStop(0, c[0]); g.addColorStop(0.35, c[1]); g.addColorStop(0.75, c[2]); g.addColorStop(1, c[3]);
+  ctx.fillStyle = g;
+  if (!lava) { ctx.shadowColor = 'rgba(40,48,60,0.35)'; ctx.shadowBlur = 18; }
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.clip();
+  // soft rock texture and strata, very low contrast so it sits with the painted backgrounds
+  const pat = smWallPattern('cave_wall');
+  if (pat) { ctx.globalAlpha = 0.22; ctx.fillStyle = pat; ctx.fillRect(x - 10, y1, a.w + 20, y2 - y1); ctx.globalAlpha = 1; }
+  ctx.strokeStyle = lava ? 'rgba(255,140,80,0.10)' : 'rgba(220,230,245,0.10)'; ctx.lineWidth = 2;
+  for (let k = Math.floor((y1 - y) / 90); y + k * 90 < y2; k++) {
+    const yy = y + k * 90 + smRand(seed + k) * 30;
+    ctx.beginPath(); ctx.moveTo(x, yy); ctx.quadraticCurveTo(x + a.w * 0.5, yy + (smRand(seed + k * 7) - 0.5) * 24, x + a.w, yy + 6); ctx.stroke();
+  }
+  ctx.restore();
+}
+// v1.6.5: seen from the lake outside, the mountain is one solid body of rock behind its outer wall (the cave
+// maze is hidden inside) with a dark doorway; it fades away as Dudu walks into the doorway.
+function drawSpiritMountainBody() {
+  if (p.y < -1240 || p.x > SM_WALL_X + 40) return;
+  const k = Math.max(0, Math.min(1, (SM_WALL_X + 40 - p.x) / 260));
+  if (k <= 0) return;
+  const v = smView();
+  const x0 = SM_WALL_X + 46, y0 = Math.max(v.y1 - 20, -1240), y1 = v.y2 + 20;
+  if (x0 > v.x2 || y1 <= y0) return;
+  ctx.save();
+  ctx.globalAlpha = k;
+  const g = ctx.createLinearGradient(x0 - 30, 0, x0 + 520, 0);
+  g.addColorStop(0, '#596170'); g.addColorStop(0.5, '#4a505e'); g.addColorStop(1, '#3d4250');
+  ctx.fillStyle = g;
+  ctx.fillRect(x0 - 30, y0, v.x2 - x0 + 60, y1 - y0);
+  const pat = smWallPattern('cave_wall');
+  if (pat) { ctx.globalAlpha = k * 0.18; ctx.fillStyle = pat; ctx.fillRect(x0 - 30, y0, v.x2 - x0 + 60, y1 - y0); ctx.globalAlpha = k; }
+  // the doorway to Gabia's cave: a dark mouth that deepens inward
+  ctx.beginPath(); ctx.rect(x0 - 30, y0, v.x2 - x0 + 60, y1 - y0); ctx.clip();
+  const d = ctx.createRadialGradient(x0 - 30, -300, 20, x0 - 30, -300, 230);
+  d.addColorStop(0, 'rgba(18,16,26,0.95)'); d.addColorStop(0.6, 'rgba(18,16,26,0.6)'); d.addColorStop(1, 'rgba(18,16,26,0)');
+  ctx.fillStyle = d;
+  ctx.beginPath(); ctx.ellipse(x0 - 30, -300, 230, 200, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
 function drawSpiritRock(a, x, y) {
   if (a.smDraw === 'roof') return;   // v1.6.4: the lava hall's roof is not drawn; the space above it is an open drop
   const v = smView();
   const y1 = Math.max(y, v.y1 - 300), y2 = Math.min(y + a.h, v.y2 + 10);
   if (y2 <= y1 || x + a.w < v.x1 - 20 || x > v.x2 + 20) return;
+  if (a.smDraw === 'rock') { drawSpiritOuterWall(a, x, y, v); return; }
   const z = smWallZone(a.id), pat = smWallPattern(z === 'out' ? 'out_wall' : 'cave_wall');
   ctx.save();
   ctx.fillStyle = pat || '#4a4652';
@@ -504,15 +575,15 @@ function drawSpiritRock(a, x, y) {
   ctx.restore();
   if (a.smDraw === 'pillar' && y > v.y1 - 80) drawSpiritTile({ w: a.w + 8 }, x - 4, y, z === 'out' ? 'cave' : z);
 }
+// v1.6.5: Gabia's floor is one long cave ledge fixed to the world (it does not follow the camera): the long
+// module scaled to the floor's full width, its surface on the floor line.
 function drawSpiritFloor(a, x, y) {
   const v = smView();
-  const x1 = Math.max(x, v.x1 - 20), x2 = Math.min(x + a.w, v.x2 + 20);
-  const h = Math.min(a.h, v.y2 - y + 10);
-  if (x2 <= x1 || h <= 0) return;
-  ctx.save();
-  ctx.fillStyle = '#2c2a36'; ctx.fillRect(x1, y + 40, x2 - x1, h - 40);
-  drawSpiritTile({ w: x2 - x1 + 12 }, x1 - 6, y, 'cave');
-  ctx.restore();
+  if (x > v.x2 + 20 || x + a.w < v.x1 - 20 || y > v.y2 + 20) return;
+  const im = smTile('cave_long'), m = SM_TILES.cave_long;
+  if (!im || !m) { ctx.fillStyle = '#3b3746'; ctx.fillRect(x, y, a.w, 40); return; }
+  const sc = (a.w + 40) / m[0];
+  ctx.drawImage(im, x - 20, y - m[2] * sc, m[0] * sc, m[1] * sc);
 }
 function drawSpiritPlatform(a, x, y) {
   if (a.smDraw === 'floor') drawSpiritFloor(a, x, y);
@@ -645,6 +716,7 @@ function drawSpiritFront() {
   if (!isSpiritActive()) return;
   const v = smView();
   drawLavaPools();
+  drawSpiritMountainBody();
   for (const w of sm.wisps) {
     const x = w.prevX + (w.x - w.prevX) * renderAlpha, y = w.hy + Math.sin(time * 2.4 + w.home) * 5;
     if (x < v.x1 - 100 || x > v.x2 + 100 || y < v.y1 - 100 || y > v.y2 + 100) continue;
