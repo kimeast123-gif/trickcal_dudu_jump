@@ -29,8 +29,9 @@ TABLE = [
     ('Q4 to peak: jump',   'NM-Q4', 'fall',  1925, 'double', {}),
     ('Q4 to peak: run jump', 'NM-Q4', 'fall', 1810, 'double', {}),
     ('Q4 to peak: dash+jump', 'NM-Q4', 'NM-B3', 1850, 'dashdouble', {}),
-    ('drop to R1',         'NM-B3', 'NM-R1', 2470, 'walk', {}),
-    ('to B4',              'NM-R1', 'NM-B4', 2985, 'single', {}),
+    ('peak to lift (top)', 'NM-B3', 'NM-R1', 2560, 'single', {'NM-R1': [2740, -230]}),
+    ('peak to lift (mid)', 'NM-B3', 'NM-R1', 2560, 'single', {'NM-R1': [2740, 60]}),
+    ('lift (bottom) to B4', 'NM-R1', 'NM-B4', 2985, 'single', {'NM-R1': [2740, 356]}),
     ('to dot 1',           'NM-B4', 'NM-DOT1', 3475, 'single', {}),
     ('dot 1 to 2',         'NM-DOT1', 'NM-DOT2', 3688, 'single', {}),
     ('dot 5 to 6',         'NM-DOT5', 'NM-DOT6', 4408, 'single', {}),
@@ -124,7 +125,7 @@ TABLE = [
 
 JS = """async([A,B,sx,mode,frozen])=>{const w=m=>new Promise(r=>setTimeout(r,m));
  const a=platforms.find(q=>q.id===A);if(!a)return 'missing '+A;
- for(const [id,x] of Object.entries(frozen)){const q=platforms.find(z=>z.id===id);if(q){q.motion=null;q.baseX=q.x=q.prevX=x;q.dx=0;}}
+ for(const [id,v] of Object.entries(frozen)){const q=platforms.find(z=>z.id===id);if(q){q.motion=null;if(Array.isArray(v)){q.baseX=q.x=q.prevX=v[0];q.baseY=q.y=q.prevY=v[1];}else{q.baseX=q.x=q.prevX=v;}q.dx=0;q.dy=0;}}
  __night.drones.forEach(d=>d.state='gone');actors=[];__night.runners.length=0;window.__duduIntroLock=0;
  releaseAllInputs();p.x=sx;p.y=a.y;p.vx=0;p.vy=0;p.prevX=p.x;p.prevY=p.y;p.ground=true;p.on=a;p.jumps=0;p.airDashUsed=false;
  p.dash=0;p.dashCooldown=0;p.invulnerable=99;p.guardStun=0;p.drop=null;state='playing';last=performance.now();acc=0;await w(120);

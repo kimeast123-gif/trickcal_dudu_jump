@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_6_0_261117';
+const NIGHT_ASSET_Q = '?v=v1_6_1_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -112,7 +112,9 @@ function buildNightStage() {
   ledge('NM-Q4', 1800, -170, 130);
   bld('NM-B3', 2290, 280, -230);
   // Section 2/4 — drop to the street, stepping stones under the first drone (sketch x 340..600)
-  ledge('NM-R1', 2740, 356, 250);
+  // v1.5.5: the drop off the peak roof used to be a blind leap onto a ledge far below. It is now a lift that
+  // rides between roof height (-230) and street height (356): step on at the top, ride down, hop to B4.
+  wSurface(s, 2740, 63, 250, 'steel', { id: 'NM-R1', nightDraw: 'ledge', behavior: 'moving', motion: { axis: 'y', range: 293, period: 5.6, phase: -Math.PI / 2 } });
   bld('NM-B4', 3140, 340, 356);
   wCheckpoint(s, '도심 진입', 3360, 356);
   [3620, 3800, 3980, 4160, 4340, 4520].forEach((x, i) => ledge(`NM-DOT${i + 1}`, x, 335, 72, { small: true }));
@@ -208,6 +210,7 @@ function buildNightStage() {
 
   // Red squares on the sketch: where each drone stops after rising from below.
   s.nightDrones = [
+    // v1.5.5: every hover point is lifted by NIGHT_DRONE_LIFT (about half of Dudu's height) when the stage builds
     { id: 'NM-D1', x: 1250, y: 150 },
     { id: 'NM-D2', x: 2480, y: -400 },
     { id: 'NM-D3', x: 4000, y: 100 },
@@ -293,19 +296,26 @@ function resetNightRuntime() {
   } else {
     window.__duduIntroLock = 0;
   }
-  night.drones = s.nightDrones.map(d => ({
-    id: d.id, tx: d.x, ty: d.y, x: d.x, y: d.y + 560, prevX: d.x, prevY: d.y + 560,
-    state: 'wait', t: 0, clip: 'drone_move', anim: 0, face: -1, fired: false, cooldown: 0, alpha: 1
+  night.drones = s.nightDrones.map((d, i) => ({
+    id: d.id, tx: d.x, ty: d.y - NIGHT_DRONE_LIFT, x: d.x, y: d.y + 560, prevX: d.x, prevY: d.y + 560,
+    state: 'wait', t: 0, clip: 'drone_move', anim: 0, face: -1, fired: false, cooldown: 0, alpha: 1,
+    // v1.5.5: each drone keeps its own rhythm, so neighbours never fire in step (rest 0.62s .. 1.25s)
+    rest: DRONE.rest * NIGHT_DRONE_RHYTHM[i % NIGHT_DRONE_RHYTHM.length]
   }));
   night.npcs = s.nightNpcs.map(n => ({ ...n, feetY: 580, near: false, anim: 0, face: -1, clip: n.idle }));
   // Riot squad: one member per ellipse; type, start offset and first delay vary per run inside fixed limits.
   actors = s.nightPatrols.map((z, i) => {
     const r1 = Math.random(), r2 = Math.random(), r3 = Math.random();
     const kind = r1 < 0.5 ? 'guard1' : 'guard2';
-    const homeX = z.side === 'left' ? z.x1 + Math.round(r2 * 60) : z.x2 - Math.round(r2 * 60);
+    // v1.5.5: the story riot squad's rhythm (short rush of about 200px, rest, walk back) instead of one slow
+    // eased sweep across the whole deck; the home spot inside the patrol line still varies per run.
+    const story = kind === 'guard1' ? { patrol: 195, baseSpeed: 162, returnSpeed: 132, speedMult: 1.05 }
+                                    : { patrol: 215, baseSpeed: 176, returnSpeed: 142, speedMult: 1.08 };
+    const span = z.x2 - z.x1;
+    const homeX = z.side === 'left' ? z.x1 + Math.round(r2 * Math.max(0, span - 260)) : z.x2 - Math.round(r2 * Math.max(0, span - 260));
     return actor(kind, homeX, 580, {
-      platformId: z.platformId, patrolX1: z.x1, patrolX2: z.x2,
-      patrolDir: z.side === 'left' ? 1 : -1, fullSpanPatrol: true, delay: Math.round(r3 * 70) / 100,
+      ...story, platformId: z.platformId, patrolX1: z.x1, patrolX2: z.x2,
+      patrolDir: z.side === 'left' ? 1 : -1, delay: Math.round(r3 * 50) / 100,
       nightPatrol: z.id
     });
   });
@@ -368,6 +378,8 @@ function startRunnerArc(r, x1, y1, final) {
 // Landing on a drone from above knocks it out (the Die motion); touching it any other way is a hit.
 // ----------------------------------------------------------------------------
 // v1.5.1: attack cycle and dart speed both 1.5x (cycle 2.49s -> 1.66s, dart 400 -> 600 px/s)
+const NIGHT_DRONE_LIFT = 34;
+const NIGHT_DRONE_RHYTHM = [1.0, 1.4, 0.75, 1.25, 0.9, 1.5, 0.8, 1.15, 1.35, 0.85];
 const DRONE = { trigger: 520, riseDur: 1.3, halfW: 46, halfH: 30, fireAt: 0.37, attackDur: 0.83, rest: 0.83, firstDelay: 0.37, dartSpeed: 600, sleepDist: 1500 };
 function updateDrone(d, dt) {
   d.prevX = d.x; d.prevY = d.y;
@@ -390,7 +402,7 @@ function updateDrone(d, dt) {
     const u = Math.min(1, d.t / DRONE.riseDur);
     const e = 1 - Math.pow(1 - u, 3);
     d.y = d.ty + 560 * (1 - e);
-    if (u >= 1) { d.state = 'hover'; d.t = 0; d.clip = 'drone_idle'; d.anim = 0; d.cooldown = DRONE.firstDelay; }
+    if (u >= 1) { d.state = 'hover'; d.t = 0; d.clip = 'drone_idle'; d.anim = 0; d.cooldown = DRONE.firstDelay * (0.6 + d.rest / DRONE.rest); }
   } else {
     d.y = d.ty + Math.sin(night.clock * 2.4 + d.tx) * 4;
     if (Math.abs(dx) > DRONE.sleepDist) { d.state = 'sleep'; return; }
@@ -403,7 +415,7 @@ function updateDrone(d, dt) {
       }
     } else if (d.state === 'attack') {
       if (!d.fired && d.t >= DRONE.fireAt) { d.fired = true; fireDroneDart(d); }
-      if (d.t >= DRONE.attackDur) { d.state = 'hover'; d.t = 0; d.clip = 'drone_idle'; d.anim = 0; d.cooldown = DRONE.rest; }
+      if (d.t >= DRONE.attackDur) { d.state = 'hover'; d.t = 0; d.clip = 'drone_idle'; d.anim = 0; d.cooldown = d.rest; }
     }
   }
   // body contact and stomp
@@ -630,6 +642,15 @@ function drawNightLedge(a, x, y) {
     ctx.fillStyle = 'rgba(150,180,240,0.22)'; ctx.fillRect(px - 16, y + 18, 4, Math.max(0, v.y2 - y));
     ctx.strokeStyle = '#3a4668'; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(px - 120, y + 18); ctx.lineTo(px - 14, y + 120); ctx.moveTo(px + 120, y + 18); ctx.lineTo(px + 14, y + 120); ctx.stroke();
+  }
+  if (a.motion && a.motion.axis === 'y') {
+    // a lift runs on two guide rails; drawing them shows where it travels without any UI marker
+    const top = a.baseY - a.motion.range - 30, bot = a.baseY + a.motion.range + 40;
+    for (const rx of [x - 8, x + a.w + 2]) {
+      ctx.fillStyle = '#323c5c'; ctx.fillRect(rx, top, 6, bot - top);
+      ctx.fillStyle = 'rgba(160,200,255,0.25)'; ctx.fillRect(rx, top, 2, bot - top);
+    }
+    ctx.fillStyle = '#3a4466'; ctx.fillRect(x - 12, top - 10, a.w + 24, 12);
   }
   const h = 16;
   ctx.fillStyle = '#2e3858'; ctx.beginPath(); ctx.roundRect(x, y, a.w, h, 4); ctx.fill();

@@ -15,7 +15,7 @@ from harness import serve, async_playwright, open_desktop
 ROUTE = [
     ('NM-B1', 280, 'single'), ('NM-P1', 690, 'single'), ('NM-P2', 900, 'single'), ('NM-B2', 1130, 'double'),
     ('NM-Q1', 1470, 'single'), ('NM-Q2', 1710, 'double'), ('NM-Q3', 1810, 'doubleleft'), ('NM-Q4', 1710, 'double'),
-    ('NM-B3', 1850, 'dashdouble'), ('NM-R1', 2560, 'walk'), ('NM-B4', 2985, 'single'),
+    ('NM-B3', 1850, 'dashdouble'), ('NM-R1', None, 'lift'), ('NM-B4', None, 'liftoff'),
     ('NM-DOT1', 3475, 'single'), ('NM-DOT2', 3688, 'single'), ('NM-DOT3', 3868, 'single'), ('NM-DOT4', 4048, 'single'),
     ('NM-DOT5', 4228, 'single'), ('NM-DOT6', 4408, 'single'), ('NM-B5', 4588, 'single'), ('NM-B6', 4935, 'double'),
     ('NM-S1', 5275, 'single'), ('NM-S2', 5455, 'single'), ('NM-T-SILL', 5675, 'single'),
@@ -82,6 +82,14 @@ JS = r"""async([route,god])=>{
     const d=edge-p.x;up('ArrowLeft');up('ArrowRight');if(Math.abs(d)>10)hold(d>0?'ArrowRight':'ArrowLeft');
     if(Math.abs(d)<=30&&gap<90&&gap>-tgt.w+60){up('ArrowLeft');up('ArrowRight');hold(dir>0?'ArrowRight':'ArrowLeft');await jump(260);ok=await landOn(id,2500);break;}
     await w(16);}
+  }else if(mode==='lift'){
+   // v1.5.5 lift: walk to the roof edge, wait until the lift is level with the roof, then hop on
+   const tgt=P(id);await walkTo(2555);for(let i=0;i<900;i++){await w(16);if(Math.abs(tgt.y-p.y)<25)break;}
+   hold('ArrowRight');await jump(200);ok=await landOn(id);
+  }else if(mode==='liftoff'){
+   // ride down, then hop to the street roof
+   const lift=p.on;await walkTo(lift.x+lift.w-20);for(let i=0;i<900;i++){await w(16);if(lift.y>330)break;}
+   await walkTo(lift.x+lift.w-20);hold('ArrowRight');await jump(260);ok=await landOn(id);
   }else if(mode==='ferry'){
    // ride the exit platform out of the tower, then hop to the first step
    const f=p.on;for(let i=0;i<900;i++){await w(16);if(f.x>6985&&f.dx>0)break;}

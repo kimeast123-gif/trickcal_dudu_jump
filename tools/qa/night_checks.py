@@ -98,7 +98,11 @@ async def main():
               const gaps=[];for(let i=1;i<shots.length;i++)gaps.push(+(shots[i].t-shots[i-1].t).toFixed(2));
               return {gaps,speed:Math.round(speed)}}""")
             g = [x for x in r['gaps'] if x > 0.5]
-            check('drone: v1.5.1 fires every ~1.66s (was 2.49s) at 600px/s (was 400)', bool(g) and all(1.5 <= x <= 1.85 for x in g) and r['speed'] == 600, r)
+            check('drone: fires on a steady own rhythm (1.45-2.1s) at 600px/s', bool(g) and max(g) - min(g) < 0.12 and all(1.4 <= x <= 2.1 for x in g) and r['speed'] == 600, r)
+            r = await pg.evaluate("()=>{devPracticeNight(3650,335);return __night.drones.map(d=>+(DRONE.attackDur+d.rest).toFixed(2))}")
+            check('drone: v1.5.5 neighbouring drones fire at different intervals', all(a != b for a, b in zip(r, r[1:])) and min(r) >= 1.4 and max(r) <= 2.1, r)
+            r = await pg.evaluate("()=>{devPracticeNight(3650,335);const s=world1Stages[NIGHT_STAGE_INDEX];return __night.drones.map((d,i)=>s.nightDrones[i].y-d.ty)}")
+            check('drone: v1.5.5 hover points are lifted 34px above the sketch marks', all(v == 34 for v in r), r)
 
         if on('drone'):
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));devPracticeNight(11900,95);p.invulnerable=99;
@@ -155,8 +159,8 @@ async def main():
               p.on=platforms.find(a=>a.id==='NM-TD1');for(let i=0;i<180;i++)await w(50);
               return actors.map(a=>({k:a.kind,z:a.nightPatrol,min:Math.round(a.reachedMinX??a.x),max:Math.round(a.reachedMaxX??a.x),x1:a.patrolX1,x2:a.patrolX2,y:a.y}))}""")
             a1 = r[0]
-            ok = all(a['k'] in ('guard1', 'guard2') for a in r) and a1['min'] >= a1['x1'] - 1 and a1['max'] <= a1['x2'] + 1 and a1['max'] - a1['min'] > 450
-            check('patrol: riot squad walks its deck span and stays inside it', ok, r)
+            ok = all(a['k'] in ('guard1', 'guard2') for a in r) and a1['min'] >= a1['x1'] - 1 and a1['max'] <= a1['x2'] + 1 and 150 <= a1['max'] - a1['min'] <= 260
+            check('patrol: riot squad rushes about 200px like the story guards and stays inside its line', ok, r)
             kinds = set()
             for _ in range(8):
                 kinds |= set(await pg.evaluate("()=>{retryWorld1StageCheckpoint();return actors.map(a=>a.kind+':'+Math.round(a.home))}"))

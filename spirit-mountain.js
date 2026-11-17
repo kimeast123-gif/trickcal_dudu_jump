@@ -16,7 +16,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 2400;
-const SM_ASSET_Q = '?v=v1_6_0_261117'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_6_1_261117'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
