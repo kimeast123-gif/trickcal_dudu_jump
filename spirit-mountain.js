@@ -17,7 +17,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_6_7_261118'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_6_8_261118'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
@@ -406,7 +406,8 @@ function drawSpiritSprite(key, t, x, y, face, alpha = 1) {
   if (alpha < 1) ctx.globalAlpha = alpha;
   ctx.translate(Math.round(x), Math.round(y));
   ctx.scale(-(face || -1), 1);
-  ctx.drawImage(im, (f % 8) * 256, Math.floor(f / 8) * 256, 256, 256, -m.anchor / 256 * size, -m.foot / 256 * size, size, size);
+  const c = im.width / 8;   // v1.6.8: sheets are 192px cells (shown at 112-130px); anchors stay in 256 units
+  ctx.drawImage(im, (f % 8) * c, Math.floor(f / 8) * c, c, c, -m.anchor / 256 * size, -m.foot / 256 * size, size, size);
   ctx.restore();
   return true;
 }
@@ -477,7 +478,6 @@ function drawSpiritLedge(a, x, y) {
 function smWallZone(id) {
   if (id === 'SM-MW1') return 'out';
   if (id === 'SM-MW3' || id === 'SM-MW4' || id === 'SM-B6') return 'lava';
-  if (id === 'SM-B7') return 'snow';
   return 'cave';
 }
 // One seamless rock texture per wall art, cut from the inside of the wall block (no tile outlines), so tall walls
@@ -490,48 +490,61 @@ function smWallPattern(key) {
   const sw = m[0] - 40, sh = m[1] - 50, sc = 0.55;
   const c = document.createElement('canvas'); c.width = Math.round(sw * sc); c.height = Math.round(sh * sc);
   c.getContext('2d').drawImage(im, 20, 25, sw, sh, 0, 0, c.width, c.height);
-  return (_smWallPat[key] = ctx.createPattern(c, 'repeat'));
+  const pat = ctx.createPattern(c, 'repeat');
+  pat.__src = c;
+  return (_smWallPat[key] = pat);
 }
 // v1.6.5: the mountain's outer walls are painted as one natural rock face (uneven edges, light on the side
 // that faces the open sky, dark toward the cave), not made of pasted tiles.
 const SM_WALL_COLORS = {
   out:  ['#7d8796', '#646c7b', '#525968', '#4a505e'],   // ends on the mountain body's colour
-  lava: ['#6b4640', '#4c3130', '#33211f', '#221617'],
-  snow: ['#9aa8bb', '#7d8a9e', '#66728a', '#56617a']
+  lava: ['#6b4640', '#4c3130', '#33211f', '#221617']
 };
-function drawSpiritOuterWall(a, x, y, v) {
-  const lava = a.id === 'SM-MW3' || a.id === 'SM-MW4', c = SM_WALL_COLORS[a.id === 'SM-B7' ? 'snow' : lava ? 'lava' : 'out'];
-  const y1 = Math.max(y, v.y1 - 40), y2 = Math.min(y + a.h, v.y2 + 40);
-  const step = 26, k0 = Math.floor((y1 - y) / step), k1 = Math.ceil((y2 - y) / step);
-  const seed = a.x * 0.37;
-  const jag = (k, side) => (smRand(seed + k * 3.1 + side * 71) - 0.5) * 12;
-  ctx.save();
-  ctx.beginPath();
-  for (let k = k0; k <= k1; k++) {
-    const yy = Math.min(y + a.h, y + k * step), ends = (k === 0 || y + k * step >= y + a.h);
-    ctx.lineTo(x + 3 + (ends ? 4 : jag(k, 0)), yy);
-  }
-  for (let k = k1; k >= k0; k--) {
-    const yy = Math.min(y + a.h, y + k * step), ends = (k === 0 || y + k * step >= y + a.h);
-    ctx.lineTo(x + a.w - 3 + (ends ? -4 : jag(k, 1)), yy);
-  }
-  ctx.closePath();
-  const g = ctx.createLinearGradient(x - 6, 0, x + a.w + 6, 0);
-  g.addColorStop(0, c[0]); g.addColorStop(0.35, c[1]); g.addColorStop(0.75, c[2]); g.addColorStop(1, c[3]);
-  ctx.fillStyle = g;
-  if (!lava) { ctx.shadowColor = 'rgba(40,48,60,0.35)'; ctx.shadowBlur = 18; }
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.clip();
-  // soft rock texture and strata, very low contrast so it sits with the painted backgrounds
+// v1.6.8: each outer wall is painted once into its own canvas (polygon, shadow blur, texture, strata) and then
+// only the visible slice is copied each frame.
+const _smWallCache = {};
+const SM_WALL_PAD = 24;
+function smPaintOuterWall(a) {
   const pat = smWallPattern('cave_wall');
-  if (pat) { ctx.globalAlpha = 0.22; ctx.fillStyle = pat; ctx.fillRect(x - 10, y1, a.w + 20, y2 - y1); ctx.globalAlpha = 1; }
-  ctx.strokeStyle = lava ? 'rgba(255,140,80,0.10)' : 'rgba(220,230,245,0.10)'; ctx.lineWidth = 2;
-  for (let k = Math.floor((y1 - y) / 90); y + k * 90 < y2; k++) {
-    const yy = y + k * 90 + smRand(seed + k) * 30;
-    ctx.beginPath(); ctx.moveTo(x, yy); ctx.quadraticCurveTo(x + a.w * 0.5, yy + (smRand(seed + k * 7) - 0.5) * 24, x + a.w, yy + 6); ctx.stroke();
+  if (!pat) return null;
+  const lava = a.id === 'SM-MW3' || a.id === 'SM-MW4', c = SM_WALL_COLORS[lava ? 'lava' : 'out'];
+  const cv = document.createElement('canvas');
+  cv.width = a.w + 2 * SM_WALL_PAD; cv.height = a.h;
+  const g = cv.getContext('2d'), x = SM_WALL_PAD;
+  const step = 26, n = Math.ceil(a.h / step), seed = a.x * 0.37;
+  const jag = (k, side) => (smRand(seed + k * 3.1 + side * 71) - 0.5) * 12;
+  g.beginPath();
+  for (let k = 0; k <= n; k++) {
+    const yy = Math.min(a.h, k * step), ends = (k === 0 || k * step >= a.h);
+    g.lineTo(x + 3 + (ends ? 4 : jag(k, 0)), yy);
   }
-  ctx.restore();
+  for (let k = n; k >= 0; k--) {
+    const yy = Math.min(a.h, k * step), ends = (k === 0 || k * step >= a.h);
+    g.lineTo(x + a.w - 3 + (ends ? -4 : jag(k, 1)), yy);
+  }
+  g.closePath();
+  const gr = g.createLinearGradient(x - 6, 0, x + a.w + 6, 0);
+  gr.addColorStop(0, c[0]); gr.addColorStop(0.35, c[1]); gr.addColorStop(0.75, c[2]); gr.addColorStop(1, c[3]);
+  g.fillStyle = gr;
+  if (!lava) { g.shadowColor = 'rgba(40,48,60,0.35)'; g.shadowBlur = 18; }
+  g.fill();
+  g.shadowBlur = 0;
+  g.clip();
+  // soft rock texture and strata, very low contrast so it sits with the painted backgrounds
+  g.globalAlpha = 0.22; g.fillStyle = g.createPattern(pat.__src, 'repeat'); g.fillRect(0, 0, cv.width, a.h); g.globalAlpha = 1;
+  g.strokeStyle = lava ? 'rgba(255,140,80,0.10)' : 'rgba(220,230,245,0.10)'; g.lineWidth = 2;
+  for (let k = 0; k * 90 < a.h; k++) {
+    const yy = k * 90 + smRand(seed + k) * 30;
+    g.beginPath(); g.moveTo(x, yy); g.quadraticCurveTo(x + a.w * 0.5, yy + (smRand(seed + k * 7) - 0.5) * 24, x + a.w, yy + 6); g.stroke();
+  }
+  return cv;
+}
+function drawSpiritOuterWall(a, x, y, v) {
+  const cv = _smWallCache[a.id] || (_smWallCache[a.id] = smPaintOuterWall(a));
+  const y1 = Math.max(y, Math.floor(v.y1) - 4), y2 = Math.min(y + a.h, Math.ceil(v.y2) + 4);
+  if (y2 <= y1) return;
+  if (!cv) { ctx.fillStyle = '#4a4652'; ctx.fillRect(x, y1, a.w, y2 - y1); return; }
+  ctx.drawImage(cv, 0, y1 - y, cv.width, y2 - y1, x - SM_WALL_PAD, y1, cv.width, y2 - y1);
 }
 // Seen from outside, the mountain is one solid body of rock (the maze and the hall are hidden inside) with a dark
 // doorway; it fades away as Dudu walks into the doorway.
@@ -829,13 +842,19 @@ function drawSpiritOverlay() {
   if (sm.mask > 0.01) {
     const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
     if (!_smMaskCanvas) { _smMaskCanvas = document.createElement('canvas'); _smMaskCanvas.width = W / SM_MASK_SCALE; _smMaskCanvas.height = H / SM_MASK_SCALE; }
-    const c = _smMaskCanvas, g = c.getContext('2d'), hole = smHole(), hr = hole.width / 2;
+    const c = _smMaskCanvas, hole = smHole(), hr = hole.width / 2;
+    const gabia = sm.npcs && sm.npcs.find(n => n.kind === 'gabia');
+    const k1 = Math.round((rPx - rCam) * zoom / SM_MASK_SCALE), k2 = Math.round((rPy - 32 - rCamY) * zoom / SM_MASK_SCALE);
+    const k3 = gabia ? Math.round((gabia.x - rCam) * zoom / SM_MASK_SCALE) : 0, k4 = gabia ? Math.round((gabia.y - 50 - rCamY) * zoom / SM_MASK_SCALE) : 0;
+    const key = k1 + ',' + k2 + ',' + k3 + ',' + k4;
+    if (key !== sm.maskKey) {
+    sm.maskKey = key;
+    const g = c.__g || (c.__g = c.getContext('2d'));
     g.globalCompositeOperation = 'source-over';
     g.clearRect(0, 0, c.width, c.height);
     g.fillStyle = 'rgba(6,5,12,0.93)'; g.fillRect(0, 0, c.width, c.height);
     g.globalCompositeOperation = 'destination-out';
     const lights = [[rPx, rPy - 32]];
-    const gabia = sm.npcs && sm.npcs.find(n => n.kind === 'gabia');
     if (gabia) lights.push([gabia.x, gabia.y - 50]);
     for (const [wx, wy] of lights) {
       const sx = (wx - rCam) * zoom / SM_MASK_SCALE, sy = (wy - rCamY) * zoom / SM_MASK_SCALE;
@@ -843,6 +862,7 @@ function drawSpiritOverlay() {
       g.drawImage(hole, sx - hr, sy - hr);
     }
     g.globalCompositeOperation = 'source-over';
+    }
     ctx.save();
     ctx.globalAlpha = sm.mask;
     ctx.imageSmoothingEnabled = true;
@@ -900,7 +920,9 @@ function drawSpiritBackground() {
     ctx.drawImage(c, sx, sy, W, H, 0, 0, W, H);
     if (a < 1) ctx.restore();
   }
-  window.__smBgDebug = { zone, weights: smBgWeights.map(v => +v.toFixed(2)) };
+  /* v1.6.8: QA readout without allocating every frame */
+  const dbg = window.__smBgDebug && window.__smBgDebug.weights === smBgWeights ? window.__smBgDebug : (window.__smBgDebug = { zone, weights: smBgWeights });
+  dbg.zone = zone;
 }
 
 // ----------------------------------------------------------------------------

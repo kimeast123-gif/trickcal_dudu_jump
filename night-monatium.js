@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_6_7_261118';
+const NIGHT_ASSET_Q = '?v=v1_6_8_261118';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -292,6 +292,7 @@ window.__duduIntroLock = 0;
 function nightRand(seed) { const v = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); }
 
 function resetNightRuntime() {
+  _runnerPl.clear();   // platforms are rebuilt on every stage load
   const s = nightStage();
   night.clock = 0;
   night.darts.length = 0;
@@ -339,7 +340,13 @@ const RUNNER_ROUTE = ['NM-B0', 'NM-B1', 'NM-P1', 'NM-P2', 'NM-B2'];
 function makeRunner(kind, x, delay, lead) {
   return { kind, x, y: 496, prevX: x, prevY: 496, vy: 0, leg: 0, air: null, delay, lead, anim: Math.random(), gone: false, alpha: 1 };
 }
-function runnerPlatform(id) { return platforms.find(a => a.id === id); }
+// v1.6.8: runners look their ledge up every physics step; keep the lookups (cleared on every reset)
+const _runnerPl = new Map();
+function runnerPlatform(id) {
+  let pl = _runnerPl.get(id);
+  if (!pl) { pl = platforms.find(a => a.id === id); if (pl) _runnerPl.set(id, pl); }
+  return pl;
+}
 function updateRunner(r, dt) {
   if (r.gone) return;
   r.prevX = r.x; r.prevY = r.y;
@@ -523,7 +530,8 @@ function drawNightSprite(key, t, x, y, face, alpha = 1, loop = true) {
   if (alpha < 1) ctx.globalAlpha = alpha;
   ctx.translate(Math.round(x), Math.round(y));
   ctx.scale(-(face || -1), 1);
-  ctx.drawImage(im, (f % 8) * 256, Math.floor(f / 8) * 256, 256, 256,
+  const c = im.width / 8;   // v1.6.8: sheets are 192px cells (shown at 138-150px); anchors stay in 256 units
+  ctx.drawImage(im, (f % 8) * c, Math.floor(f / 8) * c, c, c,
     -m.anchor / 256 * size, -m.foot / 256 * size, size, size);
   ctx.restore();
   return true;
