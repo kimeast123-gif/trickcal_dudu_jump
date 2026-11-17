@@ -672,6 +672,10 @@ body.mobile-game-landscape .encounterNav {
   .wmStageCard { min-width:195px; flex:0 0 auto; padding:8px; }
 }
 
+/* v1.6.6: worlds with a single map show their one stage card centred */
+.wmStageGrid.wmStageGridSingle { display:flex; justify-content:center; overflow-x:visible; }
+.wmStageGridSingle .wmStageCard { flex:0 0 auto; width:calc((100% - 40px) / 5); min-width:195px; }
+
 /* TEST31.3: independent jump/dash control sizing (joystick unaffected) */
 /* RENEWAL: smaller action buttons. Small fits a 390px-tall phone without covering the landing spot. */
 .mobileControls[data-action-size="small"] .vbtn-action{width:44px;height:44px;font-size:11px}

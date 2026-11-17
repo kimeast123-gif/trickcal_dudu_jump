@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_6_5_261117';
+const NIGHT_ASSET_Q = '?v=v1_6_6_261118';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -981,7 +981,7 @@ function openNightStageSelect() {
           <button type="button" class="wmBackBtn" onclick="openWorldMapMenu({forceDevOpen:true})">세계지도로</button>
         </div>
       </div>
-      <div class="wmStageGrid">
+      <div class="wmStageGrid wmStageGridSingle">
         <div class="wmStageCard unlocked ${rec.cleared ? 'cleared' : ''}" id="wmStageCard-2-1" data-stage-code="2-1" data-unlocked="true">
           <div class="wmStageTop">
             <span class="wmStageCode">STAGE 2-1</span>

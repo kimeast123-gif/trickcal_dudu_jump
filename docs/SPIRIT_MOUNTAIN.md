@@ -1,5 +1,7 @@
 # 월드 3 「정령산의 아침」 제작 기록 (v1.6.0, 2026-11-17)
 
+> **v1.6.6:** 강풍 7~10초 주기. `SM_LAVA`는 {x1, x2, y}(L0 2개, L1·L2·L9 가운데 1개씩). 산 밖 가리기는 `drawSpiritMountainBody`(호수 쪽, 이프리트 쪽, 지붕 위 낭떠러지). O13~O16B는 폭 100, x 2970/2780 번갈아, 122px 간격.
+>
 > **v1.6.5:** 강풍 10초 주기·3초·push 104. 위습 이동 259/204px/s, 양 끝 0.5초. 등산(y < -2250) 점멸은 Math.random 주기·위상. 용암 그림은 L*와 I0만. 바깥벽(MW)은 `drawSpiritOuterWall`, 산 밖에서는 `drawSpiritMountainBody`가 동굴을 가린다. 바닥은 `cave_long` 한 장을 바닥 폭에 맞춤.
 >
 > **v1.6.4:** 발판 그림은 `assets/spirit/tiles/{out,cave,lava,snow}_{long,tiny}`(긴 것은 0.34배 고정, 양끝 130px 캡 + 가운데 반복), 점멸은 `*_glow`, 벽은 `out_wall`/`cave_wall` 안쪽을 패턴으로. 구역은 id(E 외곽, M 동굴, L·I 용암)와 y > -2250이면 용암. 체크포인트는 스토리 깃발. 지붕(`SM_ROOF`)은 그리지 않는다.

@@ -379,7 +379,7 @@
         ? `스테이지 ${clearedCount}/5 클리어, 황금 크레파스 ${totalCols}/2`
         : (card.id === 'story_replay'
           ? '본편 6개 지역, 왕사탕 135개, 크레파스 12개'
-          : '추후 업데이트 예정 지역');
+          : (isComingSoon ? '추후 업데이트 예정 지역' : ''));   // v1.6.6: open single-map worlds show no note
       const actionLabel = isComingSoon
         ? '준비 중'
         : (card.id === 'story_replay' ? '본편 다시 시작' : '스테이지 고르기');
@@ -401,7 +401,7 @@
               <strong class="wmCardTitle">${card.title}</strong>
             </div>
             <p class="wmCardSub">${card.subtitle}</p>
-            <div class="wmCardMeta">${progressText}</div>
+            ${progressText ? `<div class="wmCardMeta">${progressText}</div>` : ''}
             <div class="wmCardActionRow">
               <span class="wmCardActionLabel ${isComingSoon ? 'is-disabled' : 'is-primary'}">${actionLabel}</span>
             </div>

@@ -17,13 +17,13 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_6_5_261117'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_6_6_261118'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
   x1: 0, x2: 3467, y1: -6046, y2: -4476,       // the blue zone on the sketch
-  intervalMin: 10, intervalMax: 10,             // start-to-start (v1.6.5: a gust every 10s)
-  firstMin: 10, firstMax: 10,                   // first gust 10s after arriving in the zone
+  intervalMin: 7, intervalMax: 10,              // start-to-start (v1.6.6: a gust every 7-10s)
+  firstMin: 7, firstMax: 10,                    // first gust 7-10s after arriving in the zone
   durMin: 3, durMax: 3,                         // v1.6.5: each gust blows for 3s
   warn: 1.2,                                    // visible warning before a gust, no push
   push: 104,                                    // px/s (v1.6.5: 15% stronger than 90): in the air the target speed shifts left by this much
@@ -92,8 +92,9 @@ const SM_PLATFORMS = [
   ['O4', 670, -2713, 249, 'snow'], ['O5', 997, -2910, 257, 'snow'], ['O6', 1397, -3028, 74, 'snow'],
   ['O7', 1604, -2922, 87, 'snow'], ['O8', 1848, -2922, 78, 'snow'], ['O9', 2082, -2922, 88, 'snow'],
   ['O10', 2317, -2926, 97, 'snow'], ['O11', 2501, -3047, 87, 'snow'], ['O12', 2731, -3051, 299, 'snow'],
-  ['O13', 2956, -3218, 175, 'snow'], ['O14', 2938, -3348, 179, 'snow'], ['O15', 2929, -3469, 170, 'snow'],
-  ['O16', 2915, -3617, 189, 'snow'], ['O17', 2542, -3781, 851, 'snow'],
+  // v1.6.6: zig-zag of small ledges, every step 122px up, 90px apart sideways
+  ['O13', 2970, -3173, 100, 'snow'], ['O14', 2780, -3295, 100, 'snow'], ['O15', 2970, -3417, 100, 'snow'],
+  ['O16', 2780, -3539, 100, 'snow'], ['O16B', 2970, -3661, 100, 'snow'], ['O17', 2542, -3781, 851, 'snow'],
   ['U1', 2202, -3959, 106, 'snow'], ['U2', 1875, -3876, 115, 'snow'], ['U3', 1567, -4066, 134, 'snow'],
   ['U4', 988, -4108, 147, 'snow'], ['U5', 486, -4229, 276, 'blink'], ['U6', 1305, -4237, 115, 'blink'],
   ['U7', 265, -4374, 120, 'snow'], ['U8', 1112, -4389, 124, 'snow'], ['U9', 2138, -4354, 96, 'snow'],
@@ -118,11 +119,16 @@ const SM_WALLS = [
   ['MW2', 1719, -1163, 161, 672],  // upper outer wall; the doorway to Gabia is y -491..-134
   ['MW3', 1512, -2080, 69, 830],   // lava hall left wall below L9
   ['MW4', 1452, -2705, 60, 371],    // wall above the doorway out to Ifrit (doorway y -2334..-2104)
-  ['B1', 2510, -71, 78, 256], ['B2', 2786, -424, 74, 277], ['B3', 2901, -882, 97, 315],
-  ['B5', 2745, -1236, 97, 283], ['B6', 1834, -2073, 69, 267], ['B7', 1494, -2846, 92, 217]
+  ['B1', 2510, -71, 78, 256], ['B2', 2786, -559, 74, 412], ['B3', 2901, -995, 97, 428],   // v1.6.6: B2/B3 reach the ledge above
+  ['B5', 2745, -1293, 97, 340], ['B6', 1834, -2096, 69, 290], ['B7', 1494, -2846, 92, 217]   // B5 up to L0, B6 tucked under L9
 ];
+const SM_CAPLESS = new Set(['SM-B2', 'SM-B3', 'SM-B5', 'SM-B6']);   // pillars whose top is hidden under a ledge
 const SM_ROOF = { x: 1632, y: -2705, w: 1918, h: 120 };   // v1.6.3: drawn only; the strip above it is a fall zone
-const SM_LAVA = [ { x1: 2033, x2: 2217 }, { x1: 2463, x2: 2647 } ];   // pools lying on the hall floor L0
+// Lava pools lying on the lava ledges: two on the hall floor L0 and (v1.6.6) one in the middle of L1, L2 and L9.
+const SM_LAVA = [
+  { x1: 2033, x2: 2217, y: -1301 }, { x1: 2463, x2: 2647, y: -1301 },
+  { x1: 2172, x2: 2292, y: -1510 }, { x1: 3007, x2: 3127, y: -1676 }, { x1: 1847, x2: 1967, y: -2104 }
+];
 const SM_FLOOR_Y = 580;
 const SM_WALL_X = 1719;      // the mountain's outer wall (start outside on its left, Gabia's cave on its right)
 const SM_LAVA_WALL_X = 1512; // the lava hall's left wall
@@ -334,9 +340,7 @@ function updateWisp(w, dt) {
 }
 function updateLava() {
   if (p.invulnerable > 0) return;
-  const floorY = -1301;
-  if (Math.abs(p.y - floorY) > 6) return;
-  for (const l of SM_LAVA) if (p.x > l.x1 + 6 && p.x < l.x2 - 6) { applyStunHit(p.x < (l.x1 + l.x2) / 2 ? l.x1 - 40 : l.x2 + 40, 'spirit_lava'); return; }
+  for (const l of SM_LAVA) if (Math.abs(p.y - l.y) <= 6 && p.x > l.x1 + 6 && p.x < l.x2 - 6) { applyStunHit(p.x < (l.x1 + l.x2) / 2 ? l.x1 - 40 : l.x2 + 40, 'spirit_lava'); return; }
 }
 function updateSpiritStars() {
   for (const st of sm.stars) {
@@ -492,10 +496,11 @@ function smWallPattern(key) {
 // that faces the open sky, dark toward the cave), not made of pasted tiles.
 const SM_WALL_COLORS = {
   out:  ['#7d8796', '#646c7b', '#525968', '#4a505e'],   // ends on the mountain body's colour
-  lava: ['#6b4640', '#4c3130', '#33211f', '#221617']
+  lava: ['#6b4640', '#4c3130', '#33211f', '#221617'],
+  snow: ['#9aa8bb', '#7d8a9e', '#66728a', '#56617a']
 };
 function drawSpiritOuterWall(a, x, y, v) {
-  const lava = a.id === 'SM-MW3' || a.id === 'SM-MW4', c = SM_WALL_COLORS[lava ? 'lava' : 'out'];
+  const lava = a.id === 'SM-MW3' || a.id === 'SM-MW4', c = SM_WALL_COLORS[a.id === 'SM-B7' ? 'snow' : lava ? 'lava' : 'out'];
   const y1 = Math.max(y, v.y1 - 40), y2 = Math.min(y + a.h, v.y2 + 40);
   const step = 26, k0 = Math.floor((y1 - y) / step), k1 = Math.ceil((y2 - y) / step);
   const seed = a.x * 0.37;
@@ -528,30 +533,59 @@ function drawSpiritOuterWall(a, x, y, v) {
   }
   ctx.restore();
 }
-// v1.6.5: seen from the lake outside, the mountain is one solid body of rock behind its outer wall (the cave
-// maze is hidden inside) with a dark doorway; it fades away as Dudu walks into the doorway.
-function drawSpiritMountainBody() {
-  if (p.y < -1240 || p.x > SM_WALL_X + 40) return;
-  const k = Math.max(0, Math.min(1, (SM_WALL_X + 40 - p.x) / 260));
-  if (k <= 0) return;
-  const v = smView();
-  const x0 = SM_WALL_X + 46, y0 = Math.max(v.y1 - 20, -1240), y1 = v.y2 + 20;
+// Seen from outside, the mountain is one solid body of rock (the maze and the hall are hidden inside) with a dark
+// doorway; it fades away as Dudu walks into the doorway.
+//  - the lake side (v1.6.5) and Ifrit's side (v1.6.6): a rock body right of the outer wall
+//  - above the hall's roof (v1.6.6): a dark chasm, so the fall zone reads as a drop and nothing inside shows
+function smBodyFill(x0, y0, y1, v, k, cols, doorY) {
   if (x0 > v.x2 || y1 <= y0) return;
   ctx.save();
   ctx.globalAlpha = k;
   const g = ctx.createLinearGradient(x0 - 30, 0, x0 + 520, 0);
-  g.addColorStop(0, '#596170'); g.addColorStop(0.5, '#4a505e'); g.addColorStop(1, '#3d4250');
+  g.addColorStop(0, cols[0]); g.addColorStop(0.5, cols[1]); g.addColorStop(1, cols[2]);
   ctx.fillStyle = g;
   ctx.fillRect(x0 - 30, y0, v.x2 - x0 + 60, y1 - y0);
   const pat = smWallPattern('cave_wall');
   if (pat) { ctx.globalAlpha = k * 0.18; ctx.fillStyle = pat; ctx.fillRect(x0 - 30, y0, v.x2 - x0 + 60, y1 - y0); ctx.globalAlpha = k; }
-  // the doorway to Gabia's cave: a dark mouth that deepens inward
   ctx.beginPath(); ctx.rect(x0 - 30, y0, v.x2 - x0 + 60, y1 - y0); ctx.clip();
-  const d = ctx.createRadialGradient(x0 - 30, -300, 20, x0 - 30, -300, 230);
+  const d = ctx.createRadialGradient(x0 - 30, doorY, 20, x0 - 30, doorY, 230);
   d.addColorStop(0, 'rgba(18,16,26,0.95)'); d.addColorStop(0.6, 'rgba(18,16,26,0.6)'); d.addColorStop(1, 'rgba(18,16,26,0)');
   ctx.fillStyle = d;
-  ctx.beginPath(); ctx.ellipse(x0 - 30, -300, 230, 200, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x0 - 30, doorY, 230, 200, 0, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
+}
+function drawSpiritMountainBody() {
+  const v = smView();
+  // lake side
+  if (p.y > -1240 && p.x < SM_WALL_X + 40) {
+    const k = Math.max(0, Math.min(1, (SM_WALL_X + 40 - p.x) / 260));
+    if (k > 0) smBodyFill(SM_WALL_X + 46, Math.max(v.y1 - 20, -1240), v.y2 + 20, v, k, ['#596170', '#4a505e', '#3d4250'], -300);
+  }
+  // Ifrit's side: from Ifrit's ledge outward nothing of the lava hall shows
+  if (p.y > SM_ROOF.y && p.y < -1240 && p.x < SM_LAVA_WALL_X + 40) {
+    const k = Math.max(0, Math.min(1, (SM_LAVA_WALL_X + 40 - p.x) / 260));
+    if (k > 0) smBodyFill(SM_LAVA_WALL_X + 18, Math.max(v.y1 - 20, SM_ROOF.y), Math.min(v.y2 + 20, -1240), v, k, ['#4f3431', '#3f2a28', '#33221f'], -2215);
+  }
+  // above the roof: a dark chasm below the roof line
+  if (p.y < SM_ROOF.y + 40) {
+    const k = Math.max(0, Math.min(1, (SM_ROOF.y + 40 - p.y) / 160));
+    const top = SM_ROOF.y - 10, x0 = SM_LAVA_WALL_X - 72, y1 = v.y2 + 20;
+    if (k > 0 && y1 > top && x0 < v.x2) {
+      ctx.save();
+      ctx.globalAlpha = k;
+      const g = ctx.createLinearGradient(0, top, 0, top + 170);
+      g.addColorStop(0, 'rgba(10,14,26,0)'); g.addColorStop(1, 'rgba(10,14,26,0.96)');
+      ctx.fillStyle = g;
+      // the left end fades out sideways over 80px
+      for (let i = 0; i < 8; i++) {
+        ctx.globalAlpha = k * (i + 1) / 8;
+        ctx.fillRect(x0 + i * 10, top, 10, y1 - top);
+      }
+      ctx.globalAlpha = k;
+      ctx.fillRect(x0 + 80, top, v.x2 - x0, y1 - top);
+      ctx.restore();
+    }
+  }
 }
 function drawSpiritRock(a, x, y) {
   if (a.smDraw === 'roof') return;   // v1.6.4: the lava hall's roof is not drawn; the space above it is an open drop
@@ -559,6 +593,7 @@ function drawSpiritRock(a, x, y) {
   const y1 = Math.max(y, v.y1 - 300), y2 = Math.min(y + a.h, v.y2 + 10);
   if (y2 <= y1 || x + a.w < v.x1 - 20 || x > v.x2 + 20) return;
   if (a.smDraw === 'rock') { drawSpiritOuterWall(a, x, y, v); return; }
+  if (a.id === 'SM-B7') { drawSpiritOuterWall(a, x, y, v); drawSpiritTile({ w: a.w + 8 }, x - 4, y, 'snow'); return; }
   const z = smWallZone(a.id), pat = smWallPattern(z === 'out' ? 'out_wall' : 'cave_wall');
   ctx.save();
   ctx.fillStyle = pat || '#4a4652';
@@ -573,7 +608,7 @@ function drawSpiritRock(a, x, y) {
   ctx.fillStyle = 'rgba(28,22,38,0.85)';
   ctx.fillRect(x, y1, 2, y2 - y1); ctx.fillRect(x + a.w - 2, y1, 2, y2 - y1);
   ctx.restore();
-  if (a.smDraw === 'pillar' && y > v.y1 - 80) drawSpiritTile({ w: a.w + 8 }, x - 4, y, z === 'out' ? 'cave' : z);
+  if (a.smDraw === 'pillar' && !SM_CAPLESS.has(a.id) && y > v.y1 - 80) drawSpiritTile({ w: a.w + 8 }, x - 4, y, z === 'out' ? 'cave' : z);
 }
 // v1.6.5: Gabia's floor is one long cave ledge fixed to the world (it does not follow the camera): the long
 // module scaled to the floor's full width, its surface on the floor line.
@@ -680,34 +715,61 @@ function drawSpiritBack() {
 }
 window.drawSpiritBack = drawSpiritBack;
 
+// v1.6.6: pools are painted bright and alive (dark crust rim, glowing molten top, pulsing heat glow, bubbles and
+// embers) so they stand out from the red backdrop as something that hurts.
 function drawLavaPools() {
-  const imP = smTile('lava_strip'), mP = SM_TILES.lava_strip;
-  if (imP && mP) {
-    for (const l of SM_LAVA) {
-      const w = l.x2 - l.x1 + 8, sy = 0.6;
-      ctx.drawImage(imP, l.x1 - 4, -1301 - mP[2] * sy + 6, w, mP[1] * sy);
-    }
-    return;
-  }
-  const v = smView(); const y = -1301;
-  if (y < v.y1 - 60 || y > v.y2 + 60) return;
+  const v = smView();
   ctx.save();
   for (const l of SM_LAVA) {
-    const g = ctx.createLinearGradient(0, y - 10, 0, y + 14);
-    g.addColorStop(0, '#ffd166'); g.addColorStop(0.4, '#ff7b29'); g.addColorStop(1, '#a8231d');
+    const y = l.y, w = l.x2 - l.x1;
+    if (l.x2 < v.x1 - 80 || l.x1 > v.x2 + 80 || y < v.y1 - 120 || y > v.y2 + 60) continue;
+    const pulse = 0.5 + 0.5 * Math.sin(time * 3.2 + l.x1 * 0.01);
+    // soft heat glow over the pool (an ellipse, no hard edges)
+    const cx = (l.x1 + l.x2) / 2;
+    ctx.save();
+    ctx.translate(cx, y - 6); ctx.scale(1, 0.45);
+    const hg = ctx.createRadialGradient(0, 0, 4, 0, 0, w * 0.75);
+    hg.addColorStop(0, `rgba(255,200,90,${0.45 + 0.25 * pulse})`); hg.addColorStop(1, 'rgba(255,120,40,0)');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(0, 0, w * 0.75, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // crust rim
+    ctx.fillStyle = '#2b0d07';
+    ctx.beginPath(); ctx.roundRect(l.x1 - 6, y - 9, w + 12, 22, 8); ctx.fill();
+    // molten body with a wavy top
+    const g = ctx.createLinearGradient(0, y - 10, 0, y + 12);
+    g.addColorStop(0, '#fff3a6'); g.addColorStop(0.35, '#ffb02e'); g.addColorStop(0.75, '#ff5a1f'); g.addColorStop(1, '#b3200f');
     ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(l.x1, y + 12);
-    for (let x = l.x1; x <= l.x2; x += 10) ctx.lineTo(x, y - 6 + Math.sin(time * 3 + x * 0.08) * 2.5);
-    ctx.lineTo(l.x2, y + 12); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(l.x1, y + 10);
+    for (let x = l.x1; x <= l.x2; x += 8) ctx.lineTo(x, y - 6 + Math.sin(time * 3.4 + x * 0.09) * 2.2);
+    ctx.lineTo(l.x2, y + 10); ctx.closePath(); ctx.fill();
+    // bright pulsing rim line so the edge of the danger is clear
+    ctx.strokeStyle = `rgba(255,240,170,${0.55 + 0.35 * pulse})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(l.x1 - 3, y - 8, w + 6, 18, 7); ctx.stroke();
     // bubbles that swell and pop
     for (let i = 0; i < 4; i++) {
-      const ph = (time * 0.7 + i * 0.27 + l.x1 * 0.001) % 1;
-      const bx = l.x1 + 14 + ((i * 37 + Math.floor(time * 0.7 + i * 0.27) * 53) % (l.x2 - l.x1 - 28));
-      ctx.fillStyle = `rgba(255,220,140,${0.8 * (1 - ph)})`;
-      ctx.beginPath(); ctx.arc(bx, y - 6 - ph * 10, 2 + ph * 5, 0, Math.PI * 2); ctx.fill();
+      const ph = (time * 0.8 + i * 0.27 + l.x1 * 0.001) % 1;
+      const bx = l.x1 + 12 + ((i * 37 + Math.floor(time * 0.8 + i * 0.27) * 53) % Math.max(1, w - 24));
+      ctx.fillStyle = `rgba(255,236,170,${0.85 * (1 - ph)})`;
+      ctx.beginPath(); ctx.arc(bx, y - 5 - ph * 9, 2 + ph * 4, 0, Math.PI * 2); ctx.fill();
     }
-    // heat shimmer above
-    ctx.fillStyle = 'rgba(255,140,60,0.10)'; ctx.fillRect(l.x1, y - 70, l.x2 - l.x1, 64);
+    // flame tongues licking up from the pool
+    for (let i = 0; i < Math.max(3, Math.round(w / 36)); i++) {
+      const fx = l.x1 + 14 + (i + 0.5) * (w - 28) / Math.max(3, Math.round(w / 36));
+      const fh = 16 + 14 * (0.5 + 0.5 * Math.sin(time * 7 + i * 1.9 + l.x1));
+      const fg = ctx.createLinearGradient(0, y - 6 - fh, 0, y - 4);
+      fg.addColorStop(0, 'rgba(255,230,120,0)'); fg.addColorStop(0.5, 'rgba(255,170,50,0.8)'); fg.addColorStop(1, 'rgba(255,90,30,0.95)');
+      ctx.fillStyle = fg;
+      ctx.beginPath(); ctx.moveTo(fx - 7, y - 4);
+      ctx.quadraticCurveTo(fx - 5, y - 6 - fh * 0.5, fx + Math.sin(time * 5 + i) * 3, y - 6 - fh);
+      ctx.quadraticCurveTo(fx + 5, y - 6 - fh * 0.5, fx + 7, y - 4); ctx.closePath(); ctx.fill();
+    }
+    // embers rising
+    for (let i = 0; i < 5; i++) {
+      const ph = (time * 0.55 + i * 0.21 + l.x1 * 0.003) % 1;
+      const ex = l.x1 + 10 + smRand(l.x1 + i * 13) * (w - 20) + Math.sin(time * 2 + i) * 6;
+      ctx.fillStyle = `rgba(255,${150 + 80 * (1 - ph) | 0},70,${0.8 * (1 - ph)})`;
+      ctx.beginPath(); ctx.arc(ex, y - 10 - ph * 70, 2.2 * (1 - ph) + 0.8, 0, Math.PI * 2); ctx.fill();
+    }
   }
   ctx.restore();
 }
@@ -716,7 +778,6 @@ function drawSpiritFront() {
   if (!isSpiritActive()) return;
   const v = smView();
   drawLavaPools();
-  drawSpiritMountainBody();
   for (const w of sm.wisps) {
     const x = w.prevX + (w.x - w.prevX) * renderAlpha, y = w.hy + Math.sin(time * 2.4 + w.home) * 5;
     if (x < v.x1 - 100 || x > v.x2 + 100 || y < v.y1 - 100 || y > v.y2 + 100) continue;
@@ -736,6 +797,7 @@ function drawSpiritFront() {
     else ellipse(st.x, by, 10, 10, '#ffd43b');
   }
   let nearest = null;
+  drawSpiritMountainBody();   // over the wisps and stars inside, under the NPCs (all of them stand outside or deep in the cave)
   for (const n of sm.npcs) {
     if (n.x < v.x1 - 150 || n.x > v.x2 + 150 || n.y < v.y1 - 200 || n.y > v.y2 + 200) continue;
     ellipse(n.x, n.y + 2, 26, 5, 'rgba(20,20,30,0.3)');
@@ -848,7 +910,7 @@ function openSpiritStageSelect() {
         <div><span class="wmEyebrow">월드 3</span><h2 id="wmSpiritHeaderTitle">정령산의 아침</h2></div>
         <div class="wmHeaderActions"><button type="button" class="wmBackBtn" onclick="openWorldMapMenu({forceDevOpen:true})">세계지도로</button></div>
       </div>
-      <div class="wmStageGrid">
+      <div class="wmStageGrid wmStageGridSingle">
         <div class="wmStageCard unlocked ${rec.cleared ? 'cleared' : ''}" id="wmStageCard-3-1" data-stage-code="3-1" data-unlocked="true">
           <div class="wmStageTop"><span class="wmStageCode">STAGE 3-1</span><span class="wmStageStatus">${rec.cleared ? '✓ 클리어' : '● 진입 가능'}</span></div>
           <strong class="wmStageName">정령들의 산을 오르자</strong>
