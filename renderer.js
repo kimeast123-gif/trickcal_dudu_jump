@@ -1798,6 +1798,7 @@ function drawPlatform(a) {
   const drawX = Math.round((a.prevX ?? a.x) + (a.x - (a.prevX ?? a.x)) * renderAlpha);
   const drawY = Math.round((a.prevY ?? a.y) + (a.y - (a.prevY ?? a.y)) * renderAlpha);
   if (a.nightDraw && typeof drawNightPlatform === 'function') { drawNightPlatform(a, drawX, drawY); return; }
+  if (a.smDraw && typeof drawSpiritPlatform === 'function') { drawSpiritPlatform(a, drawX, drawY); return; }
 
   // [A-4 Fix]: Distinct non-collidable turret perch pedestal (`C3-TURRET-P1/P2/P3`, `nonCollidable: true`)
   if (a.nonCollidable) {
@@ -2188,6 +2189,7 @@ function draw() {
   drawMonatiumBArchitecture();
   drawErpienAArchitecture();
   if (typeof drawNightMonatiumBack === 'function') drawNightMonatiumBack();
+  if (typeof drawSpiritBack === 'function') drawSpiritBack();
   drawPitShade(viewW, viewH);
 
   if (typeof gameMode !== 'undefined' && gameMode === 'world') {
@@ -2220,6 +2222,7 @@ function draw() {
   } else if (typeof gameMode !== 'undefined' && gameMode === 'world') {
     if (typeof drawWorld1TentaclesAndSlots === 'function') drawWorld1TentaclesAndSlots();
     if (typeof drawNightMonatiumFront === 'function') drawNightMonatiumFront();
+    if (typeof drawSpiritFront === 'function') drawSpiritFront();
   } else {
     drawActors();
     drawBombs();
@@ -2311,6 +2314,7 @@ function draw() {
   drawProtection();
   drawDeveloperQaOverlay();
   ctx.restore();
+  if (typeof drawSpiritOverlay === 'function') drawSpiritOverlay();
   drawMapEdgeMist();
   if (window.__screenFade) {
     const f = window.__screenFade;

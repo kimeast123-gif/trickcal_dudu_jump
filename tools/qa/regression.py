@@ -121,7 +121,8 @@ async def desktop_checks(pw, want):
     if on('modes'):
         bad = []
         for name, js in [('challenge', "startChallengeMode(0)"), ('world1', "startWorld1StageFromMenu(0,true)"),
-                         ('worldmap', "openWorldMapMenu({forceDevOpen:true})"), ('night', "startNightStage()")]:
+                         ('worldmap', "openWorldMapMenu({forceDevOpen:true})"), ('night', "startNightStage()"),
+                         ('spirit', "startSpiritStage()")]:
             n0 = len(errs)
             try:
                 await pg.evaluate(f"()=>{{{js};}}")
@@ -129,7 +130,7 @@ async def desktop_checks(pw, want):
                 errs.append(str(e)[:120])
             await pg.wait_for_timeout(2500)
             if len(errs) > n0: bad.append(name + ': ' + errs[n0])
-        check('modes: challenge, world 1, world map and night map open without errors', not bad, '; '.join(bad))
+        check('modes: challenge, world 1, world map, night map and spirit mountain open without errors', not bad, '; '.join(bad))
 
     if on('world1'):
         await pg.evaluate("()=>startWorld1StageFromMenu(0,true)"); await pg.wait_for_timeout(2500)
@@ -158,6 +159,18 @@ async def desktop_checks(pw, want):
                       '칸나:역시 스핑크스! 이번에도 협조해 주셔서 감사합니다!')
         ok = r['open'] and r['movedAt'] is not None and 1.98 <= r['movedAt'] <= 2.2 and r['lines'] == want_lines and not r['hallEarly'] and r['drones'] == 18
         check('night: world map open from start, 2s start hold, 5 plaza lines exact, city hall hidden early', ok, r)
+
+    if on('spirit'):
+        # v1.6 World 3. Full checks: tools/qa/spirit_checks.py, spirit_hops.py, spirit_run.py
+        r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));const out={};
+          devPracticeSpirit(1500,-46);p.invulnerable=99;await w(900);out.mask=__sm.mask;
+          const st=__sm;resetSpiritRuntime();const dt=1/120;devPracticeSpirit(1250,-5008);const gx=p.x,gy=p.y;
+          for(let i=0;i<120*120;i++){st.clock+=dt;p.x=gx;p.y=gy;p.ground=true;updateSpiritWind(dt);}
+          out.log=st.windLog.map(e=>[e.sincePrevStart,e.duration]);
+          out.npcs=world1Stages[SM_INDEX].smNpcs.map(n=>n.kind).join(',');return out}""")
+        gaps = [g for g, _ in r['log'] if g is not None]
+        ok = r['mask'] > 0.9 and r['log'] and all(20 <= g <= 30 for g in gaps) and all(4 <= d <= 6 for _, d in r['log']) and r['npcs'] == 'naia,gabia,ifrit,sylla,aya'
+        check('spirit: dark maze sight on, wind every 20-30s for 4-6s, friends in order', ok, r)
     await b.close()
 
 

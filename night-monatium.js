@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_5_4_261117';
+const NIGHT_ASSET_Q = '?v=v1_6_0_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -89,6 +89,8 @@ function buildNightStage() {
   s.customBackground = drawNightBackground;
   s.onLoad = () => loadNightAssets();
   s.onReset = () => resetNightRuntime();
+  s.onComplete = () => completeNightStage();
+  s.routeLabel = '월드 2';
 
   const bld = (id, x, w, y, extra = {}) => wFloor(s, x, w, 'steel', y, { id, h: 1250 - y, nightDraw: 'building', ...extra });
   const ledge = (id, x, y, w, extra = {}) => wSurface(s, x, y, w, 'steel', { id, nightDraw: 'ledge', ...extra });

@@ -128,7 +128,15 @@
         const stg = world1Stages[activeWorldStageIndex];
         const save = loadWorldMapSave();
         const stgRec = (stg && save?.worlds?.world1_beastforest?.stages?.[stg.stageCode]) || null;
-        if (stg && stg.worldId) {
+        if (stg && stg.worldId && stg.hudStars) {
+          // v1.6: spirit mountain's three stars use the crayon pill
+          const recS = typeof getWorldStageRecord === 'function' ? getWorldStageRecord(save, stg) : null;
+          const gotS = recS && Array.isArray(recS.collectibles) ? recS.collectibles.length : 0;
+          specPill.hidden = false;
+          if ($id('specialScore') && $id('specialScore').textContent !== String(gotS)) $id('specialScore').textContent = String(gotS);
+          if ($id('specialTotal')) $id('specialTotal').textContent = `/ ${stg.hudStars}`;
+          if ($id('specialPending')) $id('specialPending').textContent = '';
+        } else if (stg && stg.worldId) {
           specPill.hidden = true; // v1.5: the night map has no crayons
         } else if (stg && stg.collectibleDefs && stg.collectibleDefs.length > 0) {
           specPill.hidden = false;

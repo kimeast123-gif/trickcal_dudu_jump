@@ -587,8 +587,10 @@ function updateHud(){
   const stageRecords=save?.worlds?.world1_beastforest?.stages||{};
   const count=world1Stages.filter(stg=>Array.isArray(stageRecords[stg.stageCode]?.collectibles) &&
     stageRecords[stg.stageCode].collectibles.some(id=>stg.collectibleDefs.some(col=>col.id===id))).length;
-  if($('specialScore')) $('specialScore').textContent=String(count);
-  if($('specialTotal')) $('specialTotal').textContent='/ 5';
+  const wStg=world1Stages[activeWorldStageIndex];
+  const wRec=(wStg&&wStg.hudStars&&typeof getWorldStageRecord==='function')?getWorldStageRecord(save,wStg):null;
+  if($('specialScore')) $('specialScore').textContent=String(wRec?wRec.collectibles.length:count);
+  if($('specialTotal')) $('specialTotal').textContent=wRec?('/ '+wStg.hudStars):'/ 5';
   if($('specialPending')) $('specialPending').textContent='';
   $('specialPill')?.classList.remove('pending');
   updatePlayerHealthHud();
@@ -778,7 +780,7 @@ function update(dt){
   }
   p.vy=Math.min(900,p.vy+2400*dt);
  }else{
-  const target=dir*320,a=dir?(p.ground?(Math.sign(p.vx)!==dir?4000:2200):1700):(p.ground?3200:1700);
+  /* v1.6: spirit mountain wind shifts the air target speed (0 everywhere else) */const target=dir*320+((!p.ground&&window.__smWindBias)||0),a=dir?(p.ground?(Math.sign(p.vx)!==dir?4000:2200):1700):(p.ground?3200:1700);
   if(p.knock>0){p.knock=Math.max(0,p.knock-dt);p.vx=p.knockVX;}else p.vx+=Math.sign(target-p.vx)*Math.min(Math.abs(target-p.vx),a*dt);
   if(p.touchHoldGrace>0){p.touchHoldGrace-=dt;if(p.touchHoldGrace<=0){p.touchHoldGrace=0;if(!keys.has('Space')){if(p.hold<(p.jumps===2?.22:.24))p.jumpCut=true;p.jumpHeld=false;}}}
   const holding=p.jumpHeld&&(keys.has('Space')||p.touchHoldGrace>0)&&p.hold<(p.jumps===2?.22:.24)&&p.vy<0;
@@ -976,7 +978,7 @@ function update(dt){
   if(camProfile === 'world1_standard'){
    // v1.2: keep Dudu near the middle of the screen. The camera re-centres on each landing and only chases
    // mid-jump when she nears the top or bottom edge, so jumps don't bob the view.
-   const CENTER = 400;
+   const CENTER = (actLv && typeof actLv.cameraCenterY === 'number') ? actLv.cameraCenterY : 400;
    if(p.ground) desiredBaseY = p.y - CENTER;
    else if(screenY < 230) desiredBaseY = p.y - 230;
    else if(screenY > 560) desiredBaseY = p.y - 560;

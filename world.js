@@ -1360,6 +1360,8 @@ TOTAL_SPECIAL_COINS = _specialIdSet.size; // 7 (Monatium A) + 2 (Monatium B) + 1
 function currentSegment(){const lv=getActiveLevel();return lv.segments.find(s=>p.x>=s.start&&p.x<s.end)||lv.segments.at(-1);}
 
 function getKillY(x){
+ const actLv = getActiveLevel();
+ if (actLv && typeof actLv.killYAt === 'function') return actLv.killYAt(x);
  const curId = currentLevelId();
  if (curId === 'monatium_a' || curId === 'monatium') {
   if (x >= STAGE_ANCHORS.monatium_a.skywalkStart && x <= STAGE_ANCHORS.monatium_a.skywalkEnd) return -1200;

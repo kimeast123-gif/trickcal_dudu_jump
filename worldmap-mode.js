@@ -84,15 +84,15 @@ const WORLDMAP_CARDS = [
     order: 3,
     id: 'world3_spiritmountain',
     title: '정령산의 아침',
-    subtitle: '정령이 사는 산으로 가는 길',
+    subtitle: '어두운 동굴과 용암, 바람 부는 눈길을 지나 정령들의 산꼭대기로',
     kind: 'world',
-    implementationStatus: 'coming_soon',
+    implementationStatus: 'playable',
     unlockCondition: null,
-    action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('정령산의 아침', '곧 열려요', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
-    fallbackThumb: makePlaceholderSvgDataUri('정령산의 아침', '곧 열려요', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
-    statusBadge: '준비 중',
-    isPlaceholderArt: true
+    action: 'openSpiritStageSelect',
+    thumbnail: 'assets/spirit/bg1.webp?v=31',
+    fallbackThumb: makePlaceholderSvgDataUri('정령산의 아침', '정령들의 산', '#3a6073', '#16222a', '#a1ffce', '⛰️'),
+    statusBadge: '플레이 가능',
+    isPlaceholderArt: false
   },
   {
     order: 4,
@@ -161,6 +161,12 @@ function makeDefaultWorldMapSave() {
         stages: {
           '2-1': { unlocked: true, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null }
         }
+      },
+      world3_spiritmountain: {
+        regionCleared: false,
+        stages: {
+          '3-1': { unlocked: true, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null }
+        }
       }
     }
   };
@@ -203,6 +209,17 @@ function normalizeWorldMapSave(raw) {
     rec.retries = Math.max(0, parseInt(st2.retries || 0, 10) || 0);
     rec.hits = Math.max(0, parseInt(st2.hits || 0, 10) || 0);
     base.worlds.world2_monatium_night.regionCleared = rec.cleared;
+  }
+  const w3 = raw.worlds && raw.worlds.world3_spiritmountain;
+  const st3 = w3 && w3.stages && w3.stages['3-1'];
+  if (st3 && typeof st3 === 'object') {
+    const rec = base.worlds.world3_spiritmountain.stages['3-1'];
+    rec.cleared = Boolean(st3.cleared);
+    rec.bestSeconds = (typeof st3.bestSeconds === 'number' && Number.isFinite(st3.bestSeconds)) ? st3.bestSeconds : null;
+    rec.retries = Math.max(0, parseInt(st3.retries || 0, 10) || 0);
+    rec.hits = Math.max(0, parseInt(st3.hits || 0, 10) || 0);
+    rec.collectibles = Array.isArray(st3.collectibles) ? Array.from(new Set(st3.collectibles)) : [];
+    base.worlds.world3_spiritmountain.regionCleared = rec.cleared;
   }
   return base;
 }
@@ -1691,8 +1708,8 @@ window.checkWorld1Journey = checkWorld1Journey;
 
 function completeWorld1Stage(clearedGoal = null) {
   const stg = world1Stages[activeWorldStageIndex];
-  if (stg && stg.worldId && stg.worldId !== 'world1_beastforest' && typeof completeNightStage === 'function') {
-    completeNightStage(clearedGoal);
+  if (stg && typeof stg.onComplete === 'function') {
+    stg.onComplete(clearedGoal);
     return;
   }
   const save = loadWorldMapSave();
@@ -1758,8 +1775,8 @@ function updateWorld1Hud() {
   const stg = world1Stages[activeWorldStageIndex];
   if (!stg) return;
   $('zoneTitle').textContent = stg.name;
-  $('routeLabel').textContent = stg.worldId === 'world2_monatium_night'
-    ? '월드 2'
+  $('routeLabel').textContent = stg.routeLabel
+    ? stg.routeLabel
     : `WORLD 1 · ${activeWorldStageIndex + 1} / ${world1Stages.filter(st => !st.worldId).length}`;
 }
 window.updateWorld1Hud = updateWorld1Hud;
@@ -1832,6 +1849,10 @@ function handleWorldMapCardAction(cardId) {
   }
   if (card.action === 'openWorld1StageSelect') {
     openWorld1StageSelect();
+    return;
+  }
+  if (card.action === 'openSpiritStageSelect' && typeof openSpiritStageSelect === 'function') {
+    openSpiritStageSelect();
     return;
   }
   if (card.action === 'openNightStageSelect' && typeof openNightStageSelect === 'function') {

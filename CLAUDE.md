@@ -14,7 +14,7 @@ python tools/qa/regression.py                 # 커밋 전에 반드시. 전부 
 ```
 
 - 게임 코드를 바꾼 커밋은 `tools/qa/regression.py`가 전부 통과한 상태로만 올린다. 실패하면 고치거나, 의도한 변경이면 테스트를 함께 고치고 이유를 커밋 메시지에 쓴다.
-- 레벨 배치를 바꿨다면 `tools/qa/layout_map.py`로 도면을 보고, 새로 생긴 간격마다 `tools/qa/hops.py`로 실제로 건너지는지 확인한다. 야간 맵은 `night_hops.py`, `night_checks.py`, `night_run.py`.
+- 레벨 배치를 바꿨다면 `tools/qa/layout_map.py`로 도면을 보고, 새로 생긴 간격마다 `tools/qa/hops.py`로 실제로 건너지는지 확인한다. 야간 맵은 `night_hops.py`, `night_checks.py`, `night_run.py`, 정령산은 `spirit_hops.py`, `spirit_checks.py`, `spirit_run.py`.
 - 화면을 바꿨다면 `tools/qa/screens.py`로 전후 스크린샷을 비교한다.
 - 이 저장소에는 단위 테스트 프레임워크가 없다. 위 스크립트가 실제 브라우저에서 게임을 돌려 확인하는 유일한 테스트다.
 
@@ -27,7 +27,7 @@ python tools/qa/regression.py                 # 커밋 전에 반드시. 전부 
 ## 구조
 
 전부 전역 스크립트이고 `index.html`의 로드 순서에 의존한다(ES 모듈 아님).
-`perf.js → release-config.js → mobile-controls.js → game.js → world.js → npc-data.js → hazards.js → renderer.js → challenge-world.js → challenge-hazards.js → event.js → challenge-mode.js → worldmap-mode.js → night-monatium.js → uiux-redesign.js → title-lobby.js`
+`perf.js → release-config.js → mobile-controls.js → game.js → world.js → npc-data.js → hazards.js → renderer.js → challenge-world.js → challenge-hazards.js → event.js → challenge-mode.js → worldmap-mode.js → night-monatium.js → spirit-mountain.js → uiux-redesign.js → title-lobby.js`
 
 | 파일 | 내용 |
 | --- | --- |
@@ -39,6 +39,7 @@ python tools/qa/regression.py                 # 커밋 전에 반드시. 전부 
 | `renderer.js` | 캔버스 그리기 전부. 배경 파노라마, 지형 타일(`drawGroundVisual`), 발판, 문, 효과 |
 | `challenge-*.js`, `worldmap-mode.js` | 챌린지 모드, 월드맵과 월드1 스테이지 |
 | `night-monatium.js` | 월드2 「모나티엄의 야경」: 스테이지 데이터, 러너, 드론, 전기장, 진압반, 셔터, 광장 NPC, 야간 배경. `world1Stages` 뒤에 붙어 월드 스테이지 실행기를 같이 쓴다. 설계는 `docs/NIGHT_MONATIUM.md` |
+| `spirit-mountain.js` | 월드3 「정령산의 아침」: 세로 맵, 동굴 시야 마스크, 용암, 위습, 강풍(`SM_WIND`), 정령 NPC, 별. 같은 방식으로 `world1Stages` 뒤에 붙는다. 설계는 `docs/SPIRIT_MOUNTAIN.md` |
 | `title-lobby.*`, `uiux-redesign.js`, `event.js` | 로비, HUD, 컷신과 결과 화면 |
 | `style.css` | 게임 화면과 모바일 조작 UI |
 
