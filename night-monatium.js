@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_6_1_261117';
+const NIGHT_ASSET_Q = '?v=v1_6_2_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -87,15 +87,22 @@ function buildNightStage() {
   s.musicTrack = 5; // assets/event/monatium.mp3 (24. Monatium)
   s.startFlag = { x: 70, y: 496 };
   s.customBackground = drawNightBackground;
-  s.onLoad = () => loadNightAssets();
+  s.onLoad = () => {
+    loadNightAssets();
+    // the story's steel platform and wall art (only the monatium/ terrain files, not its backgrounds)
+    if (typeof TERRAIN_ASSET_LIST !== 'undefined' && typeof _loadSingleWorldImg === 'function') {
+      for (const k of TERRAIN_ASSET_LIST) if (k.startsWith('monatium/')) _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=31R', true);
+    }
+  };
   s.onReset = () => resetNightRuntime();
   s.onComplete = () => completeNightStage();
   s.routeLabel = '월드 2';
 
   const bld = (id, x, w, y, extra = {}) => wFloor(s, x, w, 'steel', y, { id, h: 1250 - y, nightDraw: 'building', ...extra });
-  const ledge = (id, x, y, w, extra = {}) => wSurface(s, x, y, w, 'steel', { id, nightDraw: 'ledge', ...extra });
+  // v1.6.2: ledges, movers, the lift and the shutters use the story mode's steel platform and wall art
+  const ledge = (id, x, y, w, extra = {}) => wSurface(s, x, y, w, 'steel', { id, ...extra });
   const mover = (id, x, y, w, range, period, phase) => wSurface(s, x, y, w, 'steel', {
-    id, nightDraw: 'ledge', behavior: 'moving', motion: { axis: 'x', range, period, phase }
+    id, behavior: 'moving', motion: { axis: 'x', range, period, phase }
   });
 
   // Section 1 — start flag, lead runners, low warm-up platforms (sketch x 0..300)
@@ -114,10 +121,10 @@ function buildNightStage() {
   // Section 2/4 — drop to the street, stepping stones under the first drone (sketch x 340..600)
   // v1.5.5: the drop off the peak roof used to be a blind leap onto a ledge far below. It is now a lift that
   // rides between roof height (-230) and street height (356): step on at the top, ride down, hop to B4.
-  wSurface(s, 2740, 63, 250, 'steel', { id: 'NM-R1', nightDraw: 'ledge', behavior: 'moving', motion: { axis: 'y', range: 293, period: 5.6, phase: -Math.PI / 2 } });
+  wSurface(s, 2740, 63, 250, 'steel', { id: 'NM-R1', behavior: 'moving', motion: { axis: 'y', range: 293, period: 5.6, phase: -Math.PI / 2 } });
   bld('NM-B4', 3140, 340, 356);
   wCheckpoint(s, '도심 진입', 3360, 356);
-  [3620, 3800, 3980, 4160, 4340, 4520].forEach((x, i) => ledge(`NM-DOT${i + 1}`, x, 335, 72, { small: true }));
+  [3620, 3800, 3980, 4160, 4340, 4520].forEach((x, i) => ledge(`NM-DOT${i + 1}`, x, 335, 72, { useSmallVisual: true }));
   bld('NM-B5', 4700, 240, 300);
   bld('NM-B6', 5020, 260, 146);
   ledge('NM-S1', 5350, 66, 120);
@@ -144,9 +151,9 @@ function buildNightStage() {
   bld('NM-B7', 7540, 300, 250);
   wCheckpoint(s, '타워 밖으로', 7620, 250);
   // Section 6 — three T-shaped decks with riot-squad patrols and drones (sketch x 917..1250)
-  ledge('NM-TD1', 7920, 180, 800, { nightDraw: 'tdeck', poleX: 8250 });
-  ledge('NM-TD2', 8640, 420, 880, { nightDraw: 'tdeck', poleX: 9060 });
-  ledge('NM-TD3', 9500, 190, 1000, { nightDraw: 'tdeck', poleX: 9970 });
+  ledge('NM-TD1', 7920, 180, 800, { poleX: 8250 });
+  ledge('NM-TD2', 8640, 420, 880, { poleX: 9060 });
+  ledge('NM-TD3', 9500, 190, 1000, { poleX: 9970 });
   bld('NM-B8', 10650, 300, 190);
   wCheckpoint(s, '고가 끝', 10760, 190);
   // Section 7 — brown anti-jump shutters over fall gaps (v1.5.2). Each shutter fills the whole gap between two decks
@@ -154,7 +161,7 @@ function buildNightStage() {
   // jump over, and below it is a pit. A dash (32px) slips under, and a dash that ends half under a shutter is carried
   // through until Dudu is clear (game.js), which puts her straight onto the next deck.
   // W2 and W5 lead to a higher deck, so the dash must be followed by a jump; W3 drops to a lower deck.
-  const shutter = (id, x, deckY) => wWall(s, x, deckY - 480, 76, 480 - 44, 'wood', { id, noTopLand: true, dashUnder: true, nightDraw: 'brown' });
+  const shutter = (id, x, deckY) => wWall(s, x, deckY - 480, 76, 480 - 44, 'steel', { id, noTopLand: true, dashUnder: true });
   ledge('NM-P71', 11080, 175, 320);
   shutter('NM-W1', 11400, 175);
   ledge('NM-P72', 11476, 175, 300);
@@ -178,8 +185,8 @@ function buildNightStage() {
   bld('NM-B10', 15250, 300, 100);
   wCheckpoint(s, '모노레일 아래', 15350, 100);
   // 7c. A fourth T-deck with a riot-squad member, then stepping stones under a drone.
-  ledge('NM-TD4', 15700, 220, 900, { nightDraw: 'tdeck', poleX: 16150 });
-  [16740, 16910, 17080, 17250].forEach((x, i) => ledge(`NM-DOT${i + 7}`, x, 260, 72, { small: true }));
+  ledge('NM-TD4', 15700, 220, 900, { poleX: 16150 });
+  [16740, 16910, 17080, 17250].forEach((x, i) => ledge(`NM-DOT${i + 7}`, x, 260, 72, { useSmallVisual: true }));
   bld('NM-B11', 17420, 280, 200);
   wCheckpoint(s, '두 번째 고가', 17520, 200);
   // 7d. Shutters over pits again, with a moving platform that slides under a hanging electric line.
@@ -307,14 +314,14 @@ function resetNightRuntime() {
   actors = s.nightPatrols.map((z, i) => {
     const r1 = Math.random(), r2 = Math.random(), r3 = Math.random();
     const kind = r1 < 0.5 ? 'guard1' : 'guard2';
-    // v1.5.5: the story riot squad's rhythm (short rush of about 200px, rest, walk back) instead of one slow
-    // eased sweep across the whole deck; the home spot inside the patrol line still varies per run.
-    const story = kind === 'guard1' ? { patrol: 195, baseSpeed: 162, returnSpeed: 132, speedMult: 1.05 }
-                                    : { patrol: 215, baseSpeed: 176, returnSpeed: 142, speedMult: 1.08 };
-    const span = z.x2 - z.x1;
-    const homeX = z.side === 'left' ? z.x1 + Math.round(r2 * Math.max(0, span - 260)) : z.x2 - Math.round(r2 * Math.max(0, span - 260));
-    return actor(kind, homeX, 580, {
-      ...story, platformId: z.platformId, patrolX1: z.x1, patrolX2: z.x2,
+    // v1.6.2: each member covers its whole deck, edge to edge, at the story guards' speeds and at an even pace
+    // (no slow ease-in / ease-out); waiting, warning and resting phases are the story ones.
+    const story = kind === 'guard1' ? { baseSpeed: 162, returnSpeed: 132, speedMult: 1.05 }
+                                    : { baseSpeed: 176, returnSpeed: 142, speedMult: 1.08 };
+    const deck = platforms.find(q => q.id === z.platformId);
+    const x1 = deck ? deck.x + 28 : z.x1, x2 = deck ? deck.x + deck.w - 28 : z.x2;
+    return actor(kind, z.side === 'left' ? x1 : x2, 580, {
+      ...story, platformId: z.platformId, patrolX1: x1, patrolX2: x2, fullSpanPatrol: true, linearPatrol: true,
       patrolDir: z.side === 'left' ? 1 : -1, delay: Math.round(r3 * 50) / 100,
       nightPatrol: z.id
     });
@@ -725,7 +732,29 @@ function releaseNightCaches() {
 }
 window.releaseNightCaches = releaseNightCaches;
 
+function drawNightSupports() {
+  const v = viewBounds();
+  for (const a of platforms) {
+    if (a.x > v.x2 + 200 || a.x + a.w < v.x1 - 200) continue;
+    if (typeof a.poleX === 'number') {
+      ctx.fillStyle = '#28324d'; ctx.fillRect(a.poleX - 16, a.y + 18, 32, Math.max(0, v.y2 - a.y));
+      ctx.fillStyle = 'rgba(150,180,240,0.22)'; ctx.fillRect(a.poleX - 16, a.y + 18, 4, Math.max(0, v.y2 - a.y));
+      ctx.strokeStyle = '#3a4668'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(a.poleX - 120, a.y + 18); ctx.lineTo(a.poleX - 14, a.y + 120); ctx.moveTo(a.poleX + 120, a.y + 18); ctx.lineTo(a.poleX + 14, a.y + 120); ctx.stroke();
+    }
+    if (a.motion && a.motion.axis === 'y') {
+      // a lift runs on two guide rails; drawing them shows where it travels without any UI marker
+      const top = a.baseY - a.motion.range - 30, bot = a.baseY + a.motion.range + 40;
+      for (const rx of [a.baseX - 8, a.baseX + a.w + 2]) {
+        ctx.fillStyle = '#323c5c'; ctx.fillRect(rx, top, 6, bot - top);
+        ctx.fillStyle = 'rgba(160,200,255,0.25)'; ctx.fillRect(rx, top, 2, bot - top);
+      }
+      ctx.fillStyle = '#3a4466'; ctx.fillRect(a.baseX - 12, top - 10, a.w + 24, 12);
+    }
+  }
+}
 function drawNightMonatiumBack() {
+  if (isNightActive()) drawNightSupports();
   if (!isNightActive()) {
     // left the night map: give back the ~30MB of prescaled art and never carry the start hold elsewhere
     if (_nightCache.size) releaseNightCaches();

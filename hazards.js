@@ -1084,7 +1084,7 @@ function updateWalker(a,dt){
  }else if(a.phase==='rush'){
   const dur=a.curRushDur||rushDur;
   const rawU=clamp(a.phaseTime/dur,0,1);
-  const curvedU=naturalMoveCurve(rawU,prof.hesitateAt,prof.hesitateDur);
+  const curvedU=a.linearPatrol?rawU:naturalMoveCurve(rawU,prof.hesitateAt,prof.hesitateDur);
   a.x=clamp(a.from+(a.to-a.from)*curvedU,a.minX,a.maxX);
   a.danger=isGuard?true:(rawU>=0.04&&rawU<=0.96);
   if(rawU>=1){
@@ -1098,7 +1098,7 @@ function updateWalker(a,dt){
  }else if(a.phase==='return'){
   const dur=a.curReturnDur||returnDur;
   const rawU=clamp(a.phaseTime/dur,0,1);
-  const curvedU=naturalMoveCurve(rawU,0,0);
+  const curvedU=a.linearPatrol?rawU:naturalMoveCurve(rawU,0,0);
   a.x=clamp(a.from+(a.home-a.from)*curvedU,a.minX,a.maxX);
   if(rawU>=1){
    a.x=a.home;a.face=dirSign;a.phase='wait';a.phaseTime=0;a.cycle++;npcClip(a,'idle');

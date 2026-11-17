@@ -7,7 +7,8 @@
 //   y = 580 - (1955 - sy) * k, k = 4.2 for the cave, 3.1 for the denser lava hall (sketch y 1530..1225) and 3.8 above.
 // Every hop was checked against the real jump arc (see docs/SPIRIT_MOUNTAIN.md and tools/qa/spirit_*.py).
 //
-// Zones, bottom to top: A start + Naia (bg 1) -> B Gabia's dark maze, circle of light around Dudu, no pits (bg 2)
+// Zones (v1.6.2 route): A start outside on the lake platforms with Naia (bg 1) -> through the doorway into
+// B Gabia's dark maze, down to Gabia on the cave floor and up the right side, circle of light, no pits (bg 2)
 // -> C Ifrit's lava hall with fire wisps (bg 3) -> D outside climb, blue wind zone: every 20-30s a 4-6s gust from the
 // right pushes Dudu left while airborne (bg 4) -> E summit, Sylla and Aya (bg 5).
 // The stage rides on the World 1 stage runner (worldmap-mode.js) exactly like the night map.
@@ -16,7 +17,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 2400;
-const SM_ASSET_Q = '?v=v1_6_1_261117'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_6_2_261117'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
@@ -44,6 +45,8 @@ const SM_SPRITES = {
   wisp_attack:  { frames: 47, fps: 25,   anchor: 110, foot: 130, display: 112 },
   wisp_groggy:  { frames: 34, fps: 25,   anchor: 140, foot: 118, display: 112 }
 };
+// v1.6.2 platform, wall, lava, wind and shrine art cut from 정령산 플랫폼 에셋.zip: [width, height, surface row]
+const SM_TILES = {"lake_long": [1247, 121, 19], "lake_mid": [384, 84, 13], "lake_small": [167, 98, 2], "lake_start": [510, 125, 22], "cave_long": [1299, 161, 39], "cave_mid": [483, 124, 17], "cave_small": [215, 114, 12], "cave_pillar": [155, 245, 2], "cave_floor": [1346, 173, 45], "lava_long": [1391, 180, 53], "lava_mid": [615, 150, 34], "lava_small": [236, 109, 10], "lava_slab": [324, 90, 3], "lava_pillar": [134, 297, 2], "lava_pool": [284, 84, 34], "snow_long": [1313, 156, 38], "snow_mid": [407, 117, 25], "snow_small": [193, 80, 3], "snow_ice": [288, 111, 6], "snow_pillar": [129, 245, 2], "wind_a": [331, 110, 14], "wind_b": [156, 117, 10], "wind_c": [157, 86, 11], "wind_d": [267, 88, 20], "wind_e": [204, 78, 16], "shrine_lake": [256, 170, 99], "shrine_cave": [233, 164, 90], "shrine_lava": [231, 166, 104], "shrine_snow": [233, 170, 102], "shrine_top": [233, 166, 33], "stone_pillar": [122, 205, 1]};
 const smImages = {};
 let _smAssetsRequested = false;
 function loadSpiritAssets() {
@@ -57,6 +60,7 @@ function loadSpiritAssets() {
   };
   for (const k of Object.keys(SM_SPRITES)) load(k, `assets/spirit/${k}.webp${SM_ASSET_Q}`);
   for (let i = 1; i <= 5; i++) load('bg' + i, `assets/spirit/bg${i}.webp${SM_ASSET_Q}`);
+  for (const k of Object.keys(SM_TILES)) load('t_' + k, `assets/spirit/tiles/${k}.webp${SM_ASSET_Q}`);
 }
 
 // ----------------------------------------------------------------------------
@@ -108,7 +112,7 @@ const SM_PLATFORMS = [
 // Solid rock: [id, x, y, w, h]. The mountain's outer wall (with the cave mouth at the floor, the doorway to Gabia's
 // rest and the doorway from the lava hall out to Ifrit), the brown pillars of the sketch and the roof of the hall.
 const SM_WALLS = [
-  ['MW1', 1135, -134, 90, 534],    // lower outer wall; leaves a 180px cave mouth at floor level (400..580)
+  ['MW1', 1135, -134, 90, 1384],   // lower outer wall, down to the bottom (v1.6.2: no cave mouth; the climb starts outside)
   ['MW2', 1135, -1163, 105, 672],  // upper outer wall; the doorway to Gabia is y -491..-134
   ['MW3', 1000, -2080, 45, 830],   // lava hall left wall below L9
   ['MW4', 961, -2705, 39, 371],    // wall above the doorway out to Ifrit (doorway y -2334..-2104)
@@ -129,7 +133,7 @@ function buildSpiritStage() {
     minCamY: -6870,
     maxCamY: 120,
     cameraProfile: 'world1_standard',
-    entrySpawns: { default: { route: 'default', platformId: 'SM-FLOOR', x: 1390, feetY: SM_FLOOR_Y } },
+    entrySpawns: { default: { route: 'default', platformId: 'SM-E3', x: 259, feetY: -449 } },
     segments: [{ start: 0, end: SM_WIDTH, bg: 'spirit' }],
     backgroundRanges: {},
     goal: { id: 'spirit-summit', exitRoute: 'default', x: 1594, y: -6350, w: 60, h: 120, hidden: true }
@@ -145,7 +149,8 @@ function buildSpiritStage() {
   s.onComplete = () => completeSpiritStage();
   s.killYAt = spiritKillY;
 
-  wFloor(s, 0, SM_WIDTH, 'grass', SM_FLOOR_Y, { id: 'SM-FLOOR', h: 700, smDraw: 'floor' });
+  // the cave floor (inside the mountain only): the maze has no pit
+  wFloor(s, 1135, SM_WIDTH - 1135, 'grass', SM_FLOOR_Y, { id: 'SM-FLOOR', h: 700, smDraw: 'floor' });
   for (const [id, x, y, w, kind] of SM_PLATFORMS) {
     if (kind === 'basalt' && id === 'L0') wSurface(s, x, y, w, 'grass', { id: 'SM-' + id, smDraw: kind });
     else wSurface(s, x, y, w, 'grass', { id: 'SM-' + id, smDraw: kind, small: w <= 100 });
@@ -153,29 +158,31 @@ function buildSpiritStage() {
   for (const [id, x, y, w, h] of SM_WALLS) wWall(s, x, y, w, h, 'grass', { id: 'SM-' + id, noTopLand: id.startsWith('MW'), smDraw: id.startsWith('B') ? 'pillar' : 'rock' });
   wWall(s, SM_ROOF.x, SM_ROOF.y, SM_ROOF.w, SM_ROOF.h, 'grass', { id: 'SM-ROOF', smDraw: 'roof' });
 
-  // Checkpoints: the sketch's green flags. Index matters for the kill rule below.
-  wCheckpoint(s, '정령산 입구', 1390, SM_FLOOR_Y);
-  wCheckpoint(s, '가비아의 쉼터', 175, -449);
+  // Checkpoints: the sketch's green flags, shown as the zone's shrine (the plain flag is hidden). Order matters
+  // for spiritKillY below.
+  wCheckpoint(s, '정령호수', 259, -449);
   wCheckpoint(s, '동굴 끝', 1990, -1003);
   wCheckpoint(s, '이프리트의 쉼터', 604, -2023);
   wCheckpoint(s, '눈 덮인 산길', 2059, -3781);
   wCheckpoint(s, '정상', 1594, -6350);
+  for (const sec of s.sections) sec.hiddenFlag = true;
+  s.smShrines = ['shrine_lake', 'shrine_cave', 'shrine_lava', 'shrine_snow', 'shrine_top'];
 
   s.smNpcs = [
-    // TEMP lines: the directive gives no script yet; replace these freely (one short line each).
-    { id: 'SM-NPC-NAIA',  kind: 'naia',  name: '나이아',   x: 1975, y: SM_FLOOR_Y, idle: 'naia_idle',  near: 'naia_happy',  dialogue: '두두 왔구나! 산꼭대기까지 같이 가 보자.' },
-    { id: 'SM-NPC-GABIA', kind: 'gabia', name: '가비아',   x: 370,  y: -449,       idle: 'gabia_idle', near: 'gabia_happy', dialogue: '깜깜한 길을 잘 찾아왔네.' },
-    { id: 'SM-NPC-IFRIT', kind: 'ifrit', name: '이프리트', x: 874,  y: -1896,      idle: 'ifrit_idle', near: 'ifrit_sorry', dialogue: '불꽃들이 장난이 심했지? 미안해.' },
-    { id: 'SM-NPC-SYLLA', kind: 'sylla', name: '실라',     x: 949,  y: -6350,      idle: 'sylla_idle', near: 'sylla_happy', dialogue: '바람을 뚫고 올라왔구나!' },
-    { id: 'SM-NPC-AYA',   kind: 'aya',   name: '아야',     x: 1069, y: -6350,      idle: 'aya_idle',   near: 'aya_happy',   dialogue: '정상에 온 걸 환영해, 두두.' }
+    { id: 'SM-NPC-NAIA',  kind: 'naia',  name: '나이아',   x: 370,  y: -449,       idle: 'naia_idle',  near: 'naia_happy',  dialogue: '안녕! 처음보는 용족이네 퓨퓨! 앞으로 잘 지내보자!' },
+    { id: 'SM-NPC-GABIA', kind: 'gabia', name: '가비아',   x: 1975, y: SM_FLOOR_Y, idle: 'gabia_idle', near: 'gabia_happy', dialogue: '응... 용...족... 어두...운데... 조심... 해' },
+    { id: 'SM-NPC-IFRIT', kind: 'ifrit', name: '이프리트', x: 874,  y: -1896,      idle: 'ifrit_idle', near: 'ifrit_sorry', dialogue: '뭐야? 용족이 왜 여기에 있어? 빨리 안나가?' },
+    { id: 'SM-NPC-SYLLA', kind: 'sylla', name: '실라',     x: 949,  y: -6350,      idle: 'sylla_idle', near: 'sylla_happy', dialogue: '꼬마 용족이 여기까지 오다니. 대견하구나.' },
+    { id: 'SM-NPC-AYA',   kind: 'aya',   name: '아야',     x: 1069, y: -6350,      idle: 'aya_idle',   near: 'aya_happy',   dialogue: '힘이 넘치는걸? 특히 저 통통한 꼬리. 매끄럽고 탄탄하고... 참, 어서 가보렴 후훗.' }
   ];
-  // Red ellipses: fire wisps, all inside the lava hall. Patrol spans follow the sketch's black lines.
+  // Red ellipses: fire wisps in the lava hall. v1.6.2: like the story's fairies they travel their platform edge to
+  // edge (wait, warn, rush, rest, walk back), about 25% faster than the fairies.
   s.smWisps = [
-    { id: 'SM-W1', x1: 1216, x2: 1680, home: 1216, y: -1301 },
-    { id: 'SM-W2', x1: 1660, x2: 2128, home: 2128, y: -1301 },
-    { id: 'SM-W3', x1: 1372, x2: 1594, home: 1372, y: -1510 },
-    { id: 'SM-W4', x1: 1828, x2: 2116, home: 2116, y: -1676 },
-    { id: 'SM-W5', x1: 1462, x2: 1462, home: 1462, y: -2104 }
+    { id: 'SM-W1', platformId: 'SM-L0', dir: 1 },
+    { id: 'SM-W2', platformId: 'SM-L0', dir: -1 },
+    { id: 'SM-W3', platformId: 'SM-L1', dir: 1 },
+    { id: 'SM-W4', platformId: 'SM-L2', dir: -1 },
+    { id: 'SM-W5', platformId: 'SM-L9', dir: -1 }
   ];
   // Yellow stars: three challenge collectibles (golden crayon art), saved with the stage record.
   s.smStars = [
@@ -198,11 +205,12 @@ function isSpiritActive() {
 }
 window.isSpiritActive = isSpiritActive;
 
-// Below the cave nothing is a pit. Once Dudu has reached Ifrit's rest (outside), falling more than about one and a
-// half screens below the latest flag sends her back to it instead of dropping her all the way down the mountain.
-function spiritKillY() {
-  if (checkpoint >= 3 && sections[checkpoint]) return sections[checkpoint].y + 1100;
-  return 2000;
+// Inside the cave nothing is a pit. Outside, a fall sends Dudu back to the latest flag (from Ifrit's rest on, after
+// falling about one and a half screens) instead of dropping her all the way down the mountain.
+function spiritKillY(x) {
+  if (checkpoint >= 2 && sections[checkpoint]) return sections[checkpoint].y + 1100;
+  if (x < 1135) return 250;   // outside the mountain at the start there is nothing below: back to the lake
+  return 2000;                // inside the cave the floor catches every fall
 }
 
 // ----------------------------------------------------------------------------
@@ -222,8 +230,12 @@ function resetSpiritRuntime() {
   sm.clock = 0;
   sm.fireballs.length = 0;
   sm.npcs = s.smNpcs.map(n => ({ ...n, nearNow: false, anim: Math.random() * 3, face: -1, clip: n.idle }));
-  sm.wisps = s.smWisps.map(w => ({ ...w, x: w.home, prevX: w.home, hy: w.y - 64, dir: w.home <= w.x1 ? 1 : -1,
-    state: 'patrol', t: 0, anim: Math.random(), clip: w.x1 === w.x2 ? 'wisp_idle' : 'wisp_move', face: -1, cool: 1.2 + Math.random(), fired: false }));
+  sm.wisps = s.smWisps.map((w, i) => {
+    const pl = platforms.find(q => q.id === w.platformId);
+    const x1 = pl.x + 28, x2 = pl.x + pl.w - 28, home = w.dir > 0 ? x1 : x2;
+    return { ...w, x1, x2, y: pl.y, home, x: home, prevX: home, hy: pl.y - 64, from: home, to: home,
+      state: 'wait', t: -0.35 * i, anim: Math.random(), clip: 'wisp_idle', face: w.dir };
+  });
   const save = loadWorldMapSave();
   const rec = spiritRecord(save);
   sm.stars = s.smStars.map(st => ({ ...st, got: rec.collectibles.includes(st.id) }));
@@ -232,6 +244,7 @@ function resetSpiritRuntime() {
   window.__smWindBias = 0;
   // respawning puts the darkness straight to where Dudu now stands (no leftover fade)
   sm.mask = (p.x > 1135 && p.y < SM_FLOOR_Y - 60 && p.y > -1240) ? 1 : 0;
+  const z = spiritBgZone(); for (let i = 0; i < 5; i++) smBgWeights[i] = i === z ? 1 : 0;
 }
 window.resetSpiritRuntime = resetSpiritRuntime;
 
@@ -278,37 +291,32 @@ function updateSpiritWind(dt) {
   w.intensity += (vis - w.intensity) * Math.min(1, dt / 0.15);
 }
 
-const WISP = { sight: 380, sightY: 170, telegraph: 0.55, attackDur: 1.4, groggy: 1.0, ballSpeed: 300, ballRange: 440, speed: 90, halfW: 26, halfH: 34 };
+// story fairy timings (fairy1/fairy2 profiles) with the travel speed about 25% higher
+const WISP = { wait: 0.62, warn: 1.0, rest: 1.3, speed: 216, returnSpeed: 170, halfW: 26, halfH: 34 };
 function spiritLavaZone() { return p.x > 1000 && p.y < -1240 && p.y > -2200; }
 function updateWisp(w, dt) {
   w.prevX = w.x; w.t += dt; w.anim += dt;
-  const active = spiritLavaZone();
-  const dx = p.x - w.x, dyP = (p.y - 30) - w.hy;
-  if (w.state === 'stomped') { if (w.t > 2.6) { w.state = 'patrol'; w.t = 0; w.clip = w.x1 === w.x2 ? 'wisp_idle' : 'wisp_move'; } return; }
-  if (w.state === 'patrol') {
-    if (w.x1 !== w.x2) {
-      w.x += w.dir * WISP.speed * dt;
-      if (w.x <= w.x1) { w.x = w.x1; w.dir = 1; } else if (w.x >= w.x2) { w.x = w.x2; w.dir = -1; }
-      w.face = w.dir;
+  const span = Math.max(40, w.x2 - w.x1);
+  if (w.state === 'stomped') { if (w.t > 2.6) { w.state = 'wait'; w.t = 0; w.clip = 'wisp_idle'; } return; }
+  if (w.state === 'wait') {
+    w.clip = 'wisp_idle';
+    if (w.t >= WISP.wait) { w.state = 'warn'; w.t = 0; w.anim = 0; w.clip = 'wisp_attack'; }
+  } else if (w.state === 'warn') {
+    w.face = w.dir;
+    if (w.t >= WISP.warn) { w.state = 'rush'; w.t = 0; w.anim = 0; w.clip = 'wisp_move'; w.from = w.x; w.to = w.dir > 0 ? w.x2 : w.x1; }
+  } else if (w.state === 'rush' || w.state === 'return') {
+    const dur = span / (w.state === 'rush' ? WISP.speed : WISP.returnSpeed);
+    const u = Math.min(1, w.t / dur);
+    w.x = w.from + (w.to - w.from) * u;                       // even pace, no ease-in / ease-out
+    w.face = w.to > w.from ? 1 : -1;
+    if (u >= 1) {
+      if (w.state === 'rush') { w.state = 'rest'; w.t = 0; w.anim = 0; w.clip = 'wisp_groggy'; }
+      else { w.state = 'wait'; w.t = 0; w.clip = 'wisp_idle'; }
     }
-    w.cool -= dt;
-    const onScreen = w.x > rCam - 20 && w.x < rCam + W + 20 && w.hy > rCamY && w.hy < rCamY + H;
-    if (active && onScreen && w.cool <= 0 && Math.abs(dx) < WISP.sight && Math.abs(dyP) < WISP.sightY && p.invulnerable <= 0.3) {
-      w.state = 'attack'; w.t = 0; w.anim = 0; w.clip = 'wisp_attack'; w.fired = false; w.face = dx > 0 ? 1 : -1;
-    }
-  } else if (w.state === 'attack') {
-    if (!w.fired && w.t >= WISP.telegraph) {
-      w.fired = true;
-      const ang = Math.atan2(dyP, dx);
-      sm.fireballs.push({ x: w.x + w.face * 20, y: w.hy, prevX: w.x, prevY: w.hy, vx: Math.cos(ang) * WISP.ballSpeed, vy: Math.sin(ang) * WISP.ballSpeed, dist: 0, hit: false });
-      if (typeof tone === 'function') tone(520, 0.08, 'triangle', 0.02);
-    }
-    if (w.t >= WISP.attackDur) { w.state = 'groggy'; w.t = 0; w.anim = 0; w.clip = 'wisp_groggy'; }
-  } else if (w.state === 'groggy') {
-    if (w.t >= WISP.groggy) { w.state = 'patrol'; w.t = 0; w.clip = w.x1 === w.x2 ? 'wisp_idle' : 'wisp_move'; w.cool = 1.6 + Math.random() * 0.8; }
+  } else if (w.state === 'rest') {
+    if (w.t >= WISP.rest) { w.state = 'return'; w.t = 0; w.anim = 0; w.clip = 'wisp_move'; w.from = w.x; w.to = w.home; }
   }
-  if (w.state === 'groggy') return; // a resting wisp is harmless
-  // body: landing on top stuns it; touching it otherwise is a hit
+  // body: landing on top stuns it; touching it otherwise is a hit (in every phase, like the fairies)
   if (p.x + 16 > w.x - WISP.halfW && p.x - 16 < w.x + WISP.halfW && p.y > w.hy - WISP.halfH && p.y - 58 < w.hy + WISP.halfH) {
     if (p.vy > 60 && (p.prevY ?? p.y) <= w.hy - WISP.halfH + 10) {
       w.state = 'stomped'; w.t = 0; w.anim = 0; w.clip = 'wisp_groggy';
@@ -319,22 +327,6 @@ function updateWisp(w, dt) {
     }
   }
 }
-function updateFireballs(dt) {
-  const pcx = p.x, pcy = p.y - 30;
-  for (const b of sm.fireballs) {
-    if (b.hit) continue;
-    b.prevX = b.x; b.prevY = b.y; b.x += b.vx * dt; b.y += b.vy * dt; b.dist += WISP.ballSpeed * dt;
-    if (b.dist > WISP.ballRange) { b.hit = true; continue; }
-    if (distPointToSegment(pcx, pcy, b.prevX, b.prevY, b.x, b.y) < 30) { b.hit = true; applyStunHit(b.prevX, 'spirit_fire'); continue; }
-    for (const pl of platforms) {
-      if (pl.collidable === false || pl.thin) continue;
-      if (pl.x > Math.max(b.x, b.prevX) || pl.x + pl.w < Math.min(b.x, b.prevX)) continue;
-      if (segmentIntersectsBox(b.prevX, b.prevY, b.x, b.y, pl.x, pl.y, pl.x + pl.w, pl.y + pl.h).hit) { b.hit = true; break; }
-    }
-  }
-  let n = 0; for (const b of sm.fireballs) if (!b.hit) sm.fireballs[n++] = b; sm.fireballs.length = n;
-}
-// Lava pools lie on the hall floor: stepping in is a normal hit (health -1, knock-back, invulnerability), never a reset.
 function updateLava() {
   if (p.invulnerable > 0) return;
   const floorY = -1301;
@@ -368,9 +360,8 @@ function updateSpiritMountain(dt) {
   if (!isSpiritActive()) { if (window.__smWindBias) window.__smWindBias = 0; return; }
   sm.clock += dt;
   updateSpiritWind(dt);
-  if (spiritLavaZone() || sm.fireballs.length) {
+  if (spiritLavaZone()) {
     for (const w of sm.wisps) updateWisp(w, dt);
-    updateFireballs(dt);
     updateLava();
   } else {
     for (const w of sm.wisps) { w.prevX = w.x; w.anim += dt; }
@@ -405,41 +396,45 @@ function drawSpiritSprite(key, t, x, y, face, alpha = 1) {
 }
 function smRand(i) { const v = Math.sin(i * 91.7 + 13.3) * 43758.5453; return v - Math.floor(v); }
 
-const SM_STYLE = {
-  ledge:  { top: '#6f6a74', body: '#4a4552', rim: 'rgba(210,200,230,0.55)' },
-  rest:   { top: '#8fb07a', body: '#5d6b4c', rim: 'rgba(240,255,210,0.7)' },
-  basalt: { top: '#4b3a37', body: '#2e2423', rim: 'rgba(255,150,80,0.75)' },
-  snow:   { top: '#f2f6ff', body: '#7d8aa3', rim: 'rgba(255,255,255,0.9)' },
-  ice:    { top: '#d9ecff', body: '#8fa9c8', rim: 'rgba(230,248,255,0.9)' },
-  summit: { top: '#ffffff', body: '#9fb0c8', rim: 'rgba(255,255,255,1)' }
-};
-function drawSpiritLedge(a, x, y) {
-  const st = SM_STYLE[a.smDraw] || SM_STYLE.ledge;
-  ctx.save();
-  ctx.fillStyle = st.body; ctx.beginPath(); ctx.roundRect(x, y + 4, a.w, 18, 6); ctx.fill();
-  ctx.fillStyle = st.top; ctx.beginPath(); ctx.roundRect(x - 2, y, a.w + 4, 9, 5); ctx.fill();
-  ctx.fillStyle = st.rim; ctx.fillRect(x + 3, y, a.w - 6, 2);
-  if (a.smDraw === 'snow' || a.smDraw === 'summit') {
-    // a soft snow lip hanging over the edges
-    ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < a.w; i += 26) { const r = 4 + smRand(a.x + i) * 4; ctx.beginPath(); ctx.arc(x + i + 10, y + 8, r, 0, Math.PI); ctx.fill(); }
-  } else if (a.smDraw === 'basalt') {
-    ctx.fillStyle = 'rgba(255,120,40,0.35)'; ctx.fillRect(x + 4, y + 18, a.w - 8, 3);
-  }
-  ctx.restore();
+function smTile(k) { return smImages['t_' + k] || null; }
+// Which zone art a platform uses, from its id: E = lake start, M = Gabia's cave, L / I0 = Ifrit's lava, the rest snow.
+function smZoneOf(id) {
+  const k = id.replace('SM-', '');
+  if (k[0] === 'E') return 'lake';
+  if (k[0] === 'M' || k === 'FLOOR') return 'cave';
+  if (k[0] === 'L' || k === 'I0') return 'lava';
+  return 'snow';
 }
+function smPickTile(a) {
+  const z = smZoneOf(a.id);
+  if (a.id === 'SM-E3') return 'lake_start';
+  if (a.smDraw === 'ice') return 'snow_ice';
+  if (z === 'lava' && a.id === 'SM-I0') return 'lava_slab';
+  if (a.w >= 700) return z + '_long';
+  if (a.w >= 260) return z + '_mid';
+  return z + '_small';
+}
+// The tile is scaled to the platform's width and placed so its walkable surface line sits on the platform top.
+function drawSpiritLedge(a, x, y) {
+  const key = smPickTile(a), im = smTile(key), m = SM_TILES[key];
+  if (!im || !m) { ctx.fillStyle = '#6f6a74'; ctx.fillRect(x, y, a.w, 14); return; }
+  const sc = (a.w + 16) / m[0];
+  ctx.drawImage(im, x - 8, y - m[2] * sc, m[0] * sc, m[1] * sc);
+}
+// Walls and the brown pillars of the sketch: the zone's pillar art stacked to the wall's height.
 function drawSpiritRock(a, x, y) {
   const v = smView();
-  const y1 = Math.max(y, v.y1 - 10), y2 = Math.min(y + a.h, v.y2 + 10);
+  const y1 = Math.max(y, v.y1 - 300), y2 = Math.min(y + a.h, v.y2 + 10);
   if (y2 <= y1) return;
+  if (a.smDraw === 'roof') { drawSpiritLedge({ ...a, smDraw: 'snow', w: a.w, id: 'SM-ROOF' }, x, y); return; }
+  const z = smZoneOf(a.id) === 'lava' || a.id === 'SM-MW3' || a.id === 'SM-MW4' || a.id === 'SM-B6' ? 'lava' : (a.id === 'SM-B7' ? 'stone' : 'cave');
+  const key = z + '_pillar', im = smTile(key), m = SM_TILES[key];
+  if (!im || !m) { ctx.fillStyle = '#4a4652'; ctx.fillRect(x, y1, a.w, y2 - y1); return; }
+  const sc = (a.w + 14) / m[0], th = m[1] * sc - 4;
   ctx.save();
-  const lava = a.y < -1200 && a.y > -2900;
-  ctx.fillStyle = a.smDraw === 'pillar' ? '#8a5a3a' : (lava ? '#3a2826' : '#4a4652');
-  ctx.fillRect(x, y1, a.w, y2 - y1);
-  ctx.fillStyle = a.smDraw === 'pillar' ? 'rgba(255,214,160,0.35)' : 'rgba(255,255,255,0.12)';
-  ctx.fillRect(x, y1, 3, y2 - y1);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x + a.w - 4, y1, 4, y2 - y1);
-  if (a.smDraw === 'roof') { ctx.fillStyle = '#f2f6ff'; ctx.fillRect(x - 4, y, a.w + 8, 10); }
+  ctx.beginPath(); ctx.rect(x - 10, y - 2, a.w + 20, a.h + 4); ctx.clip();
+  const start = y + Math.floor((y1 - y) / th) * th;
+  for (let ty = start; ty < y2; ty += th) ctx.drawImage(im, x - 7, ty, m[0] * sc, m[1] * sc);
   ctx.restore();
 }
 function drawSpiritFloor(a, x, y) {
@@ -448,9 +443,12 @@ function drawSpiritFloor(a, x, y) {
   const h = Math.min(a.h, v.y2 - y + 10);
   if (x2 <= x1 || h <= 0) return;
   ctx.save();
-  ctx.fillStyle = '#5b6b45'; ctx.fillRect(x1, y, x2 - x1, h);
-  ctx.fillStyle = '#86a35e'; ctx.fillRect(x1, y, x2 - x1, 10);
-  ctx.fillStyle = 'rgba(255,255,230,0.5)'; ctx.fillRect(x1, y, x2 - x1, 2);
+  ctx.fillStyle = '#2c2a36'; ctx.fillRect(x1, y + 30, x2 - x1, h - 30);
+  const im = smTile('cave_floor'), m = SM_TILES.cave_floor;
+  if (im && m) {
+    const sc = 0.6, tw = m[0] * sc - 6;
+    for (let tx = x + Math.floor((x1 - x) / tw) * tw; tx < x2; tx += tw) ctx.drawImage(im, tx, y - m[2] * sc, m[0] * sc, m[1] * sc);
+  }
   ctx.restore();
 }
 function drawSpiritPlatform(a, x, y) {
@@ -459,6 +457,21 @@ function drawSpiritPlatform(a, x, y) {
   else drawSpiritLedge(a, x, y);
 }
 window.drawSpiritPlatform = drawSpiritPlatform;
+
+// Checkpoint shrines (one per zone) stand where the sketch's green flags are.
+function drawSpiritShrines() {
+  const v = smView(), s = spiritStage();
+  sections.forEach((sec, i) => {
+    if (sec.x < v.x1 - 200 || sec.x > v.x2 + 200 || sec.y < v.y1 - 50 || sec.y > v.y2 + 250) return;
+    const key = s.smShrines[i], im = smTile(key), m = SM_TILES[key];
+    if (!im || !m) return;
+    const sc = 160 / m[0];
+    ctx.save();
+    if (i > 0 && checkpoint < i) ctx.globalAlpha = 0.85;
+    ctx.drawImage(im, sec.x - 80, sec.y - m[1] * sc + 14, m[0] * sc, m[1] * sc);
+    ctx.restore();
+  });
+}
 
 // --- wind particles: world-space streaks drawn behind the platforms, flowing right to left ---
 function spiritWindVisibility() {
@@ -524,6 +537,17 @@ function drawWindParticles() {
       ctx.drawImage(smStreak(), q.x, q.y - th / 2, len, th);
       ctx.globalAlpha = 1;
     }
+    if (q.s > 0.8 && I > 0.3) {
+      // a few of the supplied wind swirls, mirrored so they read as blowing from the right
+      const keys = ['wind_a', 'wind_b', 'wind_c', 'wind_d', 'wind_e'], key = keys[Math.floor(q.s * 1000) % 5];
+      const im = smTile(key), m = SM_TILES[key];
+      if (im && m) {
+        const sc = 0.5 + 0.3 * q.s;
+        ctx.save(); ctx.globalAlpha = Math.min(1, a * 1.3); ctx.translate(q.x, q.y); ctx.scale(-1, 1);
+        ctx.drawImage(im, -m[0] * sc / 2, -m[1] * sc / 2, m[0] * sc, m[1] * sc); ctx.restore();
+        continue;
+      }
+    }
     ctx.fillStyle = `rgba(255,255,255,${Math.min(0.9, a + 0.15)})`;
     ctx.beginPath(); ctx.arc(q.x, q.y, 1.6 + 1.6 * q.s, 0, Math.PI * 2); ctx.fill();
   }
@@ -542,6 +566,14 @@ function drawSpiritBack() {
 window.drawSpiritBack = drawSpiritBack;
 
 function drawLavaPools() {
+  const imP = smTile('lava_pool'), mP = SM_TILES.lava_pool;
+  if (imP && mP) {
+    for (const l of SM_LAVA) {
+      const w = l.x2 - l.x1 + 24, sc = w / mP[0];
+      ctx.drawImage(imP, l.x1 - 12, -1301 - mP[2] * sc + 4, w, mP[1] * sc);
+    }
+    return;
+  }
   const v = smView(); const y = -1301;
   if (y < v.y1 - 60 || y > v.y2 + 60) return;
   ctx.save();
@@ -568,19 +600,16 @@ function drawLavaPools() {
 function drawSpiritFront() {
   if (!isSpiritActive()) return;
   const v = smView();
+  drawSpiritShrines();
   drawLavaPools();
   for (const w of sm.wisps) {
     const x = w.prevX + (w.x - w.prevX) * renderAlpha, y = w.hy + Math.sin(time * 2.4 + w.home) * 5;
     if (x < v.x1 - 100 || x > v.x2 + 100 || y < v.y1 - 100 || y > v.y2 + 100) continue;
     ctx.save(); ctx.globalAlpha = 0.25; ellipse(x, w.y + 2, 26, 5, '#ff8a3d'); ctx.restore();
-    if (w.state === 'attack' && !w.fired) {
-      ctx.save(); ctx.globalAlpha = 0.25 + 0.5 * (w.t / WISP.telegraph); ellipse(x, y, 40, 40, 'rgba(255,170,60,0.5)'); ctx.restore();
+    if (w.state === 'warn') {
+      ctx.save(); ctx.globalAlpha = 0.25 + 0.5 * Math.min(1, w.t / WISP.warn); ellipse(x, y, 40, 40, 'rgba(255,170,60,0.5)'); ctx.restore();
     }
     if (!drawSpiritSprite(w.clip, w.anim, x, y, w.face, w.state === 'stomped' ? 0.7 : 1)) ellipse(x, y, 22, 28, '#ff8a3d');
-  }
-  for (const b of sm.fireballs) {
-    const x = b.prevX + (b.x - b.prevX) * renderAlpha, y = b.prevY + (b.y - b.prevY) * renderAlpha;
-    ellipse(x, y, 16, 16, 'rgba(255,150,60,0.35)'); ellipse(x, y, 9, 9, '#ffcf6b'); ellipse(x, y, 5, 5, '#fff4d0');
   }
   const crayon = (typeof collectibleImages !== 'undefined') ? collectibleImages['golden_crayon'] : null;
   for (let i = 0; i < sm.stars.length; i++) {
@@ -635,14 +664,19 @@ function drawSpiritOverlay() {
 window.drawSpiritOverlay = drawSpiritOverlay;
 
 // --- backdrops: the five paintings in order, each framed for its band of the climb and cross-faded by height ---
-const SM_BG_BANDS = [   // camera-centre y ranges (world y grows downward)
-  { key: 'bg1', top: 300, bottom: 99999 },
-  { key: 'bg2', top: -1163, bottom: 300 },
-  { key: 'bg3', top: -2700, bottom: -1163 },
-  { key: 'bg4', top: -6300, bottom: -2700, fadeTop: 120 },
-  { key: 'bg5', top: -99999, bottom: -6300, fadeBottom: 120 }   // short fade: the summit art appears only at the top
-];
-const SM_BG_FADE = 220;
+// v1.6.2: the start lake sits beside the cave at the same height, so the painting follows Dudu's zone and
+// cross-fades over about 0.7s instead of following the camera's height.
+const SM_BG_KEYS = ['bg1', 'bg2', 'bg3', 'bg4', 'bg5'];
+const smBgWeights = [1, 0, 0, 0, 0];
+let smBgLast = 0;
+function spiritBgZone() {
+  if (p.y < -6250) return 4;                                  // summit
+  if (p.x >= 1000 && p.y < -1240 && p.y > -2705) return 2;    // lava hall
+  if (p.x < 1000 && p.y < -1240 && p.y > -2150) return 2;     // Ifrit's rest
+  if (p.y <= -1240) return 3;                                 // outside climb
+  if (p.x >= 1135) return 1;                                  // Gabia's cave
+  return 0;                                                   // lake start
+}
 const _smBgCache = {};
 function smBackdrop(key) {
   if (_smBgCache[key]) return _smBgCache[key];
@@ -652,30 +686,32 @@ function smBackdrop(key) {
   const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, 0, 0, c.width, c.height);
   _smBgCache[key] = c; return c;
 }
-function smBandAlpha(b, cy) {
-  const fT = b.fadeTop || SM_BG_FADE, fB = b.fadeBottom || SM_BG_FADE;
-  return Math.max(0, Math.min(1, (cy - (b.top - fT)) / (2 * fT), ((b.bottom + fB) - cy) / (2 * fB)));
-}
 function drawSpiritBackground() {
+  const now = performance.now();
+  const dt = smBgLast ? Math.min(0.1, (now - smBgLast) / 1000) : 1;
+  smBgLast = now;
+  const zone = spiritBgZone();
+  for (let i = 0; i < 5; i++) {
+    const target = i === zone ? 1 : 0;
+    smBgWeights[i] += Math.sign(target - smBgWeights[i]) * Math.min(Math.abs(target - smBgWeights[i]), dt / 0.7);
+  }
   const cy = rCamY + H * 0.5, cx = rCam + W * 0.5;
-  let drew = false;
-  for (const b of SM_BG_BANDS) {
-    const a = smBandAlpha(b, cy);
-    if (a <= 0) continue;
-    const c = smBackdrop(b.key);
+  ctx.fillStyle = '#9fc3d6'; ctx.fillRect(0, 0, W, H);
+  // draw the fading-out paintings first, the current one on top
+  const order = [0, 1, 2, 3, 4].sort((a, b) => (a === zone) - (b === zone));
+  for (const i of order) {
+    const a = smBgWeights[i];
+    if (a <= 0.001) continue;
+    const c = smBackdrop(SM_BG_KEYS[i]);
     if (!c) continue;
-    // pan slowly with the climb inside the band, and a little with the camera's x
-    const span = Math.max(1, Math.min(b.bottom, 900) - Math.max(b.top, -6900));
-    const vy = Math.max(0, Math.min(1, (cy - Math.max(b.top, -6900)) / span));
+    const vy = Math.max(0, Math.min(1, (cy + 6900) / 7800));
     const vx = Math.max(0, Math.min(1, cx / SM_WIDTH));
-    const sx = Math.round(vx * (c.width - W)), sy = Math.round(vy * (c.height - H));
+    const sx = Math.round(vx * (c.width - W)), sy = Math.round((1 - vy) * 0 + vy * (c.height - H));
     if (a < 1) { ctx.save(); ctx.globalAlpha = a; }
     ctx.drawImage(c, sx, sy, W, H, 0, 0, W, H);
     if (a < 1) ctx.restore();
-    drew = drew || a >= 1;
   }
-  if (!drew && !smImages.bg1) { ctx.fillStyle = '#9fc3d6'; ctx.fillRect(0, 0, W, H); }
-  window.__smBgDebug = { cy, bands: SM_BG_BANDS.map(b => +smBandAlpha(b, cy).toFixed(2)) };
+  window.__smBgDebug = { zone, weights: smBgWeights.map(v => +v.toFixed(2)) };
 }
 
 // ----------------------------------------------------------------------------
