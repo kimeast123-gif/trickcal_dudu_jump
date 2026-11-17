@@ -15,9 +15,10 @@
 
 const NIGHT_WORLD_ID = 'world2_monatium_night';
 const NIGHT_STAGE_CODE = '2-1';
-const NIGHT_END = 16400;
-const NIGHT_SAFE_X = 14990;           // the plaza is a safe zone: no drone rises or fires once Dudu is on it
-const NIGHT_HALL_FADE = [15150, 15450];   // camera-centre range where the city hall backdrop fades in (last stretch only)
+const NIGHT_EXT = 8200;              // v1.5.3: the stretch added before the stairs (map is 1.5x longer)
+const NIGHT_END = 16400 + NIGHT_EXT;
+const NIGHT_SAFE_X = 14990 + NIGHT_EXT;           // the plaza is a safe zone: no drone rises or fires once Dudu is on it
+const NIGHT_HALL_FADE = [15150 + NIGHT_EXT, 15450 + NIGHT_EXT];   // camera-centre range where the city hall backdrop fades in (last stretch only)
 const NIGHT_RUNNER_SPEED = 345;          // Mayo's top chase speed is 314 px/s; runners use ~1.10x
 const NIGHT_INTRO_HOLD = 2.0;            // seconds Dudu cannot move at the start flag
 
@@ -36,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_5_2_261117';
+const NIGHT_ASSET_Q = '?v=v1_5_3_261117';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -80,7 +81,7 @@ function buildNightStage() {
     entrySpawns: { default: { route: 'default', platformId: 'NM-B0', x: 130, feetY: 496 } },
     segments: [{ start: 0, end: NIGHT_END, bg: 'night' }],
     backgroundRanges: {},
-    goal: { id: 'night-plaza', exitRoute: 'default', x: 16330, y: 580, w: 60, h: 120, hidden: true }
+    goal: { id: 'night-plaza', exitRoute: 'default', x: 16330 + NIGHT_EXT, y: 580, w: 60, h: 120, hidden: true }
   });
   s.worldId = NIGHT_WORLD_ID;
   s.night = true;
@@ -163,14 +164,46 @@ function buildNightStage() {
   shutter('NM-W5', 12864, 300);
   ledge('NM-P76', 12940, 223, 380);
   bld('NM-B9', 13440, 300, 40);
-  wCheckpoint(s, '시청 가는 길', 13540, 40);
+  wCheckpoint(s, '모노레일 앞', 13540, 40);
+
+  // ---- v1.5.3 extension (x 13740 .. 21940): the same gimmicks again, mixed and a little tighter ----
+  // 7b. Moving platforms across a long drop under the monorail, a drone overhead.
+  // Same period, neighbours in opposite phase: every 4.2s each pair swings together and the gap closes.
+  mover('NM-X-M5', 14000, 120, 150, 160, 4.2, 0.0);
+  mover('NM-X-M6', 14450, 60, 150, 180, 4.2, Math.PI);
+  mover('NM-X-M7', 14900, 140, 150, 170, 4.2, 0.0);
+  bld('NM-B10', 15250, 300, 100);
+  wCheckpoint(s, '모노레일 아래', 15350, 100);
+  // 7c. A fourth T-deck with a riot-squad member, then stepping stones under a drone.
+  ledge('NM-TD4', 15700, 220, 900, { nightDraw: 'tdeck', poleX: 16150 });
+  [16740, 16910, 17080, 17250].forEach((x, i) => ledge(`NM-DOT${i + 7}`, x, 260, 72, { small: true }));
+  bld('NM-B11', 17420, 280, 200);
+  wCheckpoint(s, '두 번째 고가', 17520, 200);
+  // 7d. Shutters over pits again, with a moving platform that slides under a hanging electric line.
+  ledge('NM-P81', 17840, 230, 300);
+  shutter('NM-W6', 18140, 230);
+  ledge('NM-P82', 18216, 150, 300);
+  shutter('NM-W7', 18516, 150);
+  ledge('NM-P83', 18592, 150, 260);
+  mover('NM-X-M8', 19020, 150, 150, 150, 4.0, 1.0);
+  ledge('NM-P84', 19400, 150, 260);
+  shutter('NM-W8', 19660, 150);
+  ledge('NM-P85', 19736, 300, 300);
+  bld('NM-B12', 20180, 300, 220);
+  wCheckpoint(s, '셔터 너머', 20280, 220);
+  // 7e. A short climb to one last long roof with a patrol and a high drone.
+  ledge('NM-Q5', 20640, 90, 140);
+  ledge('NM-Q6', 20880, -40, 140);
+  bld('NM-B13', 21140, 800, -80);
+  wCheckpoint(s, '시청 가는 길', 21240, -80);
+
   // Section 8 — stairs down to the city hall plaza (safe zone, last ~1.1 screens)
-  ledge('NM-E1', 13860, 130, 120);
-  ledge('NM-E2', 14080, 200, 120);
-  ledge('NM-E3', 14310, 280, 120);
-  ledge('NM-E4', 14550, 390, 120);
-  ledge('NM-E5', 14790, 490, 120);
-  wFloor(s, 15000, NIGHT_END - 15000, 'steel', 580, { id: 'NM-PLAZA', h: 670, nightDraw: 'plaza' });
+  ledge('NM-E1', 13860 + NIGHT_EXT, 130, 120);
+  ledge('NM-E2', 14080 + NIGHT_EXT, 200, 120);
+  ledge('NM-E3', 14310 + NIGHT_EXT, 280, 120);
+  ledge('NM-E4', 14550 + NIGHT_EXT, 390, 120);
+  ledge('NM-E5', 14790 + NIGHT_EXT, 490, 120);
+  wFloor(s, 15000 + NIGHT_EXT, NIGHT_END - (15000 + NIGHT_EXT), 'steel', 580, { id: 'NM-PLAZA', h: 670, nightDraw: 'plaza' });
 
   // Red squares on the sketch: where each drone stops after rising from below.
   s.nightDrones = [
@@ -183,25 +216,36 @@ function buildNightStage() {
     { id: 'NM-D7', x: 10200, y: -60 },
     { id: 'NM-D8', x: 12700, y: -230 },
     { id: 'NM-D9', x: 11990, y: -140 },   // v1.5.2: second drone over the middle of the shutter run
-    { id: 'NM-D10', x: 14030, y: -40 },   // v1.5.2: one drone per two stairs down to the plaza
-    { id: 'NM-D11', x: 14490, y: 150 },
-    { id: 'NM-D12', x: 14850, y: 280 }
+    { id: 'NM-D10', x: 14030 + NIGHT_EXT, y: -40 },   // v1.5.2: one drone per two stairs down to the plaza
+    { id: 'NM-D11', x: 14490 + NIGHT_EXT, y: 150 },
+    { id: 'NM-D12', x: 14850 + NIGHT_EXT, y: 280 },
+    { id: 'NM-D13', x: 14450, y: -170 },  // v1.5.3 extension
+    { id: 'NM-D14', x: 16150, y: -40 },
+    { id: 'NM-D15', x: 17000, y: 40 },
+    { id: 'NM-D16', x: 18400, y: -160 },
+    { id: 'NM-D17', x: 19560, y: -120 },
+    { id: 'NM-D18', x: 21560, y: -330 }
   ];
   // Red ellipses: one riot-squad member per deck; the black line is the patrol span.
   s.nightPatrols = [
     { id: 'NM-RS1', platformId: 'NM-TD1', side: 'left',  x1: 7980, x2: 8660 },
     { id: 'NM-RS2', platformId: 'NM-TD2', side: 'right', x1: 8700, x2: 9460 },
-    { id: 'NM-RS3', platformId: 'NM-TD3', side: 'left',  x1: 9560, x2: 10440 }
+    { id: 'NM-RS3', platformId: 'NM-TD3', side: 'left',  x1: 9560, x2: 10440 },
+    { id: 'NM-RS4', platformId: 'NM-TD4', side: 'right', x1: 15760, x2: 16540 },
+    { id: 'NM-RS5', platformId: 'NM-B13', side: 'right', x1: 21300, x2: 21880 }
   ];
   // Red vertical line inside the tower.
-  s.nightFields = [{ id: 'NM-FIELD', x: 6480, y1: -600, y2: 420 }];
+  s.nightFields = [
+    { id: 'NM-FIELD', x: 6480, y1: -600, y2: 420 },
+    { id: 'NM-FIELD2', x: 19095, y1: -320, y2: 50, hanging: true }   // v1.5.3: over NM-X-M8, do not jump under it
+  ];
   // Green circles: the friendly plaza, in this exact order.
   s.nightNpcs = [
-    { id: 'NM-NPC-LION',   kind: 'lion',   name: '리온',   x: 15420, idle: 'lion_idle',   nearClip: 'lion_happy', dialogue: '시저가 또 난리를 치다니... 빨리 붙잡아 다행이에요!', color: '#fff3e6' },
-    { id: 'NM-NPC-SCIZOR', kind: 'scizor', name: '시저',   x: 15620, idle: 'scizor_idle', nearClip: 'scizor_sad', dialogue: '히끅... 빌... 빌런은 반드시 다시 돌아온다!', color: '#eef8e8' },
-    { id: 'NM-NPC-ELENA',  kind: 'elena',  name: '엘레나', x: 15820, idle: 'elena_idle',  nearClip: 'elena_idle', dialogue: '바빠 죽겠는데 뭔 빌런이야 어휴!', color: '#eef6ff' },
-    { id: 'NM-NPC-AMELIA', kind: 'amelia', name: '아멜리아', x: 16010, idle: 'amelia_idle', nearClip: 'amelia_idle', dialogue: '언젠가 외래종 교도소를 한번 손 봐야겠군요', color: '#fff5eb' },
-    { id: 'NM-NPC-CANNA',  kind: 'canna',  name: '칸나',   x: 16200, idle: 'canna_idle',  nearClip: 'canna_idle', dialogue: '역시 스핑크스! 이번에도 협조해 주셔서 감사합니다!', color: '#f3f9ee' }
+    { id: 'NM-NPC-LION',   kind: 'lion',   name: '리온',   x: 15420 + NIGHT_EXT, idle: 'lion_idle',   nearClip: 'lion_happy', dialogue: '시저가 또 난리를 치다니... 빨리 붙잡아 다행이에요!', color: '#fff3e6' },
+    { id: 'NM-NPC-SCIZOR', kind: 'scizor', name: '시저',   x: 15620 + NIGHT_EXT, idle: 'scizor_idle', nearClip: 'scizor_sad', dialogue: '히끅... 빌... 빌런은 반드시 다시 돌아온다!', color: '#eef8e8' },
+    { id: 'NM-NPC-ELENA',  kind: 'elena',  name: '엘레나', x: 15820 + NIGHT_EXT, idle: 'elena_idle',  nearClip: 'elena_idle', dialogue: '바빠 죽겠는데 뭔 빌런이야 어휴!', color: '#eef6ff' },
+    { id: 'NM-NPC-AMELIA', kind: 'amelia', name: '아멜리아', x: 16010 + NIGHT_EXT, idle: 'amelia_idle', nearClip: 'amelia_idle', dialogue: '언젠가 외래종 교도소를 한번 손 봐야겠군요', color: '#fff5eb' },
+    { id: 'NM-NPC-CANNA',  kind: 'canna',  name: '칸나',   x: 16200 + NIGHT_EXT, idle: 'canna_idle',  nearClip: 'canna_idle', dialogue: '역시 스핑크스! 이번에도 협조해 주셔서 감사합니다!', color: '#f3f9ee' }
   ];
   return s;
 }
@@ -723,6 +767,12 @@ function drawNightField(f) {
   const y1 = Math.max(f.y1, v.y1 - 20), y2 = Math.min(f.y2, v.y2 + 20);
   if (y2 <= y1) return;
   ctx.save();
+  if (f.hanging) {
+    // the line hangs between two emitter boxes on a cable from above (the tower one is drawn on the tower wall)
+    line(f.x, f.y1 - 400, f.x, f.y1 - 18, '#3a3f52', 3);
+    ctx.fillStyle = '#4a2030'; ctx.fillRect(f.x - 14, f.y1 - 18, 28, 18); ctx.fillRect(f.x - 14, f.y2, 28, 14);
+    ctx.fillStyle = 'rgba(255,120,140,0.8)'; ctx.fillRect(f.x - 10, f.y2 + 10, 20, 3);
+  }
   ctx.fillStyle = 'rgba(255,60,90,0.16)'; ctx.fillRect(f.x - 16, y1, 32, y2 - y1);
   ctx.fillStyle = 'rgba(255,80,110,0.45)'; ctx.fillRect(f.x - 7, y1, 14, y2 - y1);
   ctx.strokeStyle = '#ffd6de'; ctx.lineWidth = 2.5; ctx.beginPath();
@@ -791,7 +841,9 @@ window.drawNightMonatiumFront = drawNightMonatiumFront;
 const NIGHT_BG_ZONES = [
   { key: 'street', x0: 0, x1: 5600, flip: false },
   { key: 'towers', x0: 5600, x1: 11000, flip: false },
-  { key: 'street', x0: 11000, x1: NIGHT_END, flip: true }
+  { key: 'street', x0: 11000, x1: 16000, flip: true },
+  { key: 'towers', x0: 16000, x1: 20600, flip: true },
+  { key: 'street', x0: 20600, x1: NIGHT_END, flip: false }
 ];
 const NIGHT_BG_SCALE = 1.15;
 function nightBackdropCanvas(key, flip) {
@@ -847,7 +899,7 @@ function drawNightBackground() {
   if (!covered && !nightImages.bg_street) { ctx.fillStyle = '#0d1328'; ctx.fillRect(0, 0, W, H); } // still loading
   window.__nightBgDebug = { center, hall: hallA > 0 };
   // build the plaza slab while still on the stairs, so the first plaza frame does not pay for it
-  if (center > 13600 && !_nightCache.has('plaza')) { const pz = platforms.find(q => q.id === 'NM-PLAZA'); if (pz) nightPlazaSlab(pz); }
+  if (center > 13600 + NIGHT_EXT && !_nightCache.has('plaza')) { const pz = platforms.find(q => q.id === 'NM-PLAZA'); if (pz) nightPlazaSlab(pz); }
   pruneNightCache();
 }
 

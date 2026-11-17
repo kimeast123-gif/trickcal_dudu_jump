@@ -24,8 +24,13 @@ ROUTE = [
     ('NM-B7', 7455, 'single'), ('NM-TD1', 7835, 'single'), ('NM-TD2', 8700, 'walk'), ('NM-TD3', 9420, 'double'),
     ('NM-B8', 10495, 'single'), ('NM-P71', 10945, 'single'), ('NM-P72', 11378, 'dash'), ('NM-P73', 11754, 'dashjump'),
     ('NM-P74', 12090, 'dash'), ('NM-P75', 12466, 'dash'), ('NM-P76', 12842, 'dashjump'), ('NM-B9', 13315, 'double'),
-    ('NM-E1', 13735, 'single'), ('NM-E2', 13975, 'single'), ('NM-E3', 14195, 'single'), ('NM-E4', 14425, 'single'),
-    ('NM-E5', 14665, 'single'), ('NM-PLAZA', 14905, 'single'), ('CLEAR', None, 'walk_end'),
+    ('NM-X-M5', None, 'catch'), ('NM-X-M6', None, 'catch'), ('NM-X-M7', None, 'catch'), ('NM-B10', None, 'catch'),
+    ('NM-TD4', 15545, 'single'), ('NM-DOT7', 16595, 'single'), ('NM-DOT8', 16808, 'single'), ('NM-DOT9', 16978, 'single'),
+    ('NM-DOT10', 17148, 'single'), ('NM-B11', 17318, 'single'), ('NM-P81', 17695, 'single'), ('NM-P82', 18120, 'dashjump'),
+    ('NM-P83', 18496, 'dash'), ('NM-X-M8', None, 'catch'), ('NM-P84', None, 'catch'), ('NM-P85', 19640, 'dash'),
+    ('NM-B12', 20030, 'double'), ('NM-Q5', 20475, 'double'), ('NM-Q6', 20775, 'double'), ('NM-B13', 21015, 'single'),
+    ('NM-E1', 21935, 'single'), ('NM-E2', 22175, 'single'), ('NM-E3', 22395, 'single'), ('NM-E4', 22625, 'single'),
+    ('NM-E5', 22865, 'single'), ('NM-PLAZA', 23105, 'single'), ('CLEAR', None, 'walk_end'),
 ]
 
 JS = r"""async([route,god])=>{
@@ -63,6 +68,19 @@ JS = r"""async([route,god])=>{
     const fieldSafe=(p.x<6440);
     if(Math.abs(c-p.x)<tgt.w/2-30&&fieldSafe&&p.ground){up('ArrowLeft');up('ArrowRight');
       window.__dropInfo={px:Math.round(p.x),c:Math.round(c),tx:Math.round(tgt.x),dx:tgt.dx};hold('ArrowDown');await w(30);await jump(60);up('ArrowDown');ok=await landOn(id,1500);break;}
+    await w(16);}
+  }else if(mode==='catch'){
+   // moving platforms: wait at the near edge until the target is within a jump, then jump
+   const tgt=P(id);
+   for(let i=0;i<900&&!ok;i++){
+    const cur=p.on;if(!cur||!p.ground){await w(16);continue;}
+    const dir=(tgt.x+tgt.w/2)>p.x?1:-1;const lead=0.3*120;
+    const edge=dir>0?cur.x+cur.w-24:cur.x+24;
+    const tNear=dir>0?tgt.x+tgt.dx*lead:tgt.x+tgt.w+tgt.dx*lead;
+    const cEdge=dir>0?cur.x+cur.w+cur.dx*lead:cur.x+cur.dx*lead;
+    const gap=dir>0?tNear-cEdge:cEdge-tNear;
+    const d=edge-p.x;up('ArrowLeft');up('ArrowRight');if(Math.abs(d)>10)hold(d>0?'ArrowRight':'ArrowLeft');
+    if(Math.abs(d)<=30&&gap<90&&gap>-tgt.w+60){up('ArrowLeft');up('ArrowRight');hold(dir>0?'ArrowRight':'ArrowLeft');await jump(260);ok=await landOn(id,2500);break;}
     await w(16);}
   }else if(mode==='ferry'){
    // ride the exit platform out of the tower, then hop to the first step

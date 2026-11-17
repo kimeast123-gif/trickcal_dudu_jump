@@ -86,7 +86,7 @@ async def main():
               return {hp0,hp:p.hp,state:d.state}}""")
             check('drone: landing on top knocks it out (Die motion), no damage', r['state'] in ('dead', 'gone') and r['hp'] == r['hp0'], r)
             r = await pg.evaluate("()=>{retryWorld1StageCheckpoint();return {n:__night.drones.length,ids:new Set(__night.drones.map(d=>d.id)).size,states:__night.drones.map(d=>d.state).join(',')}}")
-            check('drone: retry rebuilds the 12 drones without duplicates', r['n'] == 12 and r['ids'] == 12 and set(r['states'].split(',')) == {'wait'}, r)
+            check('drone: retry rebuilds the 18 drones without duplicates', r['n'] == 18 and r['ids'] == 18 and set(r['states'].split(',')) == {'wait'}, r)
 
         if on('drone'):
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));devPracticeNight(3650,335);p.invulnerable=0;
@@ -109,10 +109,10 @@ async def main():
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));const s=world1Stages[NIGHT_STAGE_INDEX];
               const dash=s.nightDrones.filter(d=>d.x>11000&&d.x<13350).map(d=>d.id);
               const stairs=['NM-E1','NM-E2','NM-E3','NM-E4','NM-E5'].map(id=>platforms.find(a=>a.id===id));
-              const stairDrones=s.nightDrones.filter(d=>d.x>13800&&d.x<14990);
+              const stairDrones=s.nightDrones.filter(d=>d.x>22000&&d.x<23190);
               const perPair=[[0,1],[2,3],[4,4]].map(([a,b])=>stairDrones.filter(d=>d.x>=stairs[a].x-120&&d.x<=stairs[b].x+stairs[b].w+120).length);
-              devPracticeNight(15100,580);p.invulnerable=0;await w(4000);
-              const plaza={darts:__night.darts.length,hp:p.hp,awake:__night.drones.filter(d=>d.tx>13800&&d.state!=='wait').length};
+              devPracticeNight(23300,580);p.invulnerable=0;await w(4000);
+              const plaza={darts:__night.darts.length,hp:p.hp,awake:__night.drones.filter(d=>d.tx>22000&&d.state!=='wait').length};
               return {dash,perPair,plaza}}""")
             check('drone: two drones over the shutter run, one per two stairs, none fire into the plaza',
                   len(r['dash']) == 2 and r['perPair'] == [1, 1, 1] and r['plaza']['darts'] == 0 and r['plaza']['hp'] == 5 and r['plaza']['awake'] == 0, r)
@@ -132,6 +132,14 @@ async def main():
               p.invulnerable=0;p.guardStun=0;p.knock=0;p.vx=0;p.x=p.prevX=6430;p.y=p.prevY=202;p.on=m2;p.ground=true;const hp1=p.hp;await w(300);
               return {hit,missNear:p.hp===hp1,f:__night.drones.length}}""")
             check('field: touching the red line is a hit; standing just beside its glow is safe', r['hit'] and r['missNear'], r)
+
+        if on('field'):
+            r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));devPracticeNight(18700,150);
+              const m8=platforms.find(a=>a.id==='NM-X-M8');m8.motion=null;m8.x=m8.baseX=m8.prevX=19020;
+              p.x=p.prevX=19095;p.y=p.prevY=150;p.on=m8;p.ground=true;p.invulnerable=0;await w(300);const hpStand=p.hp;
+              pressInput('Space','kb_s');await w(260);releaseInput('Space','kb_s');await w(300);
+              return {hpStand,hpJump:p.hp}}""")
+            check('field: v1.5.3 hanging line over the mover is safe to ride under, a jump into it hurts', r['hpStand'] == 5 and r['hpJump'] == 4, r)
 
         if on('ride'):
             await pg.evaluate(PLACE, [6200, 650])
@@ -160,26 +168,26 @@ async def main():
               const b4=platforms.find(a=>a.id==='NM-B4');p.x=p.prevX=3360;p.y=p.prevY=356;p.on=b4;p.ground=true;await w(200);
               const cp=checkpoint;p.y=900;await w(200);return {cp,x:Math.round(p.x),y:Math.round(p.y),flags:flags.length,hidden:flags.filter(f=>f.hidden).length,runners:__night.runners.length,lock:window.__duduIntroLock}}""")
             check('checkpoint: flag saves, a fall returns there without replaying the runners', r['cp'] == 1 and r['x'] == 3360 and r['y'] == 356 and r['runners'] == 0 and r['lock'] == 0, r)
-            check('checkpoint: 4 sketch flags plus one quiet one at the tower door', r['flags'] == 5 and r['hidden'] == 1, r)
+            check('checkpoint: 4 sketch flags, 4 in the v1.5.3 stretch, one quiet one at the tower door', r['flags'] == 9 and r['hidden'] == 1, r)
 
         if on('backdrop'):
             await pg.evaluate(PLACE, [130, 496])
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));const out=[];
-              for(const x of [2000,6000,9000,12000,13600,14300,14800,15000,15300,15900,16300]){
+              for(const x of [2000,6000,9000,12000,14500,18000,21500,21800,22500,23000,23200,23500,24100,24500]){
                 const plat=platforms.filter(a=>!a.wall&&a.x<=x&&a.x+a.w>=x).sort((a,b)=>a.y-b.y)[0];
                 devPracticeNight(x,plat?plat.y:580);await w(700);out.push([x,Math.round(rCam),__nightBgDebug.hall]);}
               return out}""")
-            early = [o for o in r if o[0] < 15000]
-            late = [o for o in r if o[0] >= 15300]
+            early = [o for o in r if o[0] < 23200]
+            late = [o for o in r if o[0] >= 23500]
             check('backdrop: city hall never shows before the plaza', all(not o[2] for o in early), r)
             check('backdrop: city hall shows on the plaza', all(o[2] for o in late), r)
 
         if on('npc'):
-            await pg.evaluate(PLACE, [15200, 580])
+            await pg.evaluate(PLACE, [23400, 580])
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));const out=[];p.invulnerable=99;
               for(const n of __night.npcs){p.x=p.prevX=n.x-90;p.y=p.prevY=580;p.vx=0;await w(250);
                 const c=__night.npcs.find(q=>q.id===n.id);out.push({name:c.name,x:c.x,near:c.near,clip:c.clip,line:c.dialogue});}
-              p.x=p.prevX=15100;await w(250);const far=__night.npcs.map(n=>n.clip);
+              p.x=p.prevX=23300;await w(250);const far=__night.npcs.map(n=>n.clip);
               return {out,far}}""")
             names = [o['name'] for o in r['out']]
             want_lines = {
@@ -194,13 +202,13 @@ async def main():
             ok = all(o['near'] and (o['clip'], o['line']) == want_lines[o['name']] for o in r['out'])
             check('npc: near each friend the set motion and exact line play', ok, r['out'])
             check('npc: walking away returns them to idle', r['far'] == ['lion_idle', 'scizor_idle', 'elena_idle', 'amelia_idle', 'canna_idle'], r['far'])
-            r = await pg.evaluate("""()=>{const s=world1Stages[NIGHT_STAGE_INDEX];const z=platforms.filter(a=>a.x+a.w>15000&&a.x<16400);
-              return {hazardsInPlaza:__night.drones.filter(d=>d.tx>14950).length+actors.filter(a=>a.x>14950).length+s.nightFields.filter(f=>f.x>14950).length,
+            r = await pg.evaluate("""()=>{const s=world1Stages[NIGHT_STAGE_INDEX];const z=platforms.filter(a=>a.x+a.w>23200&&a.x<24600);
+              return {hazardsInPlaza:__night.drones.filter(d=>d.tx>23150).length+actors.filter(a=>a.x>23150).length+s.nightFields.filter(f=>f.x>23150).length,
                 floor:z.map(a=>a.id).join(',')}}""")
             check('npc: plaza is a safe zone (no drones, guards, field or pits)', r['hazardsInPlaza'] == 0 and r['floor'] == 'NM-PLAZA', r)
 
         if on('clear'):
-            await pg.evaluate(PLACE, [16200, 580])
+            await pg.evaluate(PLACE, [24400, 580])
             r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));p.invulnerable=99;pressInput('ArrowRight','kb_t');
               for(let i=0;i<40;i++){await w(50);if(state!=='playing')break;}releaseInput('ArrowRight','kb_t');
               const rec=loadWorldMapSave().worlds.world2_monatium_night.stages['2-1'];

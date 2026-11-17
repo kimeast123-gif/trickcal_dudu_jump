@@ -156,7 +156,7 @@ async def desktop_checks(pw, want):
         want_lines = ('리온:시저가 또 난리를 치다니... 빨리 붙잡아 다행이에요!|시저:히끅... 빌... 빌런은 반드시 다시 돌아온다!|'
                       '엘레나:바빠 죽겠는데 뭔 빌런이야 어휴!|아멜리아:언젠가 외래종 교도소를 한번 손 봐야겠군요|'
                       '칸나:역시 스핑크스! 이번에도 협조해 주셔서 감사합니다!')
-        ok = r['open'] and r['movedAt'] is not None and 1.98 <= r['movedAt'] <= 2.2 and r['lines'] == want_lines and not r['hallEarly'] and r['drones'] == 12
+        ok = r['open'] and r['movedAt'] is not None and 1.98 <= r['movedAt'] <= 2.2 and r['lines'] == want_lines and not r['hallEarly'] and r['drones'] == 18
         check('night: world map open from start, 2s start hold, 5 plaza lines exact, city hall hidden early', ok, r)
     await b.close()
 
