@@ -17,7 +17,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_6_6_261118'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_6_7_261118'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
@@ -120,7 +120,7 @@ const SM_WALLS = [
   ['MW3', 1512, -2080, 69, 830],   // lava hall left wall below L9
   ['MW4', 1452, -2705, 60, 371],    // wall above the doorway out to Ifrit (doorway y -2334..-2104)
   ['B1', 2510, -71, 78, 256], ['B2', 2786, -559, 74, 412], ['B3', 2901, -995, 97, 428],   // v1.6.6: B2/B3 reach the ledge above
-  ['B5', 2745, -1293, 97, 340], ['B6', 1834, -2096, 69, 290], ['B7', 1494, -2846, 92, 217]   // B5 up to L0, B6 tucked under L9
+  ['B5', 2745, -1293, 97, 340], ['B6', 1834, -2096, 69, 290]   // B5 up to L0, B6 tucked under L9 (v1.6.7: B7 removed)
 ];
 const SM_CAPLESS = new Set(['SM-B2', 'SM-B3', 'SM-B5', 'SM-B6']);   // pillars whose top is hidden under a ledge
 const SM_ROOF = { x: 1632, y: -2705, w: 1918, h: 120 };   // v1.6.3: drawn only; the strip above it is a fall zone
@@ -259,7 +259,7 @@ function resetSpiritRuntime() {
   sm.wind = { rng: smRng(20261117), state: 'outside', entered: false, nextStart: Infinity, start: 0, end: 0, dur: 0, intensity: 0, push: 0 };
   window.__smWindBias = 0;
   // respawning puts the darkness straight to where Dudu now stands (no leftover fade)
-  sm.mask = (p.x > SM_WALL_X && p.y < SM_FLOOR_Y - 60 && p.y > -1240) ? 1 : 0;
+  sm.mask = (p.x > SM_WALL_X && p.y < SM_FLOOR_Y + 60 && p.y > -1240) ? 1 : 0;
   const z = spiritBgZone(); for (let i = 0; i < 5; i++) smBgWeights[i] = i === z ? 1 : 0;
 }
 window.resetSpiritRuntime = resetSpiritRuntime;
@@ -376,7 +376,7 @@ function updateSpiritMountain(dt) {
     for (const w of sm.wisps) { w.prevX = w.x; w.anim += dt; }
   }
   // v1.6.3: above the lava hall's roof there is nothing to stand on: dropping into it is a fall
-  if (p.x > SM_ROOF.x && p.x < SM_ROOF.x + SM_ROOF.w && p.y > SM_ROOF.y + 30 && p.y < SM_ROOF.y + 250 && p.vy > 0 && state === 'playing') {
+  if (p.x > SM_LAVA_WALL_X - 60 && p.x < SM_ROOF.x + SM_ROOF.w && p.y > SM_ROOF.y + 30 && p.y < SM_ROOF.y + 250 && p.vy > 0 && state === 'playing') {
     deaths++;
     if (typeof retryWorld1StageCheckpoint === 'function') retryWorld1StageCheckpoint();
     if (typeof tone === 'function') tone(180, 0.13);
@@ -384,8 +384,8 @@ function updateSpiritMountain(dt) {
   }
   updateSpiritStars();
   updateSpiritNpcs(dt);
-  // cave darkness follows Dudu: full in the maze, none at the start floor, Gabia's rest or the lava hall
-  const inMaze = p.x > SM_WALL_X && p.y < SM_FLOOR_Y - 60 && p.y > -1240;
+  // cave darkness follows Dudu: full in the whole cave down to Gabia's floor (v1.6.7), none outside or in the hall
+  const inMaze = p.x > SM_WALL_X && p.y < SM_FLOOR_Y + 60 && p.y > -1240;
   const target = inMaze ? 1 : 0;
   sm.mask += (target - sm.mask) * Math.min(1, dt / 0.35);
 }
@@ -569,12 +569,13 @@ function drawSpiritMountainBody() {
   // above the roof: a dark chasm below the roof line
   if (p.y < SM_ROOF.y + 40) {
     const k = Math.max(0, Math.min(1, (SM_ROOF.y + 40 - p.y) / 160));
-    const top = SM_ROOF.y - 10, x0 = SM_LAVA_WALL_X - 72, y1 = v.y2 + 20;
+    // v1.6.7: opaque right below the roof line and wide enough to swallow MW4, so only the drop shows
+    const top = SM_ROOF.y - 24, x0 = SM_LAVA_WALL_X - 152, y1 = v.y2 + 20;
     if (k > 0 && y1 > top && x0 < v.x2) {
       ctx.save();
       ctx.globalAlpha = k;
-      const g = ctx.createLinearGradient(0, top, 0, top + 170);
-      g.addColorStop(0, 'rgba(10,14,26,0)'); g.addColorStop(1, 'rgba(10,14,26,0.96)');
+      const g = ctx.createLinearGradient(0, top, 0, top + 60);
+      g.addColorStop(0, 'rgba(10,14,26,0)'); g.addColorStop(1, 'rgba(10,14,26,0.97)');
       ctx.fillStyle = g;
       // the left end fades out sideways over 80px
       for (let i = 0; i < 8; i++) {
@@ -593,7 +594,6 @@ function drawSpiritRock(a, x, y) {
   const y1 = Math.max(y, v.y1 - 300), y2 = Math.min(y + a.h, v.y2 + 10);
   if (y2 <= y1 || x + a.w < v.x1 - 20 || x > v.x2 + 20) return;
   if (a.smDraw === 'rock') { drawSpiritOuterWall(a, x, y, v); return; }
-  if (a.id === 'SM-B7') { drawSpiritOuterWall(a, x, y, v); drawSpiritTile({ w: a.w + 8 }, x - 4, y, 'snow'); return; }
   const z = smWallZone(a.id), pat = smWallPattern(z === 'out' ? 'out_wall' : 'cave_wall');
   ctx.save();
   ctx.fillStyle = pat || '#4a4652';
@@ -810,31 +810,43 @@ window.drawSpiritFront = drawSpiritFront;
 
 // Screen-space pass after the world: the cave darkness. The DOM HUD and touch controls sit above the canvas,
 // so they are never darkened.
-let _smMaskCanvas = null;
+// v1.6.7: the mask is rebuilt each frame at quarter size with a light hole for Dudu and one for Gabia (she glows
+// with the same radius as Dudu's sight).
+let _smHole = null, _smMaskCanvas = null;
 const SM_SIGHT_R = 210, SM_MASK_SCALE = 4;
-function smMaskCanvas() {
-  if (_smMaskCanvas) return _smMaskCanvas;
-  const c = document.createElement('canvas');
-  c.width = (2 * W) / SM_MASK_SCALE; c.height = (2 * H) / SM_MASK_SCALE;
+function smHole() {
+  if (_smHole) return _smHole;
+  const r = SM_SIGHT_R / SM_MASK_SCALE, R = Math.ceil(r * 1.3);
+  const c = document.createElement('canvas'); c.width = c.height = 2 * R;
   const g = c.getContext('2d');
-  g.fillStyle = 'rgba(6,5,12,0.93)'; g.fillRect(0, 0, c.width, c.height);
-  g.globalCompositeOperation = 'destination-out';
-  const r = SM_SIGHT_R / SM_MASK_SCALE, cx = c.width / 2, cy = c.height / 2;
-  const grad = g.createRadialGradient(cx, cy, r * 0.55, cx, cy, r * 1.25);
+  const grad = g.createRadialGradient(R, R, r * 0.55, R, R, r * 1.25);
   grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = grad; g.beginPath(); g.arc(cx, cy, r * 1.3, 0, Math.PI * 2); g.fill();
-  _smMaskCanvas = c;
-  return c;
+  g.fillStyle = grad; g.beginPath(); g.arc(R, R, R, 0, Math.PI * 2); g.fill();
+  return (_smHole = c);
 }
 function drawSpiritOverlay() {
   if (!isSpiritActive()) return;
   if (sm.mask > 0.01) {
     const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
-    const sx = (rPx - rCam) * zoom, sy = (rPy - 32 - rCamY) * zoom;
+    if (!_smMaskCanvas) { _smMaskCanvas = document.createElement('canvas'); _smMaskCanvas.width = W / SM_MASK_SCALE; _smMaskCanvas.height = H / SM_MASK_SCALE; }
+    const c = _smMaskCanvas, g = c.getContext('2d'), hole = smHole(), hr = hole.width / 2;
+    g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, c.width, c.height);
+    g.fillStyle = 'rgba(6,5,12,0.93)'; g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = 'destination-out';
+    const lights = [[rPx, rPy - 32]];
+    const gabia = sm.npcs && sm.npcs.find(n => n.kind === 'gabia');
+    if (gabia) lights.push([gabia.x, gabia.y - 50]);
+    for (const [wx, wy] of lights) {
+      const sx = (wx - rCam) * zoom / SM_MASK_SCALE, sy = (wy - rCamY) * zoom / SM_MASK_SCALE;
+      if (sx < -hr || sy < -hr || sx > c.width + hr || sy > c.height + hr) continue;
+      g.drawImage(hole, sx - hr, sy - hr);
+    }
+    g.globalCompositeOperation = 'source-over';
     ctx.save();
     ctx.globalAlpha = sm.mask;
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(smMaskCanvas(), sx - W, sy - H, 2 * W, 2 * H);
+    ctx.drawImage(c, 0, 0, W, H);
     ctx.restore();
   }
 }

@@ -27,7 +27,8 @@ const mobilePrefs = {
   buttonSwap: 'normal',    // 'normal' | 'swapped'
   stickSize: 'medium',     // 'small' | 'medium' | 'large'
   actionSize: 'small',     // jump/dash buttons independently sized (RENEWAL: default small)
-  dashMode: 'both'         // 'button' | 'both' (double-tap + button) | 'tap' (double-tap only, mobile dash button hidden)
+  dashMode: 'both',        // 'button' | 'both' (double-tap + button) | 'tap' (double-tap only, mobile dash button hidden)
+  kbDoubleTapDash: true    // v1.6.7: PC option, double-tap a direction key to dash (checkbox under the dash key)
 };
 
 const mobileUIState = {
@@ -58,7 +59,7 @@ function pressInput(code, sourceId = 'touch') {
   if (wasEmpty) {
     keys.add(code);
     if (typeof p !== 'undefined' && p.guardStun > 0) return;
-    if ((code === 'ArrowLeft' || code === 'ArrowRight') && mobilePrefs.dashMode !== 'button' && String(sourceId).startsWith('kb_')) {
+    if ((code === 'ArrowLeft' || code === 'ArrowRight') && mobilePrefs.kbDoubleTapDash !== false && String(sourceId).startsWith('kb_')) {
       // RENEWAL: double-tap a direction to dash (keyboard and joystick flick share this path).
       // Only a short tap followed quickly by a second press counts, so walking and inching never dash by accident.
       const now = performance.now();
@@ -460,7 +461,7 @@ function syncAllKeybindLabels() {
   // 2. Update modalKeys & below keys bar
   const modalKeysEl = document.querySelector('.modalKeys');
   if (modalKeysEl) {
-    modalKeysEl.textContent = `${k.l} ${k.r} 이동, ${k.j} 점프, ${k.d}+${k.j} 내려가기, ${k.d} 꾹 눌러 아래보기, ${k.dash} 대시` + (mobilePrefs.dashMode !== 'button' ? ' (방향 두 번으로도 대시)' : '');
+    modalKeysEl.textContent = `${k.l} ${k.r} 이동, ${k.j} 점프, ${k.d}+${k.j} 내려가기, ${k.d} 꾹 눌러 아래보기, ${k.dash} 대시` + (mobilePrefs.kbDoubleTapDash !== false ? ' (방향 두 번으로도 대시)' : '');
   }
   const belowKeysEl = document.querySelector('.below .keys');
   if (belowKeysEl) {
@@ -469,7 +470,7 @@ function syncAllKeybindLabels() {
       <span><kbd>${k.j}</kbd> 점프 / 2단 점프</span>
       <span><kbd>${k.d}</kbd> 길게 눌러 아래보기</span>
       <span><kbd>${k.d}</kbd> + <kbd>${k.j}</kbd> 얇은 발판 내려가기</span>
-      <span><kbd>${k.dash}</kbd> 대시${mobilePrefs.dashMode !== 'button' ? ' (방향 두 번도 가능)' : ''}</span>
+      <span><kbd>${k.dash}</kbd> 대시${mobilePrefs.kbDoubleTapDash !== false ? ' (방향 두 번도 가능)' : ''}</span>
       <span><kbd>${k.retry}</kbd> 구간 다시 시작</span>
       <span><kbd>${k.pauseLabel}</kbd> 쉬어가기</span>
     `;
@@ -505,6 +506,12 @@ function ensurePcKeybindSettingsUI() {
   const sec = document.createElement('div');
   sec.id = 'pcKeybindSection';
   sec.className = 'pcKeybindSection';
+  // v1.6.7: the double-tap dash switch sits in the grid cell right under the dash key
+  const tapDashRow = `
+    <label class="pcKeybindRow pcKeybindCheckRow" for="kbDoubleTapDashChk">
+      <span class="pcKeybindActionName">방향키 두 번 대시</span>
+      <input type="checkbox" id="kbDoubleTapDashChk" class="pcKeybindCheck" ${mobilePrefs.kbDoubleTapDash !== false ? 'checked' : ''}>
+    </label>`;
   const rowsHtml = Object.keys(ACTION_TO_LOGICAL_CODE).map(act => `
     <div class="pcKeybindRow">
       <span class="pcKeybindActionName">${ACTION_LABELS_KO[act]}</span>
@@ -512,7 +519,7 @@ function ensurePcKeybindSettingsUI() {
         ${formatKeyCodeLabel(pcKeybinds[act])}
       </button>
     </div>
-  `).join('');
+  ` + (act === 'RETRY' ? tapDashRow : '')).join('');
 
   sec.innerHTML = `
     <div class="soundSettingDivider" aria-hidden="true"></div>
@@ -550,6 +557,17 @@ function ensurePcKeybindSettingsUI() {
     });
   });
 
+  const tapChk = document.getElementById('kbDoubleTapDashChk');
+  if (tapChk) {
+    tapChk.addEventListener('click', e => e.stopPropagation());
+    tapChk.addEventListener('change', () => {
+      mobilePrefs.kbDoubleTapDash = tapChk.checked;
+      doubleTapState.ArrowLeft.press = doubleTapState.ArrowLeft.release = 0;
+      doubleTapState.ArrowRight.press = doubleTapState.ArrowRight.release = 0;
+      saveMobilePrefs();
+      if (typeof syncAllKeybindLabels === 'function') syncAllKeybindLabels();
+    });
+  }
   const resetBtn = document.getElementById('resetPcKeybindsBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', e => {
@@ -588,6 +606,7 @@ function loadMobilePrefs() {
       }
       if (parsed && ['small','medium','large'].includes(parsed.actionSize)) mobilePrefs.actionSize=parsed.actionSize;
       if (parsed && ['button','both','tap'].includes(parsed.dashMode)) mobilePrefs.dashMode=parsed.dashMode;
+      if (parsed && typeof parsed.kbDoubleTapDash === 'boolean') mobilePrefs.kbDoubleTapDash = parsed.kbDoubleTapDash;
     }
   } catch (e) {
     // Ignore storage errors in private mode

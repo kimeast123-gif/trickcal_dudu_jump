@@ -2108,6 +2108,8 @@ body:not(.is-mobile-device) #mobileControls {
 }
 .pcKeybindRow:last-child { border-bottom-color: transparent; }
 .pcKeybindCaptureBtn { min-width: 79px; padding: 6px 8px; }
+.pcKeybindCheckRow { cursor: pointer; }
+.pcKeybindCheck { width: 20px; height: 20px; margin: 0 30px 0 0; accent-color: #5f965b; cursor: pointer; }
 .pcKeybindHintRow { margin-top: 2px; }
 .pcKeybindHintRow:has(.pcKeybindStatusMsg:empty) { display: none; }
 .pcKeybindStatusMsg:empty { display: none; }
