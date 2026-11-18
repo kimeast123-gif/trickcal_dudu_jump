@@ -627,7 +627,7 @@ function buildWorld1Stages() {
     id: 'world1_1',
     stageCode: '1-1',
     name: '1-1 밝은 숲의 첫 시험',
-    subtitle: '초원 출발 → 스위치백 상승 → 수직 이동 3연속 → 점멸 계단 & 복귀 루트 → 4단 연결 계단 및 거목 입구',
+    subtitle: '햇살 가득한 초원을 지나 거목 앞까지 폴짝! 깜빡이는 발판은 서둘러 건너요.',
     worldWidth: 6800,
     killY: 920,
     minCamY: -650,
@@ -762,7 +762,7 @@ function buildWorld1Stages() {
     id: 'world1_2',
     stageCode: '1-2',
     name: '1-2 거목의 갈림길',
-    subtitle: '오래된 거목 내부 — 상단 정밀 7발판 수평 루트(상단 출구→1-3 상단) vs 하단 미로·리프트 루트(하단 출구→1-3 하단)',
+    subtitle: '거목 안에서 길이 둘로 갈라져요. 위는 아슬아슬한 발판길, 아래는 빙글빙글 미로.',
     worldWidth: 6600,
     killY: 980,
     minCamY: -860,
@@ -919,7 +919,7 @@ function buildWorld1Stages() {
     id: 'world1_3',
     stageCode: '1-3',
     name: '1-3 깊은 숲의 갈림길',
-    subtitle: '상층 정밀 협폭 발판(48~60px · 특수 수집물 · 상단 출구→1-4 상단) vs 하층 점멸·촉수·리프트 루트(하단 출구→1-4 하단)',
+    subtitle: '좁은 발판 위에 반짝이는 게 있어요! 떨어져도 아래 길로 이어져요.',
     worldWidth: 7000,
     killY: 920,
     minCamY: -960,
@@ -1080,7 +1080,7 @@ function buildWorld1Stages() {
     id: 'world1_4',
     stageCode: '1-4',
     name: '1-4 숲의 끝자락',
-    subtitle: '상·하단 진입 합류 · 어두운 숲→밝은 초지 단일 전환 · 최종 2단 점프 + 공중 대시 필수 도약(567px · 폭 64px)',
+    subtitle: '어두운 숲을 빠져나오면 마지막 큰 도약! 두 번 뛰고 공중에서 대시해요.',
     worldWidth: 7200,
     killY: 920,
     minCamY: -760,
@@ -1230,7 +1230,7 @@ function buildWorld1Stages() {
     stageCode: '1-5',
     name: '1-5 수인마을 귀환',
     cameraProfile: 'world1_village',
-    subtitle: '평화로운 수인마을 귀환 (우호 NPC 9명 슬롯 & 상공 란 특수 루트)',
+    subtitle: '드디어 수인마을! 친구들에게 인사하고, 하늘 위 란의 길도 찾아봐요.',
     worldWidth: 6400,
     killY: 920,
     minCamY: -780,
@@ -1777,7 +1777,7 @@ function updateWorld1Hud() {
   $('zoneTitle').textContent = stg.name;
   $('routeLabel').textContent = stg.routeLabel
     ? stg.routeLabel
-    : `WORLD 1 · ${activeWorldStageIndex + 1} / ${world1Stages.filter(st => !st.worldId).length}`;
+    : `월드 1, ${activeWorldStageIndex + 1}/${world1Stages.filter(st => !st.worldId).length}`;
 }
 window.updateWorld1Hud = updateWorld1Hud;
 
@@ -1877,7 +1877,7 @@ function renderWorldMap7CardsUI() {
   const cardsHtml = WORLDMAP_CARDS.map(card => {
     const isComingSoon = card.implementationStatus === 'coming_soon';
     const extraProgress = card.id === 'world1_beastforest'
-      ? `<div class="wmCardMeta">진행: ${clearedCount}/5 클리어 · 특수자원 ${totalCols}/2 ${w1.regionCleared ? '· ★완주' : ''}</div>`
+      ? `<div class="wmCardMeta">스테이지 ${clearedCount}/5 클리어, 황금 크레파스 ${totalCols}/${world1Stages.filter(st => !st.worldId).reduce((a, st) => a + ((st.collectibleDefs && st.collectibleDefs.length) || 0), 0)}${w1.regionCleared ? ', 완주' : ''}</div>`
       : card.id === 'world2_monatium_night'
       ? (() => { const r = save.worlds.world2_monatium_night.stages['2-1']; return `<div class="wmCardMeta">${r.cleared ? `완주, 최고 기록 ${r.bestSeconds.toFixed(1)}초` : '스테이지 1개, 시청 앞 광장까지'}</div>`; })()
       : (card.id === 'story_replay'
@@ -1950,8 +1950,8 @@ function openWorld1StageSelect() {
     const bestTxt = rec.bestSeconds !== null ? `${rec.bestSeconds.toFixed(1)}초` : '기록 없음';
     const hasSpecSlot = stg.collectibleDefs.length > 0;
     const specTxt = hasSpecSlot
-      ? `특수자원: ${rec.collectibles.length}/${stg.collectibleDefs.length}`
-      : '특수자원 없음';
+      ? `황금 크레파스: ${rec.collectibles.length}/${stg.collectibleDefs.length}`
+      : '황금 크레파스 없음';
     const hasDualEntry = Boolean(stg.entrySpawns && stg.entrySpawns.upper && stg.entrySpawns.lower);
     const savedRoute = rec.lastEntryRoute || (hasDualEntry ? 'lower' : 'default');
     const savedRouteLabel = savedRoute === 'upper' ? '상단 입구' : (savedRoute === 'lower' ? '하단 입구' : '기본 입구');
@@ -1959,7 +1959,7 @@ function openWorld1StageSelect() {
     return `
       <div class="wmStageCard ${unlocked ? 'unlocked' : 'locked'} ${cleared ? 'cleared' : ''}" id="wmStageCard-${stg.stageCode}" data-stage-code="${stg.stageCode}" data-unlocked="${unlocked}">
         <div class="wmStageTop">
-          <span class="wmStageCode">STAGE ${stg.stageCode}</span>
+          <span class="wmStageCode">${stg.stageCode}</span>
           <span class="wmStageStatus">${cleared ? '✓ 클리어' : (unlocked ? '● 진입 가능' : '🔒 이전 단계 클리어 필요')}</span>
         </div>
         <strong class="wmStageName">${stg.name}</strong>

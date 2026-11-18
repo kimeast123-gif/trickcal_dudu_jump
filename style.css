@@ -672,6 +672,9 @@ body.mobile-game-landscape .encounterNav {
   .wmStageCard { min-width:195px; flex:0 0 auto; padding:8px; }
 }
 
+/* v1.7.0: the pause menu's restart asks for a second press */
+#restart.restartArmed { background: #fff1e6; border-color: #e8590c; color: #b5480b; }
+
 /* v1.6.6: worlds with a single map show their one stage card centred */
 .wmStageGrid.wmStageGridSingle { display:flex; justify-content:center; overflow-x:visible; }
 .wmStageGridSingle .wmStageCard { flex:0 0 auto; width:calc((100% - 40px) / 5); min-width:195px; }

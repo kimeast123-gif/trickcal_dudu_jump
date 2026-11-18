@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_6_9_261118';
+const NIGHT_ASSET_Q = '?v=v1_7_0_261118';
 const nightImages = {};
 let _nightAssetsRequested = false;
 
@@ -992,7 +992,7 @@ function openNightStageSelect() {
       <div class="wmStageGrid wmStageGridSingle">
         <div class="wmStageCard unlocked ${rec.cleared ? 'cleared' : ''}" id="wmStageCard-2-1" data-stage-code="2-1" data-unlocked="true">
           <div class="wmStageTop">
-            <span class="wmStageCode">STAGE 2-1</span>
+            <span class="wmStageCode">2-1</span>
             <span class="wmStageStatus">${rec.cleared ? '✓ 클리어' : '● 진입 가능'}</span>
           </div>
           <strong class="wmStageName">시저와 리온을 쫓아서</strong>

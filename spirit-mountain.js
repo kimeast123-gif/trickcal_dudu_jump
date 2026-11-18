@@ -17,7 +17,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_6_9_261118'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_7_0_261118'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
@@ -946,7 +946,7 @@ function openSpiritStageSelect() {
       </div>
       <div class="wmStageGrid wmStageGridSingle">
         <div class="wmStageCard unlocked ${rec.cleared ? 'cleared' : ''}" id="wmStageCard-3-1" data-stage-code="3-1" data-unlocked="true">
-          <div class="wmStageTop"><span class="wmStageCode">STAGE 3-1</span><span class="wmStageStatus">${rec.cleared ? '✓ 클리어' : '● 진입 가능'}</span></div>
+          <div class="wmStageTop"><span class="wmStageCode">3-1</span><span class="wmStageStatus">${rec.cleared ? '✓ 클리어' : '● 진입 가능'}</span></div>
           <strong class="wmStageName">정령들의 산을 오르자</strong>
           <p class="wmStageDesc">깜깜한 동굴과 뜨거운 용암, 바람 부는 눈길을 지나 꼭대기까지 올라가요.</p>
           <div class="wmStageStats">

@@ -503,8 +503,30 @@ function dispatchPrimaryAction() {
   startStoryMode();
 }
 
+// v1.7.0: from the pause menu, restarting throws away the run, so it needs a second press within 3s.
+let _restartArmedAt = 0;
 function dispatchRestartAction() {
   if (state === 'loading') return;
+  const btn = $('restart');
+  if (state === 'paused' && btn) {
+    const now = performance.now();
+    if (now - _restartArmedAt > 3000) {
+      _restartArmedAt = now;
+      if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+      btn.textContent = (typeof gameMode !== 'undefined' && gameMode === 'challenge')
+        ? '정말요? 한 번 더!' : '숲부터? 한 번 더!';
+      btn.classList.add('restartArmed');
+      setTimeout(() => {
+        if (performance.now() - _restartArmedAt >= 2900 && btn.dataset.label) {
+          btn.textContent = btn.dataset.label; delete btn.dataset.label; btn.classList.remove('restartArmed');
+        }
+      }, 3000);
+      return;
+    }
+    _restartArmedAt = 0;
+    if (btn.dataset.label) { btn.textContent = btn.dataset.label; delete btn.dataset.label; }
+    btn.classList.remove('restartArmed');
+  }
   if (typeof gameMode !== 'undefined' && gameMode === 'challenge') {
     startChallengeMode(0, null, challengeDifficultyId);
     return;

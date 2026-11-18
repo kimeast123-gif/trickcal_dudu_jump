@@ -176,6 +176,12 @@ function ensurePaused(reason = 'manual') {
     if (typeof modal === 'function') {
       modal('', '일시정지', subtitle, btnLabel);
     }
+    // v1.7.0: say what "restart" restarts (in the story it is the whole walk home, from the forest)
+    const rb = document.getElementById('restart');
+    if (rb && (typeof gameMode === 'undefined' || gameMode === 'story')) {
+      delete rb.dataset.label; rb.classList.remove('restartArmed');
+      rb.textContent = '숲부터 다시 걷기';
+    }
     syncMobileViewMode();
     return true;
   }

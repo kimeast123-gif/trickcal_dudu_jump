@@ -1046,7 +1046,7 @@ checkpointAt(erpien_a, 6350, '도심 외곽 진입로 (배경 전환 완료)', '
 // --- [P0-E.3 & P0-F 해결]: 에르피엔 A 본격 요정 코스 (x = 6800 ~ 10800, 수직 고도 y = 580 ~ -720 총 1,300px 대확장!) ---
 // 1. 좌측 하단 진입 지면 (x=6800..7210, y=580)
 floor(erpien_a, 6800, 410, 'stone', 580, { id: 'EA-GND-ENTRY', checkpointSafe: true, joinLeft: true });
-checkpointAt(erpien_a, 6920, '에르피엔 A · 요정 입구', '', 580);
+checkpointAt(erpien_a, 6920, '요정 탑 입구', '', 580);
 
 // 2. 좌측 수직·지그재그 상승부 일반 발판 4개 (EA-P01 ~ EA-P04, 층간 약 260~280px로 확연한 수직 분리!)
 // EA-P01 (y = 350, EA-F01 담당)
@@ -1093,7 +1093,7 @@ surface(erpien_a, 9760, 540, 130, 'stone', { id: 'EA-B10', routeOrder: 16, behav
 // 5. 중상부 초록 깃발 세이브 포인트 (`EA-P-CP`, x=7900..8160, y=-720)
 surface(erpien_a, 7900, -720, 260, 'stone', { id: 'EA-P-CP', checkpointSafe: true, dropThroughDisabled: true });
 wall(erpien_a, 7905, -700, 250, 24, 'stone', { id: 'EA-WALL-CP-UNDER', ceiling: true, noTopLand: true, underPlatformBeam: true });
-checkpointAt(erpien_a, 8030, '에르피엔 A · 중상부 세이브 깃발', '', -720);
+checkpointAt(erpien_a, 8030, '요정 탑 높은 길', '', -720);
 
 // 6. 중앙 최상단 긴 브릿지 (2요정 공유, `EA-P-TOP-C`, x=8330..9020, y=-680) 및 중앙 거대 수직 기둥 (`h=1212px`)
 surface(erpien_a, 8330, -680, 690, 'stone', { id: 'EA-P-TOP-C', dropThroughDisabled: true, role: '중앙 최상단 긴 플랫폼 (EA-F05, EA-F06 2요정 공유)' });
@@ -1134,9 +1134,10 @@ for (const [id, ph] of [['E-GATE-BLINK-1',0.0],['E-GATE-BLINK-2',0.5],
  const a = erpien_a.platforms.find(q => q.id === id);
  if (a) a.blink = { on: 3.0, warning: 0.75, off: 0.8, phase: ph };
 }
-// The gate-to-city buffer is a walk with no hazards; its checkpoint flag and the one right after it are removed.
+// The gate-to-city buffer is a walk with no hazards; its checkpoint flag is removed.
+// v1.7.0: the flag at the fairy tower entrance (6920) stays, so a fall in the hardest part of Erpien A no longer
+// sends Dudu back 4,500px to the gate fork.
 dropCheckpoint(erpien_a,6350);
-dropCheckpoint(erpien_a,6920);
 levels.push(erpien_a);
 
 
@@ -1349,6 +1350,32 @@ for (const [lo, hi] of [['E-CITY-01','E-CITY-02'],['E-CITY-02B','E-CITY-02C'],['
  relayPlatform(erpien_b, hi, a.x + 180 + 110, 410, 180);
 }
 levels.push(erpien_b);
+
+// v1.7.0: Erpien A (the fairy tower, the hardest area) had no candies at all, while Monatium A and Erpien B carried
+// 36 each in tight clusters. Twelve come out of each of those clusters and 24 go along Erpien A's route, so every
+// area but Monatium B carries 24 and the total stays 135. The candy line also shows the way up the tower.
+(function rebalanceCandies() {
+  const take = (l, pts) => {
+    for (const [x, y] of pts) {
+      const i = l.regularDefs.findIndex(c => Math.abs(c.x - x) < 3 && Math.abs(c.y - y) < 3);
+      if (i >= 0) l.regularDefs.splice(i, 1); else console.warn('[candy] none at', l.id, x, y);
+    }
+  };
+  take(monatium_a, [[4766, -98], [5340, 212], [5158, -553], [5113, -873], [4789, -1333], [5052, -1793], [5422, -413], [4835, -738],
+    [6602, -1818], [8961, -1798], [11661, -1773], [1430, 382]]);
+  take(erpien_b, [[635, 442], [1280, 442], [2650, 432], [2940, 392], [3650, 542], [4637, 413], [6275, 412], [9260, 437],
+    [10707, 307], [10862, 177], [13575, 317], [15375, 357]]);
+  const pts = [
+    [520, 542], [800, 542], [1180, 470], [1700, 542],          // the gate road and the first gap
+    [2362, 427], [2840, 362], [3650, 542],                     // over the two blinking planks
+    [4207, 412], [4565, 317], [4980, 542],                     // the high / low fork
+    [5600, 542], [6300, 542], [7000, 542],                     // the buffer walk to the tower
+    [7445, 312], [7782, 172], [8055, 32], [7990, -318], [7555, -658],   // up the fairy tower
+    [8675, -718], [9415, -658], [9515, -338], [9217, -18], [9480, 312], // across the top and back down
+    [10600, 542]                                               // the exit
+  ];
+  pts.forEach(([x, y], i) => addCandy(erpien_a, 'EA-C' + String(i + 1).padStart(2, '0'), x, y));
+})();
 // TEST28: Single source of truth for official gold crayon HUD and the priority ending.
 const _allSpecialDefs = levels.flatMap(lv => lv.specialDefs);
 const _specialIdSet = new Set(_allSpecialDefs.map(d => d.id));

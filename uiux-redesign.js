@@ -376,7 +376,7 @@
       const isComingSoon = card.implementationStatus === 'coming_soon';
       const statusText = isComingSoon ? '준비 중' : (card.id === 'world1_beastforest' && w1.regionCleared ? '완주 달성' : '진입 가능');
       const progressText = card.id === 'world1_beastforest'
-        ? `스테이지 ${clearedCount}/5 클리어, 황금 크레파스 ${totalCols}/2`
+        ? `스테이지 ${clearedCount}/5 클리어, 황금 크레파스 ${totalCols}/${world1Stages.filter(st => !st.worldId).reduce((a, st) => a + ((st.collectibleDefs && st.collectibleDefs.length) || 0), 0)}`   /* v1.7.0: was a fixed /2 */
         : (card.id === 'story_replay'
           ? '본편 6개 지역, 왕사탕 135개, 크레파스 12개'
           : (isComingSoon ? '추후 업데이트 예정 지역' : ''));   // v1.6.6: open single-map worlds show no note
