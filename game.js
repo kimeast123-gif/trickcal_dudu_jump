@@ -515,6 +515,7 @@ function platformStep(){
   a.dy=a.y-a.prevY;
  }
  if(typeof syncSpecialCoinPositions==='function')syncSpecialCoinPositions();
+ if(typeof syncRidingCandies==='function')syncRidingCandies();
 }
 
 function chooseSection(n){

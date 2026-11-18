@@ -223,6 +223,31 @@ function relayPlatform(l, id, nx, ny, nw, extra) {
  if (a.visual) a.visual = makeVisualMeta(l, a.x, a.y, a.w, a.skin, a);
  return a;
 }
+// v1.7.2: a candy placed on a moving platform rides it. Before, the candy stayed where the platform was at the start,
+// so it hung in mid-air (and between other platforms) for most of the platform's cycle.
+const ridingCandies = [];
+function attachRidingCandies() {
+ ridingCandies.length = 0;
+ for (const c of coins) {
+  for (const a of platforms) {
+   if (!a.motion) continue;
+   const r = Math.abs(a.motion.range || 0), bx = a.baseX ?? a.x, by = a.baseY ?? a.y;
+   const x1 = bx - (a.motion.axis === 'x' ? r : 0), x2 = bx + a.w + (a.motion.axis === 'x' ? r : 0);
+   const y1 = by - (a.motion.axis === 'x' ? 0 : r), y2 = by + (a.motion.axis === 'x' ? 0 : r);
+   if (c.x < x1 - 6 || c.x > x2 + 6 || c.y < y1 - 75 || c.y > y2 + 2) continue;
+   let ox = c.x - bx;
+   if (ox < 18 || ox > a.w - 18) ox = a.w / 2;
+   c.ride = a; c.rideOx = ox;
+   ridingCandies.push(c);
+   break;
+  }
+ }
+ syncRidingCandies();
+}
+function syncRidingCandies() {
+ for (const c of ridingCandies) { c.x = c.ride.x + c.rideOx; c.y = c.ride.y - 38; }
+}
+window.syncRidingCandies = syncRidingCandies;
 function dropPlatform(l, id) {
  const i = l.platforms.findIndex(q => q.id === id);
  if (i >= 0) l.platforms.splice(i, 1); else console.warn('[relay] cannot drop', id);
@@ -1376,6 +1401,17 @@ levels.push(erpien_b);
   ];
   pts.forEach(([x, y], i) => addCandy(erpien_a, 'EA-C' + String(i + 1).padStart(2, '0'), x, y));
 })();
+
+// v1.7.2: candies that a static audit (tools/qa/candy_audit.py) found sunk into a ledge, hanging off its end or
+// floating too high. Every resting candy sits 38px above the top it rests on.
+(function fixCandySpots() {
+  const fix = { 'M-C31': [14665, 382], 'M-C32': [17600, 392], 'M-C35': [24277, 412],   // sunk into the ledge
+    'MB-C04': [805, -653],                                                                 // floating 85px up
+    'E-C02': [1210, 442],                                                                  // sunk into the bridge
+    'E-C04': [2300, 372],    // was past the right end of E-CITY-02C and 17px below its top (wedged against its side)
+    'E-C05': [2900, 392] };  // was past the left end of E-CITY-04
+  for (const l of [monatium_a, monatium_b, erpien_b]) for (const c of l.regularDefs) if (fix[c.id]) { [c.x, c.y] = fix[c.id]; }
+})();
 // TEST28: Single source of truth for official gold crayon HUD and the priority ending.
 const _allSpecialDefs = levels.flatMap(lv => lv.specialDefs);
 const _specialIdSet = new Set(_allSpecialDefs.map(d => d.id));
@@ -1533,8 +1569,10 @@ function loadLevel(index,{atEnd=false,section=0}={}){
   category:d.category||'main',
   got:saved.has(d.id)
  }));
+ attachRidingCandies();
  syncSpecialCoinsForLevel(index);
  checkpoint=atEnd?sections.length-1:section;levelClock=0;reset();
+ syncRidingCandies();
  if(atEnd){
   p.x=END-240;p.y=580;p.on=platforms.find(a=>!a.wall&&!a.ceiling&&p.x>=a.x&&p.x<=a.x+a.w&&Math.abs(a.y-580)<6);
   p.ground=!!p.on;cam=Math.max(0,END-W);p.face=-1;

@@ -16,6 +16,7 @@ python tools/qa/regression.py                 # 커밋 전에 반드시. 전부 
 - 게임 코드를 바꾼 커밋은 `tools/qa/regression.py`가 전부 통과한 상태로만 올린다. 실패하면 고치거나, 의도한 변경이면 테스트를 함께 고치고 이유를 커밋 메시지에 쓴다.
 - 레벨 배치를 바꿨다면 `tools/qa/layout_map.py`로 도면을 보고, 새로 생긴 간격마다 `tools/qa/hops.py`로 실제로 건너지는지 확인한다. 야간 맵은 `night_hops.py`, `night_checks.py`, `night_run.py`, 정령산은 `spirit_hops.py`, `spirit_checks.py`, `spirit_run.py`.
 - 화면을 바꿨다면 `tools/qa/screens.py`로 전후 스크린샷을 비교한다.
+- 왕사탕 위치를 바꿨다면 `tools/qa/candy_audit.py`(플레이 없이 배치만 검사)가 PASS여야 한다. 쉬는 사탕은 발판 윗면 38px 위.
 - 이 저장소에는 단위 테스트 프레임워크가 없다. 위 스크립트가 실제 브라우저에서 게임을 돌려 확인하는 유일한 테스트다.
 
 ## 배포 규칙

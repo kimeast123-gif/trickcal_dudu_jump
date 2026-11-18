@@ -21,6 +21,7 @@ Claude 앱 대화에서 진행한 리뉴얼 작업을 Claude Code로 넘기기 �
 | v1.4 | 성능: 큰 이미지 자동 분할, 맵 전환 중 배경 미리 준비, HUD 흐림 제거, HUD 갱신 프레임당 1회, 저사양 자동 모드, `?fps=1` |
 | v1.4.1 | 마요가 붙잡은 뒤 재시작하거나 화면 밖에서 따라잡을 때 점프 상태가 남던 문제. 화면 가장자리에서 보이던 따라잡기 이동을 화면 밖으로. 인수인계 도구와 문서 |
 | v1.4.2 | HUD 흰 글씨가 크림 바탕에 묻히던 문제(v1.4 회귀), 가로 폰 옵션 창과 게임 화면 높이, 로비 문구, 모나티엄 B 탑 내부를 띠 단위로 미리 합성(31ms→20.5ms), `?fps=1` 정보 추가 |
+| v1.7.2 | 왕사탕 점검: `tools/qa/candy_audit.py`(정적 검사, PASS 필요), 움직이는 발판 위 사탕은 `attachRidingCandies`/`syncRidingCandies`로 발판을 따라감(`platformStep` 끝, loadLevel의 reset 뒤), 위치 수정 7개는 world.js `fixCandySpots` |
 | v1.7.1 | HUD 재배치(style.css 끝 v1.7.1 블록: `#mobileOptBtn`, `#sound`, `#full` 숨김, 체력 왼쪽 위, 숫자 숨김), 일시정지 메뉴 `#pauseSoundBtn`·`#pauseFullBtn`(`body[data-game-state=paused]`에서만 보임), 대시 링 `#dashRing`·`#vbtn-dash`에 `--dash`와 `data-dash-state`(game.js HUD 블록, 값이 바뀔 때만 씀) |
 | v1.7.0 | 디자인 리뷰(`docs/DESIGN_REVIEW.md`) "지금" 5개: 수인숲 설명 문구, 영문 머리말, 크레파스 총수 표시, 에르피엔 A 6920 깃발 복원, 왕사탕 재배치(`rebalanceCandies`, 지역별 24·24·24·15·24·24), 일시정지 다시 시작 2번 누르기 |
 | v1.6.9 | 첫 접속 71.5→39.3MB: `assets/*.png`, `assets/event/*.png`, `assets/title/*.png`를 WebP q90로(로더는 `.webp?v=31`, 타이틀은 `.webp?v=V4_*`), 글꼴 woff2 우선(ttf는 대체), `event.js`가 타이틀에서 모든 음악을 auto로 바꾸던 것 삭제, index.html preload·img 주소를 스크립트와 같은 주소로 |
