@@ -14,8 +14,8 @@
   // Centralized Configuration (§3-3, §3-4, §5, §8)
   const LOBBY_CONFIG = {
     ASSET_VERSION: 'V4_STANDALONE',
-    HERO_MASTER_DAY_SRC: 'assets/title/hero-dudu-master.png?v=V4_2_MINIMAL',
-    HERO_MASTER_NIGHT_SRC: 'assets/title/hero-dudu-night-master.png?v=V4_2_MINIMAL',
+    HERO_MASTER_DAY_SRC: 'assets/title/hero-dudu-master.webp?v=V4_2_MINIMAL',
+    HERO_MASTER_NIGHT_SRC: 'assets/title/hero-dudu-night-master.webp?v=V4_2_MINIMAL',
     THEME_PERIOD_MS: 35000,       // v5 §0-5 & §4.4: 35s input-independent Day<->Night cycle
     IDLE_DARK_MS: 35000,          // Legacy alias preserved for compatibility
     SLIDE_HOLD_MS: 4000,          // 4.0s full visibility hold per stage scene (C01)
@@ -115,8 +115,8 @@
     const code = String(stickerNum).padStart(2, '0');
     return `
       <div class="lobbyStickerItem ${extraClass}" data-sticker="${code}">
-        <img class="stickerImgDay" src="assets/title/sticker-${code}-day.png?v=V4_STANDALONE" alt="" draggable="false">
-        <img class="stickerImgNight" src="assets/title/sticker-${code}-night.png?v=V4_STANDALONE" alt="" draggable="false">
+        <img class="stickerImgDay" src="assets/title/sticker-${code}-day.webp?v=V4_STANDALONE" alt="" draggable="false">
+        <img class="stickerImgNight" src="assets/title/sticker-${code}-night.webp?v=V4_STANDALONE" alt="" draggable="false">
       </div>
     `;
   }
@@ -217,8 +217,8 @@
 
       <!-- 4. Foreground Grass Decoration under Dudu's feet (outside clip-path!) -->
       <div class="lobbyForeground" id="lobbyForeground" aria-hidden="true">
-        <img class="lobbyFgGrassDay" src="assets/title/fg-grass-day.png?v=V4_STANDALONE" alt="" draggable="false">
-        <img class="lobbyFgGrassNight" src="assets/title/fg-grass-night.png?v=V4_STANDALONE" alt="" draggable="false">
+        <img class="lobbyFgGrassDay" src="assets/title/fg-grass-day.webp?v=V4_STANDALONE" alt="" draggable="false">
+        <img class="lobbyFgGrassNight" src="assets/title/fg-grass-night.webp?v=V4_STANDALONE" alt="" draggable="false">
       </div>
 
       <!-- 5. [Gate A & B: B01~B03] Unclipped Single-Master Hero Dudu (.heroGlowLayer + .heroBodyLayer, ZERO ancestor clip-path!) -->
@@ -235,14 +235,14 @@
 
       <!-- 6. Independent "크왕!" Burst Speech Badge -->
       <div class="lobbyKwangBadge" id="lobbyKwangBadge">
-        <img class="lobbyKwangDay" src="assets/title/kwang-day.png?v=V4_STANDALONE" alt="크왕!" draggable="false">
-        <img class="lobbyKwangNight" src="assets/title/kwang-night.png?v=V4_STANDALONE" alt="" draggable="false">
+        <img class="lobbyKwangDay" src="assets/title/kwang-day.webp?v=V4_STANDALONE" alt="크왕!" draggable="false">
+        <img class="lobbyKwangNight" src="assets/title/kwang-night.webp?v=V4_STANDALONE" alt="" draggable="false">
       </div>
 
       <!-- 7. Top Calligraphy / Sticker Title Logo ("두두의 폴짝폴짝 대모험") -->
       <div class="lobbyLogo" id="lobbyLogo" aria-label="두두의 폴짝폴짝 대모험">
-        <img class="lobbyLogoDay" src="assets/title/logo-day.png?v=V4_STANDALONE" alt="두두의 폴짝폴짝 대모험" draggable="false">
-        <img class="lobbyLogoNight" src="assets/title/logo-night.png?v=V4_STANDALONE" alt="" draggable="false">
+        <img class="lobbyLogoDay" src="assets/title/logo-day.webp?v=V4_STANDALONE" alt="두두의 폴짝폴짝 대모험" draggable="false">
+        <img class="lobbyLogoNight" src="assets/title/logo-night.webp?v=V4_STANDALONE" alt="" draggable="false">
       </div>
 
       <div class="lobbyDemoStageTag" id="lobbyDemoStageTag">🏞️ ${DEMO_SCENES[0].title}</div>

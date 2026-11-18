@@ -47,7 +47,7 @@ const WORLDMAP_CARDS = [
     implementationStatus: 'playable',
     unlockCondition: 'storyClearConfirmed',
     action: 'openStoryReplay',
-    thumbnail: 'assets/event/opening.png?v=31',
+    thumbnail: 'assets/event/opening.webp?v=31',
     fallbackThumb: makePlaceholderSvgDataUri('스토리 모드 재도전', '25분 귀갓길 다시 걷기', '#5f8d6b', '#2b4c3f', '#ffe082', '🏡'),
     statusBadge: '플레이 가능',
     isPlaceholderArt: false

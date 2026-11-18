@@ -1193,7 +1193,7 @@ async function load(){try{Object.assign(meta,{
   "rest_happy_2": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
   "rest_happy_8": {"frames": 33, "fps": 24, "cols": 8, "facing": 1}
 });const coreDuduKeys=['idle','run','jump','spin'];
-const loadDuduKey=(name)=>new Promise((ok,no)=>{if(images[name])return ok(images[name]);let im=new Image();im.onload=()=>{images[name]=im;ok(im);};im.onerror=no;im.src='assets/'+name+'.png?v=30';});
+const loadDuduKey=(name)=>new Promise((ok,no)=>{if(images[name])return ok(images[name]);let im=new Image();im.onload=()=>{images[name]=im;ok(im);};im.onerror=no;im.src='assets/'+name+'.webp?v=31';});
 const duduCoreLoads=Promise.all(coreDuduKeys.map(loadDuduKey));
 const fontLoad=(document.fonts&&document.fonts.load)?document.fonts.load('16px "ONE Mobile POP"').catch(()=>{}):Promise.resolve();
 await Promise.all([duduCoreLoads,fontLoad,loadWorldImages(),loadNpcImages(),typeof preloadEventImages==='function'?preloadEventImages():Promise.resolve()]);

@@ -173,9 +173,9 @@ async function preloadEventImages(){
   const im=new Image();
   im.onload=async()=>{try{if(im.decode)await im.decode();}catch{}eventImages[k]=im;ok();};
   im.onerror=()=>ok();
-  im.src=EVENT_ROOT+k+'.png?v=30';
+  im.src=EVENT_ROOT+k+'.webp?v=31';
  })));
- setTimeout(()=>{for(const a of tracks){if(a.preload!=='auto')a.preload='auto';}},1500);
+ /* v1.6.9: tracks are no longer all downloaded on the title screen; playTrack() loads each one when it starts */
 }
 
 function hideAllCutsceneLayers(){
@@ -211,7 +211,7 @@ function showStory(kind){
  storyScriptStep=0;
  storyLine=storyScript.length?storyScript[0].text:(lines[kind]||lines.success);
  const imgKind=(kind==='special'||kind==='candy')?'success':kind;
- const src=eventImages[imgKind]?.src||(EVENT_ROOT+imgKind+'.png?v=12');
+ const src=eventImages[imgKind]?.src||(EVENT_ROOT+imgKind+'.webp?v=31');
  const baseEl=$('storyBase'),motionEl=$('storyMotion'),storyEl=$('story');
  $('storyText').textContent='';
  $('storyHint').textContent='클릭해서 계속';
