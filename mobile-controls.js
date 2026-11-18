@@ -182,6 +182,7 @@ function ensurePaused(reason = 'manual') {
       delete rb.dataset.label; rb.classList.remove('restartArmed');
       rb.textContent = '숲부터 다시 걷기';
     }
+    if (typeof syncPauseSoundBtn === 'function') syncPauseSoundBtn();
     syncMobileViewMode();
     return true;
   }

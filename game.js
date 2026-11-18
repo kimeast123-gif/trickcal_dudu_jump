@@ -57,6 +57,8 @@ function setMasterSoundVolume(percent){
  syncSoundVolumeUi();refreshLiveSoundVolumes();
 }
 window.setMasterSoundVolume=setMasterSoundVolume;
+function syncPauseSoundBtn(){const b=$('pauseSoundBtn');if(!b)return;const t=(muted||masterSoundVolume<=0)?'소리 꺼짐':'소리 켜짐';if(b.textContent!==t)b.textContent=t;}
+window.syncPauseSoundBtn=syncPauseSoundBtn;
 function toggleSound(){
  if(muted||masterSoundVolume<=0){
   muted=false;
@@ -620,6 +622,9 @@ $('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>{rese
 }
 window.triggerActiveModeRetry=triggerActiveModeRetry;
 $('retry').onclick=()=>triggerActiveModeRetry();for(let n=0;n<5;n++){if($('section'+n))$('section'+n).onclick=()=>chooseSection(n);}$('sound').onclick=toggleSound;setupSoundVolumeSlider();$('full').onclick=()=>{if(typeof requestGameFullscreenOrFocus==='function')requestGameFullscreenOrFocus('hud_btn');else if(document.fullscreenElement)document.exitFullscreen();else $('game').requestFullscreen().catch(()=>notify('브라우저에서 전체화면을 허용해 주세요.'));};
+/* v1.7.1: sound and fullscreen live in the pause menu (the HUD keeps only the pause button) */
+if($('pauseSoundBtn'))$('pauseSoundBtn').onclick=()=>{toggleSound();syncPauseSoundBtn();};
+if($('pauseFullBtn'))$('pauseFullBtn').onclick=()=>{$('full').click();};
 function isEditableTextTarget(el){
  const t=el||document.activeElement;
  if(!t||t===document.body||t===document.documentElement)return false;
@@ -1092,6 +1097,11 @@ function update(dt){
  const kb=(typeof getKeybindSummaryLabels==='function')?getKeybindSummaryLabels():{dash:'L SHIFT',j:'SPACE',d:'↓'};
  const nextDashTxt=p.guardStun>0?`경직 중 (${p.guardStun.toFixed(1)}s)`:p.dash>0?'대시 중':p.airDashUsed&&!p.ground?'대시 (착지 후 충전)':p.dashCooldown>0?'대시 충전 중':`${kb.dash} 대시 준비됨`;
  if(_hudDomCache.dashTxt!==nextDashTxt){_hudDomCache.dashTxt=nextDashTxt;$('dashStatus').textContent=nextDashTxt;}
+ /* v1.7.1: dash ring gauge (desktop HUD and the mobile dash button): fill = charge, colour = state */
+ const dashSt=p.guardStun>0?'stun':p.dash>0?'busy':(p.airDashUsed&&!p.ground)?'air':p.dashCooldown>0?'charge':'ready';
+ const dashFill=dashSt==='charge'?Math.round((1-p.dashCooldown/.55)*20)/20:dashSt==='ready'?1:0;
+ const dashKey=dashSt+dashFill;
+ if(_hudDomCache.dashRing!==dashKey){_hudDomCache.dashRing=dashKey;for(const el of [$('dashRing'),$('vbtn-dash')]){if(!el)continue;el.style.setProperty('--dash',dashFill);el.dataset.dashState=dashSt;}}
  const nextJumpW=(p.jumpHeld?Math.min(100,p.hold/.24*100).toFixed(1):'0')+'%';
  if(_hudDomCache.jumpW!==nextJumpW){_hudDomCache.jumpW=nextJumpW;$('jumpMeter').style.width=nextJumpW;}
  const nextJumpTxt=lookDownHold>0.10?`${kb.d} 아래쪽을 살펴보는 중`:`${kb.j} 점프, ${kb.d} 아래보기`;

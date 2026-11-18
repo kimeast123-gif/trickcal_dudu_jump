@@ -2240,3 +2240,57 @@ body.mobile-game-landscape,body.mobile-game-landscape .game,.mobileControls,.mob
   .optChoiceBtn { flex-basis: 0; padding: 6px 8px; font-size: 11.5px; }
   .mobileSettingsFooter { position: sticky; bottom: 0; z-index: 1; background: var(--ds-surface-card); padding: 8px 0 10px; margin-top: 2px; }
 }
+
+
+/* ===== v1.7.1 HUD regroup (design review U3, U4) =====
+   Left: where Dudu is and how much health she has. Right: what she has collected and the pause button.
+   Options, sound and fullscreen moved into the pause menu. The dash is a ring gauge instead of a text bar. */
+#mainHud #mobileOptBtn,
+#mainHud #sound,
+#mainHud #full { display: none !important; }
+
+body .playerHealthHud {
+  top: 56px !important;
+  left: 14px !important;
+  right: auto !important;
+}
+body #playerHealthCount { display: none !important; }
+@media (max-width: 960px), (max-height: 520px) {
+  body .playerHealthHud { top: 42px !important; left: 10px !important; }
+}
+
+/* pause-only buttons: shown in the pause menu, hidden on the start screen and result screens */
+.pauseOnlyBtn { display: none; }
+body[data-game-state="paused"] .pauseOnlyBtn { display: inline-flex; align-items: center; justify-content: center; }
+
+/* dash ring (desktop) */
+.practiceHUD #dashStatus { display: none; }
+.dashRing {
+  --dash: 1;
+  position: relative;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  background: conic-gradient(var(--dash-col, #f4ce83) calc(var(--dash) * 360deg), rgba(255,255,255,0.18) 0);
+  -webkit-mask: radial-gradient(circle, transparent 0 9px, #000 10px);
+          mask: radial-gradient(circle, transparent 0 9px, #000 10px);
+}
+.dashRing i { display: none; }
+.practiceHUD .dashRing::after { content: none; }
+.dashRing[data-dash-state="ready"] { --dash-col: #8ce99a; }
+.dashRing[data-dash-state="charge"] { --dash-col: #f4ce83; }
+.dashRing[data-dash-state="busy"], .dashRing[data-dash-state="air"] { --dash-col: #adb5bd; }
+.dashRing[data-dash-state="stun"] { --dash-col: #ff6b6b; --dash: 1 !important; }
+
+/* dash ring around the mobile dash button */
+#vbtn-dash { position: relative; }
+#vbtn-dash::before {
+  content: '';
+  position: absolute; inset: -5px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(var(--dash-col, #8ce99a) calc(var(--dash, 1) * 360deg), rgba(255,255,255,0.15) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+}
+#vbtn-dash[data-dash-state="ready"] { --dash-col: #8ce99a; }
+#vbtn-dash[data-dash-state="charge"] { --dash-col: #f4ce83; }
+#vbtn-dash[data-dash-state="busy"], #vbtn-dash[data-dash-state="air"] { --dash-col: #adb5bd; opacity: 0.75; }
+#vbtn-dash[data-dash-state="stun"] { --dash-col: #ff6b6b; }
