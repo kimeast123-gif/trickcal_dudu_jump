@@ -261,11 +261,16 @@ function updateShadow(dt){
  shadow.alpha+=(opacity-shadow.alpha)*(1-Math.exp(-dt*18));
  shadow.width+=((25-Math.min(11,height*.04))-shadow.width)*(1-Math.exp(-dt*14));
 }
-function spriteFacing(name){return (meta[name]?.facing??1)*p.face;}
+/* v1.7.3: every Dudu sheet is drawn facing left, so each one is marked facing -1 and mirrored when Dudu faces right */
+function spriteFacing(name){return (meta[name]?.facing??-1)*p.face;}
 const visual={name:'idle',phase:0,frame:0,blend:1,reset:true};
 const spriteLayer=document.createElement('canvas'),oldLayer=document.createElement('canvas');spriteLayer.width=oldLayer.width=256;spriteLayer.height=oldLayer.height=224;const sc=spriteLayer.getContext('2d'),oc=oldLayer.getContext('2d');
 function updateAnimation(dt){
- const name=state==='won'?'win':p.guardStun>0?'jump':p.dash>0?'run':!p.ground?(spin>0?'spin':'jump'):Math.abs(p.vx)>12?'run':'idle';
+ /* v1.7.3: hysteresis so the pose does not flicker: airborne only after 0.06s off the ground (or when rising), run starts above 30px/s and stops below 8px/s */
+ visual.airT=p.ground?0:(visual.airT||0)+dt;
+ const airborne=!p.ground&&(visual.airT>0.06||p.vy<-60);
+ const moving=visual.name==='run'?Math.abs(p.vx)>8:Math.abs(p.vx)>30;
+ const name=state==='won'?'win':p.guardStun>0?'jump':p.dash>0?'run':airborne?(spin>0?'spin':'jump'):moving?'run':'idle';
  if(name!==visual.name){oc.clearRect(0,0,256,224);oc.drawImage(spriteLayer,0,0);visual.name=name;visual.phase=0;visual.blend=0;if(name==='jump')visual.frame=Math.max(4,Math.min(11,7.5+p.vy/180));}
  visual.blend=Math.min(1,visual.blend+dt/.07);
  const runSpeedRatio=Math.min(1.22,Math.max(.42,Math.abs(p.vx)/320));
@@ -1190,19 +1195,19 @@ cam: (${Math.round(rCam)}, ${Math.round(rCamY)}) | prof: ${debugMetrics.cameraPr
  requestAnimationFrame(frame);
 }
 async function load(){try{Object.assign(meta,{
-  "idle": {"frames": 31, "fps": 24, "facing": 1},
+  "idle": {"frames": 31, "fps": 24, "facing": -1},
   "run": {"frames": 19, "fps": 24, "facing": -1},
   "jump": {"frames": 16, "fps": 24, "facing": -1},
   "spin": {"frames": 14, "fps": 24, "facing": -1},
-  "win": {"frames": 72, "fps": 24, "facing": 1},
-  "rest_angry_3": {"frames": 26, "fps": 24, "cols": 8, "facing": 1},
-  "rest_blank_3": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
-  "rest_close_1": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
-  "rest_cute_3": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
-  "rest_eat_2": {"frames": 26, "fps": 24, "cols": 8, "facing": 1},
-  "rest_happy_1": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
-  "rest_happy_2": {"frames": 33, "fps": 24, "cols": 8, "facing": 1},
-  "rest_happy_8": {"frames": 33, "fps": 24, "cols": 8, "facing": 1}
+  "win": {"frames": 72, "fps": 24, "facing": -1},
+  "rest_angry_3": {"frames": 26, "fps": 24, "cols": 8, "facing": -1},
+  "rest_blank_3": {"frames": 33, "fps": 24, "cols": 8, "facing": -1},
+  "rest_close_1": {"frames": 33, "fps": 24, "cols": 8, "facing": -1},
+  "rest_cute_3": {"frames": 33, "fps": 24, "cols": 8, "facing": -1},
+  "rest_eat_2": {"frames": 26, "fps": 24, "cols": 8, "facing": -1},
+  "rest_happy_1": {"frames": 33, "fps": 24, "cols": 8, "facing": -1},
+  "rest_happy_2": {"frames": 33, "fps": 24, "cols": 8, "facing": -1},
+  "rest_happy_8": {"frames": 33, "fps": 24, "cols": 8, "facing": -1}
 });const coreDuduKeys=['idle','run','jump','spin'];
 const loadDuduKey=(name)=>new Promise((ok,no)=>{if(images[name])return ok(images[name]);let im=new Image();im.onload=()=>{images[name]=im;ok(im);};im.onerror=no;im.src='assets/'+name+'.webp?v=31';});
 const duduCoreLoads=Promise.all(coreDuduKeys.map(loadDuduKey));
