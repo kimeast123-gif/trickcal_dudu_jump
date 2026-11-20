@@ -96,10 +96,16 @@ const rest={clip:null,elapsed:0,wait:3.5,bag:[],previous:null};
 const shadow={y:583,alpha:.13,width:25};
 const _hudDomCache={toastOp:'',progW:'',dashTxt:'',jumpW:'',jumpTxt:''};
 
+/* v1.7.4: rest-pose anchors re-measured so their bodies line up with idle (they were 1-5px off, so Dudu twitched
+   sideways whenever a rest pose started or ended). SPRITE_FOOT is the row where the feet end in each sheet: the
+   lowest pixel of every frame is the costume's tail or hem, so pinning row 180 to the ground left the feet 3-5px
+   above it. Poses in the air keep 180. */
+const SPRITE_FOOT={idle:176,win:176,run:177,rest_angry_3:177,rest_blank_3:178,rest_close_1:177,rest_cute_3:177,
+ rest_eat_2:177,rest_happy_1:177,rest_happy_2:177,rest_happy_8:177};
 const SPRITE_ANCHORS={
  idle:76,win:76,run:79,jump:95,spin:95,
- rest_angry_3:79,rest_blank_3:76,rest_close_1:79,rest_cute_3:77,
- rest_eat_2:79,rest_happy_1:79,rest_happy_2:79,rest_happy_8:82
+ rest_angry_3:76,rest_blank_3:73,rest_close_1:77,rest_cute_3:75,
+ rest_eat_2:78,rest_happy_1:77,rest_happy_2:77,rest_happy_8:82
 };
 
 const debugMetrics={
@@ -296,7 +302,7 @@ function drawSample(name,frame,alpha=1){
  sc.scale(spriteFacing(name),1);
  sc.globalCompositeOperation='source-over';
  sc.globalAlpha=alpha;
- sc.drawImage(images[name],f%cols*192,Math.floor(f/cols)*192,192,192,-anchor,-180,192,192);
+ sc.drawImage(images[name],f%cols*192,Math.floor(f/cols)*192,192,192,-anchor,-(SPRITE_FOOT[name]??180),192,192);
  sc.restore();
 }
 function renderCharacter(){
@@ -305,8 +311,9 @@ function renderCharacter(){
  const name=visual.name;
  if(name==='idle'&&rest.clip){
   const blend=restBlend();
-  if(blend<.5)drawSample('idle',visual.frame,visual.blend);
-  else drawSample(rest.clip,rest.elapsed*meta[rest.clip].fps,visual.blend);
+  /* v1.7.4: cross-fade idle and the rest pose instead of swapping them at the halfway point */
+  if(blend<1)drawSample('idle',visual.frame,visual.blend*(1-blend));
+  if(blend>0)drawSample(rest.clip,rest.elapsed*meta[rest.clip].fps,visual.blend*blend);
  }else{
   drawSample(name,visual.frame,visual.blend);
  }

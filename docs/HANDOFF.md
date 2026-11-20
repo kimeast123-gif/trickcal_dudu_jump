@@ -21,6 +21,7 @@ Claude 앱 대화에서 진행한 리뉴얼 작업을 Claude Code로 넘기기 �
 | v1.4 | 성능: 큰 이미지 자동 분할, 맵 전환 중 배경 미리 준비, HUD 흐림 제거, HUD 갱신 프레임당 1회, 저사양 자동 모드, `?fps=1` |
 | v1.4.1 | 마요가 붙잡은 뒤 재시작하거나 화면 밖에서 따라잡을 때 점프 상태가 남던 문제. 화면 가장자리에서 보이던 따라잡기 이동을 화면 밖으로. 인수인계 도구와 문서 |
 | v1.4.2 | HUD 흰 글씨가 크림 바탕에 묻히던 문제(v1.4 회귀), 가로 폰 옵션 창과 게임 화면 높이, 로비 문구, 모나티엄 B 탑 내부를 띠 단위로 미리 합성(31ms→20.5ms), `?fps=1` 정보 추가 |
+| v1.7.4 | 두두 발 위치: `SPRITE_FOOT`(시트별 발끝 행, 서기 176 등, 공중 동작 180)로 그림, rest_* 앵커를 서기 몸에 맞춰 다시 잼, 서기와 쉬는 동작은 `restBlend`로 교차 페이드 |
 | v1.7.3 | 두두 스프라이트 방향: 모든 시트가 왼쪽을 봄 → meta의 idle·win·rest_* `facing`을 -1로(run/jump/spin과 같게), `spriteFacing` 기본값 -1. `updateAnimation`에 동작 전환 히스테리시스(공중 0.06초, 달리기 30/8px/s) |
 | v1.7.2 | 왕사탕 점검: `tools/qa/candy_audit.py`(정적 검사, PASS 필요), 움직이는 발판 위 사탕은 `attachRidingCandies`/`syncRidingCandies`로 발판을 따라감(`platformStep` 끝, loadLevel의 reset 뒤), 위치 수정 7개는 world.js `fixCandySpots` |
 | v1.7.1 | HUD 재배치(style.css 끝 v1.7.1 블록: `#mobileOptBtn`, `#sound`, `#full` 숨김, 체력 왼쪽 위, 숫자 숨김), 일시정지 메뉴 `#pauseSoundBtn`·`#pauseFullBtn`(`body[data-game-state=paused]`에서만 보임), 대시 링 `#dashRing`·`#vbtn-dash`에 `--dash`와 `data-dash-state`(game.js HUD 블록, 값이 바뀔 때만 씀) |
