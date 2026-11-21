@@ -1,0 +1,38 @@
+[
+  {
+    "left": "spirit_lava_long_left",
+    "right": "spirit_lava_long_mid_a",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "spirit_lava_long_mid_a",
+    "right": "spirit_lava_long_mid_b",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "spirit_lava_long_mid_b",
+    "right": "spirit_lava_long_right",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "spirit_lava_long_left",
+    "right": "spirit_lava_long_right",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "spirit_lava_long_mid_a",
+    "right": "spirit_lava_long_mid_a",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "spirit_lava_long_mid_b",
+    "right": "spirit_lava_long_mid_b",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  }
+]

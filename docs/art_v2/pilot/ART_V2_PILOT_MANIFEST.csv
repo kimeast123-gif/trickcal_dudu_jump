@@ -1,0 +1,9 @@
+﻿name,family,width,height,contactY,outputScale,intendedUse,file,atlas4x,rect4x,approved
+forest_w1_compact_left,forest_w1,24,64,18,1,left cap,01_tiles_1x/forest_w1_compact_left.png,02_atlases_4x/forest_w1_sheet_4x.png,"[0, 0, 96, 256]",False
+forest_w1_compact_fill_a,forest_w1,16,64,18,1,repeat fill,01_tiles_1x/forest_w1_compact_fill_a.png,02_atlases_4x/forest_w1_sheet_4x.png,"[160, 0, 64, 256]",False
+forest_w1_compact_fill_b,forest_w1,16,64,18,1,repeat fill,01_tiles_1x/forest_w1_compact_fill_b.png,02_atlases_4x/forest_w1_sheet_4x.png,"[288, 0, 64, 256]",False
+forest_w1_compact_right,forest_w1,24,64,18,1,right cap,01_tiles_1x/forest_w1_compact_right.png,02_atlases_4x/forest_w1_sheet_4x.png,"[416, 0, 96, 256]",False
+spirit_lava_long_left,spirit_lava,44,74,6,1,left cap,01_tiles_1x/spirit_lava_long_left.png,02_atlases_4x/spirit_lava_sheet_4x.png,"[0, 0, 176, 296]",False
+spirit_lava_long_mid_a,spirit_lava,394,74,6,1,repeat fill,01_tiles_1x/spirit_lava_long_mid_a.png,02_atlases_4x/spirit_lava_sheet_4x.png,"[240, 0, 1576, 296]",False
+spirit_lava_long_mid_b,spirit_lava,394,74,6,1,repeat fill,01_tiles_1x/spirit_lava_long_mid_b.png,02_atlases_4x/spirit_lava_sheet_4x.png,"[1880, 0, 1576, 296]",False
+spirit_lava_long_right,spirit_lava,44,74,6,1,right cap,01_tiles_1x/spirit_lava_long_right.png,02_atlases_4x/spirit_lava_sheet_4x.png,"[3520, 0, 176, 296]",False

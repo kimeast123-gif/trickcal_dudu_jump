@@ -1,0 +1,159 @@
+{
+  "version": "V2-pilot-20261122",
+  "status": "PILOT_UNAPPROVED",
+  "reference": "GPT_ASSET_BRIEF.md / ART_V2_ASSET_SPEC.md",
+  "files": [
+    {
+      "name": "forest_w1_compact_left",
+      "family": "forest_w1",
+      "file": "01_tiles_1x/forest_w1_compact_left.png",
+      "atlas4x": "02_atlases_4x/forest_w1_sheet_4x.png",
+      "rect4x": [
+        0,
+        0,
+        96,
+        256
+      ],
+      "width": 24,
+      "height": 64,
+      "contactY": 18,
+      "outputScale": 1,
+      "intendedUse": "left cap",
+      "alpha": true,
+      "approved": false
+    },
+    {
+      "name": "forest_w1_compact_fill_a",
+      "family": "forest_w1",
+      "file": "01_tiles_1x/forest_w1_compact_fill_a.png",
+      "atlas4x": "02_atlases_4x/forest_w1_sheet_4x.png",
+      "rect4x": [
+        160,
+        0,
+        64,
+        256
+      ],
+      "width": 16,
+      "height": 64,
+      "contactY": 18,
+      "outputScale": 1,
+      "intendedUse": "repeat fill",
+      "alpha": true,
+      "approved": false
+    },
+    {
+      "name": "forest_w1_compact_fill_b",
+      "family": "forest_w1",
+      "file": "01_tiles_1x/forest_w1_compact_fill_b.png",
+      "atlas4x": "02_atlases_4x/forest_w1_sheet_4x.png",
+      "rect4x": [
+        288,
+        0,
+        64,
+        256
+      ],
+      "width": 16,
+      "height": 64,
+      "contactY": 18,
+      "outputScale": 1,
+      "intendedUse": "repeat fill",
+      "alpha": true,
+      "approved": false
+    },
+    {
+      "name": "forest_w1_compact_right",
+      "family": "forest_w1",
+      "file": "01_tiles_1x/forest_w1_compact_right.png",
+      "atlas4x": "02_atlases_4x/forest_w1_sheet_4x.png",
+      "rect4x": [
+        416,
+        0,
+        96,
+        256
+      ],
+      "width": 24,
+      "height": 64,
+      "contactY": 18,
+      "outputScale": 1,
+      "intendedUse": "right cap",
+      "alpha": true,
+      "approved": false
+    },
+    {
+      "name": "spirit_lava_long_left",
+      "family": "spirit_lava",
+      "file": "01_tiles_1x/spirit_lava_long_left.png",
+      "atlas4x": "02_atlases_4x/spirit_lava_sheet_4x.png",
+      "rect4x": [
+        0,
+        0,
+        176,
+        296
+      ],
+      "width": 44,
+      "height": 74,
+      "contactY": 6,
+      "outputScale": 1,
+      "intendedUse": "left cap",
+      "alpha": true,
+      "approved": false
+    },
+    {
+      "name": "spirit_lava_long_mid_a",
+      "family": "spirit_lava",
+      "file": "01_tiles_1x/spirit_lava_long_mid_a.png",
+      "atlas4x": "02_atlases_4x/spirit_lava_sheet_4x.png",
+      "rect4x": [
+        240,
+        0,
+        1576,
+        296
+      ],
+      "width": 394,
+      "height": 74,
+      "contactY": 6,
+      "outputScale": 1,
+      "intendedUse": "repeat fill",
+      "alpha": true,
+      "approved": false
+    },
+    {
+      "name": "spirit_lava_long_mid_b",
+      "family": "spirit_lava",
+      "file": "01_tiles_1x/spirit_lava_long_mid_b.png",
+      "atlas4x": "02_atlases_4x/spirit_lava_sheet_4x.png",
+      "rect4x": [
+        1880,
+        0,
+        1576,
+        296
+      ],
+      "width": 394,
+      "height": 74,
+      "contactY": 6,
+      "outputScale": 1,
+      "intendedUse": "repeat fill",
+      "alpha": true,
+      "approved": false
+    },
+    {
+      "name": "spirit_lava_long_right",
+      "family": "spirit_lava",
+      "file": "01_tiles_1x/spirit_lava_long_right.png",
+      "atlas4x": "02_atlases_4x/spirit_lava_sheet_4x.png",
+      "rect4x": [
+        3520,
+        0,
+        176,
+        296
+      ],
+      "width": 44,
+      "height": 74,
+      "contactY": 6,
+      "outputScale": 1,
+      "intendedUse": "right cap",
+      "alpha": true,
+      "approved": false
+    }
+  ]
+}

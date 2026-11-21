@@ -1,0 +1,56 @@
+[
+  {
+    "width": 48,
+    "segments": 2,
+    "seam_mean_diffs": [
+      0.0
+    ],
+    "max_mean_seam_diff": 0.0
+  },
+  {
+    "width": 64,
+    "segments": 3,
+    "seam_mean_diffs": [
+      0.0,
+      0.0
+    ],
+    "max_mean_seam_diff": 0.0
+  },
+  {
+    "width": 92,
+    "segments": 5,
+    "seam_mean_diffs": [
+      0.0,
+      0.0,
+      5.685,
+      0.0
+    ],
+    "max_mean_seam_diff": 5.685
+  },
+  {
+    "width": 110,
+    "segments": 6,
+    "seam_mean_diffs": [
+      0.0,
+      0.0,
+      0.0,
+      1.524,
+      2.036
+    ],
+    "max_mean_seam_diff": 2.036
+  },
+  {
+    "width": 140,
+    "segments": 8,
+    "seam_mean_diffs": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      4.696,
+      0.0
+    ],
+    "max_mean_seam_diff": 4.696
+  }
+]

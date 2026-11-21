@@ -1,0 +1,38 @@
+[
+  {
+    "left": "forest_w1_compact_left",
+    "right": "forest_w1_compact_fill_a",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "forest_w1_compact_fill_a",
+    "right": "forest_w1_compact_fill_b",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "forest_w1_compact_fill_b",
+    "right": "forest_w1_compact_right",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "forest_w1_compact_left",
+    "right": "forest_w1_compact_right",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "forest_w1_compact_fill_a",
+    "right": "forest_w1_compact_fill_a",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  },
+  {
+    "left": "forest_w1_compact_fill_b",
+    "right": "forest_w1_compact_fill_b",
+    "max_RGBA_channel_diff": 0,
+    "mean_RGBA_channel_diff": 0.0
+  }
+]
