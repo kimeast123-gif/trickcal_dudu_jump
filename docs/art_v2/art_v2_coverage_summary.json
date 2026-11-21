@@ -1,0 +1,136 @@
+{
+ "v2_coverage": {
+  "forest_story": {
+   "ground": [
+    0,
+    8
+   ],
+   "wall": [
+    0,
+    3
+   ],
+   "long": [
+    0,
+    4
+   ],
+   "small": [
+    0,
+    4
+   ],
+   "micro": [
+    0,
+    1
+   ]
+  },
+  "forest_world1": {
+   "ground": [
+    0,
+    11
+   ],
+   "small": [
+    0,
+    24
+   ],
+   "blink": [
+    0,
+    19
+   ],
+   "long": [
+    0,
+    17
+   ],
+   "ceiling": [
+    0,
+    3
+   ],
+   "medium": [
+    0,
+    19
+   ],
+   "wall": [
+    0,
+    6
+   ],
+   "micro": [
+    0,
+    33
+   ]
+  },
+  "spirit_cave": {
+   "floor": [
+    0,
+    1
+   ],
+   "long": [
+    0,
+    16
+   ],
+   "micro_or_small": [
+    0,
+    9
+   ],
+   "outer_wall": [
+    0,
+    1
+   ],
+   "pillar": [
+    0,
+    4
+   ]
+  },
+  "spirit_out": {
+   "long": [
+    0,
+    3
+   ],
+   "outer_wall": [
+    0,
+    1
+   ]
+  },
+  "spirit_lava": {
+   "long": [
+    0,
+    5
+   ],
+   "blink": [
+    0,
+    6
+   ],
+   "outer_wall": [
+    0,
+    2
+   ],
+   "pillar": [
+    0,
+    1
+   ]
+  },
+  "spirit_snow": {
+   "long": [
+    0,
+    14
+   ],
+   "micro_or_small": [
+    0,
+    30
+   ],
+   "blink": [
+    0,
+    13
+   ]
+  }
+ },
+ "prototype_counts": {
+  "forest_story": 5,
+  "forest_world1": 54,
+  "spirit_cave": 16
+ },
+ "rows": 273,
+ "uneven_scale_rows": [
+  "SM-L3",
+  "SM-L4",
+  "SM-L5",
+  "SM-U5"
+ ]
+}
