@@ -54,7 +54,7 @@ js = f"""// ====================================================================
   for (const k of Object.keys(KIT)) for (const n of PARTS[k]) {{
     const im = new Image();
     im.onload = () => {{ KIT[k].img[n] = im; }};
-    im.src = KIT[k].dir + n + '.png?v=pilot261122';
+    im.src = KIT[k].dir + n + '.png?v=pilot261122r1';
   }}
   const failed = {{}};
   function fail(k, e) {{ failed[k] = true; console.warn('[art v2 pilot] ' + k + ' off:', e); }}

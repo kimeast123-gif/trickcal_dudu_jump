@@ -1,82 +1,108 @@
-[
-  {
-    "part": "forest_w1_compact_left",
-    "dimensions_ok": true,
-    "RGBA": true,
-    "contactY": 18,
-    "coverage_at_contact": 0.958,
-    "fraction_above_contact": 0.0,
-    "alpha_core_below_contact": 1.0,
-    "bytes": 2612
+{
+  "version": "revision1",
+  "file_dimensions": {
+    "forest_w1_compact_left": [
+      24,
+      64
+    ],
+    "forest_w1_compact_fill_a": [
+      16,
+      64
+    ],
+    "forest_w1_compact_fill_b": [
+      16,
+      64
+    ],
+    "forest_w1_compact_right": [
+      24,
+      64
+    ],
+    "spirit_lava_long_left": [
+      44,
+      74
+    ],
+    "spirit_lava_long_mid_a": [
+      394,
+      74
+    ],
+    "spirit_lava_long_mid_b": [
+      394,
+      74
+    ],
+    "spirit_lava_long_right": [
+      44,
+      74
+    ]
   },
-  {
-    "part": "forest_w1_compact_fill_a",
-    "dimensions_ok": true,
-    "RGBA": true,
-    "contactY": 18,
-    "coverage_at_contact": 1.0,
-    "fraction_above_contact": 0.0,
-    "alpha_core_below_contact": 1.0,
-    "bytes": 1488
+  "contact": {
+    "forest_w1_compact_left": {
+      "requiredContactY": 18,
+      "firstRowCoverage90p": 18,
+      "opaqueCoverageAtContact": 0.917
+    },
+    "forest_w1_compact_fill_a": {
+      "requiredContactY": 18,
+      "firstRowCoverage90p": 18,
+      "opaqueCoverageAtContact": 1.0
+    },
+    "forest_w1_compact_fill_b": {
+      "requiredContactY": 18,
+      "firstRowCoverage90p": 18,
+      "opaqueCoverageAtContact": 1.0
+    },
+    "forest_w1_compact_right": {
+      "requiredContactY": 18,
+      "firstRowCoverage90p": 18,
+      "opaqueCoverageAtContact": 0.917
+    },
+    "spirit_lava_long_left": {
+      "requiredContactY": 6,
+      "firstRowCoverage90p": 6,
+      "opaqueCoverageAtContact": 0.932
+    },
+    "spirit_lava_long_mid_a": {
+      "requiredContactY": 6,
+      "firstRowCoverage90p": 6,
+      "opaqueCoverageAtContact": 1.0
+    },
+    "spirit_lava_long_mid_b": {
+      "requiredContactY": 6,
+      "firstRowCoverage90p": 6,
+      "opaqueCoverageAtContact": 1.0
+    },
+    "spirit_lava_long_right": {
+      "requiredContactY": 6,
+      "firstRowCoverage90p": 6,
+      "opaqueCoverageAtContact": 0.932
+    }
   },
-  {
-    "part": "forest_w1_compact_fill_b",
-    "dimensions_ok": true,
-    "RGBA": true,
-    "contactY": 18,
-    "coverage_at_contact": 1.0,
-    "fraction_above_contact": 0.0,
-    "alpha_core_below_contact": 1.0,
-    "bytes": 1469
+  "seams": {
+    "forest_w1": {
+      "maxFullRGBAAbsDiff": 0,
+      "meanFullRGBAAbsDiff": 0.0,
+      "legalJoinsChecked": 9
+    },
+    "spirit_lava": {
+      "maxFullRGBAAbsDiff": 0,
+      "meanFullRGBAAbsDiff": 0.0,
+      "legalJoinsChecked": 9
+    }
   },
-  {
-    "part": "forest_w1_compact_right",
-    "dimensions_ok": true,
-    "RGBA": true,
-    "contactY": 18,
-    "coverage_at_contact": 0.958,
-    "fraction_above_contact": 0.0,
-    "alpha_core_below_contact": 1.0,
-    "bytes": 2669
+  "sample_widths": {
+    "forest_w1": [
+      48,
+      64,
+      92,
+      110,
+      140
+    ],
+    "spirit_lava": [
+      313,
+      548,
+      690,
+      745,
+      1960
+    ]
   },
-  {
-    "part": "spirit_lava_long_left",
-    "dimensions_ok": true,
-    "RGBA": true,
-    "contactY": 6,
-    "coverage_at_contact": 0.932,
-    "fraction_above_contact": 0.0,
-    "alpha_core_below_contact": 0.995,
-    "bytes": 2545
-  },
-  {
-    "part": "spirit_lava_long_mid_a",
-    "dimensions_ok": true,
-    "RGBA": true,
-    "contactY": 6,
-    "coverage_at_contact": 1.0,
-    "fraction_above_contact": 0.0,
-    "alpha_core_below_contact": 1.0,
-    "bytes": 19722
-  },
-  {
-    "part": "spirit_lava_long_mid_b",
-    "dimensions_ok": true,
-    "RGBA": true,
-    "contactY": 6,
-    "coverage_at_contact": 1.0,
-    "fraction_above_contact": 0.0,
-    "alpha_core_below_contact": 1.0,
-    "bytes": 19742
-  },
-  {
-    "part": "spirit_lava_long_right",
-    "dimensions_ok": true,
-    "RGBA": true,
-    "contactY": 6,
-    "coverage_at_contact": 0.932,
-    "fraction_above_contact": 0.0,
-    "alpha_core_below_contact": 0.995,
-    "bytes": 2757
-  }
-]
+  "qa_scope": "Static raster/composite only; not real in-browser game-play testing"
+}

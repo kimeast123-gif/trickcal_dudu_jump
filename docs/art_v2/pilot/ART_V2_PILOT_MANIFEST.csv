@@ -1,9 +1,9 @@
-﻿name,family,width,height,contactY,outputScale,intendedUse,file,atlas4x,rect4x,approved
-forest_w1_compact_left,forest_w1,24,64,18,1,left cap,01_tiles_1x/forest_w1_compact_left.png,02_atlases_4x/forest_w1_sheet_4x.png,"[0, 0, 96, 256]",False
-forest_w1_compact_fill_a,forest_w1,16,64,18,1,repeat fill,01_tiles_1x/forest_w1_compact_fill_a.png,02_atlases_4x/forest_w1_sheet_4x.png,"[160, 0, 64, 256]",False
-forest_w1_compact_fill_b,forest_w1,16,64,18,1,repeat fill,01_tiles_1x/forest_w1_compact_fill_b.png,02_atlases_4x/forest_w1_sheet_4x.png,"[288, 0, 64, 256]",False
-forest_w1_compact_right,forest_w1,24,64,18,1,right cap,01_tiles_1x/forest_w1_compact_right.png,02_atlases_4x/forest_w1_sheet_4x.png,"[416, 0, 96, 256]",False
-spirit_lava_long_left,spirit_lava,44,74,6,1,left cap,01_tiles_1x/spirit_lava_long_left.png,02_atlases_4x/spirit_lava_sheet_4x.png,"[0, 0, 176, 296]",False
-spirit_lava_long_mid_a,spirit_lava,394,74,6,1,repeat fill,01_tiles_1x/spirit_lava_long_mid_a.png,02_atlases_4x/spirit_lava_sheet_4x.png,"[240, 0, 1576, 296]",False
-spirit_lava_long_mid_b,spirit_lava,394,74,6,1,repeat fill,01_tiles_1x/spirit_lava_long_mid_b.png,02_atlases_4x/spirit_lava_sheet_4x.png,"[1880, 0, 1576, 296]",False
-spirit_lava_long_right,spirit_lava,44,74,6,1,right cap,01_tiles_1x/spirit_lava_long_right.png,02_atlases_4x/spirit_lava_sheet_4x.png,"[3520, 0, 176, 296]",False
+﻿name,family,file,width,height,contactY,outputScale,approved,sha256
+forest_w1_compact_left,forest_w1,01_tiles_1x/forest_w1_compact_left.png,24,64,18,1,False,eab257cf6708650e0732a2e57cc971dc9caa940d017668e4e99da4368a7d8a07
+forest_w1_compact_fill_a,forest_w1,01_tiles_1x/forest_w1_compact_fill_a.png,16,64,18,1,False,cf14f49d3692b255344d4f9ca5dcb7078bb56ae40d32f81fff45b424f6e748a1
+forest_w1_compact_fill_b,forest_w1,01_tiles_1x/forest_w1_compact_fill_b.png,16,64,18,1,False,6ab9e4d40b80deef7bf127e79f8028f1c9e83619b9fd9002e7f270b9a723e660
+forest_w1_compact_right,forest_w1,01_tiles_1x/forest_w1_compact_right.png,24,64,18,1,False,5a3a0ff0108a2f69b1e5d8a1ffcfb117c42d60e25951981980f3315debac7fc4
+spirit_lava_long_left,spirit_lava,01_tiles_1x/spirit_lava_long_left.png,44,74,6,1,False,d467bf970d29f634cb42ddf8758b63a3c09c063cc9f653bcdcd84bf9917fb41c
+spirit_lava_long_mid_a,spirit_lava,01_tiles_1x/spirit_lava_long_mid_a.png,394,74,6,1,False,beadf738a10f91c436ed6c74da98e02c574cc7c80c27ce655d0ed70f14837c7e
+spirit_lava_long_mid_b,spirit_lava,01_tiles_1x/spirit_lava_long_mid_b.png,394,74,6,1,False,ff768a89f565273597499bdb9e73310df4323f54f7576d53ed05a111fc6a40d1
+spirit_lava_long_right,spirit_lava,01_tiles_1x/spirit_lava_long_right.png,44,74,6,1,False,f1a6ad188eb985229e99001e897e07aae6830c4d92b6e243cb17630e8b18bb54

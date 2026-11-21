@@ -24,72 +24,72 @@
       "2": {
         "srcX": 14,
         "width": 2,
-        "mean_edge_diff": 0.428
+        "mean_edge_diff": 0.344
       },
       "3": {
         "srcX": 13,
         "width": 3,
-        "mean_edge_diff": 1.264
+        "mean_edge_diff": 1.139
       },
       "4": {
         "srcX": 12,
         "width": 4,
-        "mean_edge_diff": 2.246
+        "mean_edge_diff": 2.211
       },
       "5": {
-        "srcX": 0,
+        "srcX": 11,
         "width": 5,
-        "mean_edge_diff": 1.939
+        "mean_edge_diff": 3.096
       },
       "6": {
-        "srcX": 0,
+        "srcX": 9,
         "width": 6,
-        "mean_edge_diff": 1.887
+        "mean_edge_diff": 3.311
       },
       "7": {
-        "srcX": 0,
+        "srcX": 9,
         "width": 7,
-        "mean_edge_diff": 2.445
+        "mean_edge_diff": 2.967
       },
       "8": {
-        "srcX": 0,
+        "srcX": 8,
         "width": 8,
-        "mean_edge_diff": 3.098
+        "mean_edge_diff": 3.092
       },
       "9": {
-        "srcX": 6,
+        "srcX": 0,
         "width": 9,
-        "mean_edge_diff": 2.873
+        "mean_edge_diff": 3.092
       },
       "10": {
-        "srcX": 5,
+        "srcX": 0,
         "width": 10,
-        "mean_edge_diff": 2.314
+        "mean_edge_diff": 2.967
       },
       "11": {
-        "srcX": 5,
+        "srcX": 1,
         "width": 11,
-        "mean_edge_diff": 1.887
+        "mean_edge_diff": 3.482
       },
       "12": {
-        "srcX": 4,
+        "srcX": 2,
         "width": 12,
-        "mean_edge_diff": 1.939
+        "mean_edge_diff": 2.43
       },
       "13": {
-        "srcX": 0,
+        "srcX": 1,
         "width": 13,
-        "mean_edge_diff": 2.246
+        "mean_edge_diff": 1.525
       },
       "14": {
-        "srcX": 0,
+        "srcX": 1,
         "width": 14,
-        "mean_edge_diff": 1.264
+        "mean_edge_diff": 0.73
       },
       "15": {
         "srcX": 0,
         "width": 15,
-        "mean_edge_diff": 0.428
+        "mean_edge_diff": 0.344
       }
     },
     "1": {
@@ -99,75 +99,76 @@
         "mean_edge_diff": 0.0
       },
       "2": {
-        "srcX": 0,
+        "srcX": 14,
         "width": 2,
-        "mean_edge_diff": 0.584
+        "mean_edge_diff": 0.332
       },
       "3": {
-        "srcX": 0,
+        "srcX": 13,
         "width": 3,
-        "mean_edge_diff": 2.57
+        "mean_edge_diff": 1.119
       },
       "4": {
-        "srcX": 1,
+        "srcX": 12,
         "width": 4,
-        "mean_edge_diff": 2.287
+        "mean_edge_diff": 2.088
       },
       "5": {
-        "srcX": 0,
+        "srcX": 11,
         "width": 5,
-        "mean_edge_diff": 1.703
+        "mean_edge_diff": 2.996
       },
       "6": {
         "srcX": 0,
         "width": 6,
-        "mean_edge_diff": 1.416
+        "mean_edge_diff": 3.182
       },
       "7": {
         "srcX": 0,
         "width": 7,
-        "mean_edge_diff": 1.572
+        "mean_edge_diff": 2.896
       },
       "8": {
         "srcX": 0,
         "width": 8,
-        "mean_edge_diff": 1.695
+        "mean_edge_diff": 3.289
       },
       "9": {
-        "srcX": 7,
+        "srcX": 6,
         "width": 9,
-        "mean_edge_diff": 1.695
+        "mean_edge_diff": 3.229
       },
       "10": {
         "srcX": 6,
         "width": 10,
-        "mean_edge_diff": 1.572
+        "mean_edge_diff": 2.896
       },
       "11": {
         "srcX": 5,
         "width": 11,
-        "mean_edge_diff": 1.416
+        "mean_edge_diff": 3.182
       },
       "12": {
-        "srcX": 4,
+        "srcX": 1,
         "width": 12,
-        "mean_edge_diff": 1.703
+        "mean_edge_diff": 2.58
       },
       "13": {
-        "srcX": 3,
+        "srcX": 1,
         "width": 13,
-        "mean_edge_diff": 2.889
+        "mean_edge_diff": 1.611
       },
       "14": {
         "srcX": 1,
         "width": 14,
-        "mean_edge_diff": 1.461
+        "mean_edge_diff": 0.824
       },
       "15": {
-        "srcX": 1,
+        "srcX": 0,
         "width": 15,
-        "mean_edge_diff": 0.584
+        "mean_edge_diff": 0.332
       }
     }
-  }
+  },
+  "note": "Offline-only, recomputed from revision-1 pixel data. Do not call getImageData at runtime."
 }
