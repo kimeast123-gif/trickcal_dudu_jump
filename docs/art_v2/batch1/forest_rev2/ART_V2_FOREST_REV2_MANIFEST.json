@@ -1,0 +1,254 @@
+[
+  {
+    "file": "01_tiles_1x/forest_w1_ground_top_a.png",
+    "name": "forest_w1_ground_top_a",
+    "family": "forest_w1",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      64,
+      64,
+      520,
+      380
+    ],
+    "sha256": "020d9b5024ded7cbf81496389affbfb3bfaae477652620034eeac219617bd2bb",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_ground_top_b.png",
+    "name": "forest_w1_ground_top_b",
+    "family": "forest_w1",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      648,
+      64,
+      520,
+      380
+    ],
+    "sha256": "7d9e887969c9bf6a28c86327c007c58f38d7b316ece9e32ee27ccd4465d687ed",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_ground_top_c.png",
+    "name": "forest_w1_ground_top_c",
+    "family": "forest_w1",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      1232,
+      64,
+      520,
+      380
+    ],
+    "sha256": "39bda47cf9b95bff40b31f7890505f78c177a7b08ed977a1d98b90c6ef4d8451",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_ground_body_a.png",
+    "name": "forest_w1_ground_body_a",
+    "family": "forest_w1",
+    "width": 151,
+    "height": 86,
+    "contactY": null,
+    "repeatMode": "repeat_xy",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      1816,
+      64,
+      604,
+      344
+    ],
+    "sha256": "a53e39e63bfdd705b45dde386b5c5bde1d04959497fa12e8cace57a7b86b179e",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_ground_body_b.png",
+    "name": "forest_w1_ground_body_b",
+    "family": "forest_w1",
+    "width": 151,
+    "height": 86,
+    "contactY": null,
+    "repeatMode": "repeat_xy",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      2484,
+      64,
+      604,
+      344
+    ],
+    "sha256": "9e282402486731493f1179a863c92bbdb19835e2f394028628b64d8ed0d93333",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_ground_cliff_left.png",
+    "name": "forest_w1_ground_cliff_left",
+    "family": "forest_w1",
+    "width": 81,
+    "height": 159,
+    "contactY": 25,
+    "repeatMode": "end_left",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      3152,
+      64,
+      324,
+      636
+    ],
+    "sha256": "b4be89c7ec7eb02f3e1e9751c20a9d61ffcb37a18e018cebca584ba2a4524434",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_ground_cliff_right.png",
+    "name": "forest_w1_ground_cliff_right",
+    "family": "forest_w1",
+    "width": 81,
+    "height": 159,
+    "contactY": 25,
+    "repeatMode": "end_right",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      3540,
+      64,
+      324,
+      636
+    ],
+    "sha256": "14f209018fe471ec1cd0f92ca91abea570991e1a1138c57134b0748a209dde8f",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_wall_top.png",
+    "name": "forest_w1_wall_top",
+    "family": "forest_w1",
+    "width": 96,
+    "height": 24,
+    "contactY": 6,
+    "repeatMode": "crop_center",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      64,
+      764,
+      384,
+      96
+    ],
+    "sha256": "1209fa353885978609c7721578aba8b0be8dd132cd8dded4ed910d4ec5e84021",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_wall_body.png",
+    "name": "forest_w1_wall_body",
+    "family": "forest_w1",
+    "width": 96,
+    "height": 128,
+    "contactY": null,
+    "repeatMode": "repeat_y_center_crop",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      512,
+      764,
+      384,
+      512
+    ],
+    "sha256": "b943a8120de6cf2cddef5645845aac6fbf2ac258fbbe9b25f47916564f8e0c24",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_wall_edge_left.png",
+    "name": "forest_w1_wall_edge_left",
+    "family": "forest_w1",
+    "width": 8,
+    "height": 128,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      960,
+      764,
+      32,
+      512
+    ],
+    "sha256": "b55bdef308530c44d1a3eb9cc2d8f927b6eeae2fab432b1bf1f40ac4d0ea6540",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_wall_edge_right.png",
+    "name": "forest_w1_wall_edge_right",
+    "family": "forest_w1",
+    "width": 8,
+    "height": 128,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      1056,
+      764,
+      32,
+      512
+    ],
+    "sha256": "f1d86e36f59cb0130e87c1b4634bba01b57d3639179edff32c8226176575c885",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_under_support.png",
+    "name": "forest_w1_under_support",
+    "family": "forest_w1",
+    "width": 128,
+    "height": 44,
+    "contactY": null,
+    "repeatMode": "repeat_x",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      1152,
+      764,
+      512,
+      176
+    ],
+    "sha256": "be2a2c29cf25fe2d1c4ee713e031ccfd75705b32ecfa9d63526006da222e32e9",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_under_support_end_left.png",
+    "name": "forest_w1_under_support_end_left",
+    "family": "forest_w1",
+    "width": 24,
+    "height": 44,
+    "contactY": null,
+    "repeatMode": "end_left",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      1728,
+      764,
+      96,
+      176
+    ],
+    "sha256": "6ab16616390d717d923f01be1e6dc39001de164fb6b4471339234693e7c9feab",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  },
+  {
+    "file": "01_tiles_1x/forest_w1_under_support_end_right.png",
+    "name": "forest_w1_under_support_end_right",
+    "family": "forest_w1",
+    "width": 24,
+    "height": 44,
+    "contactY": null,
+    "repeatMode": "end_right",
+    "atlas4x": "forest_w1_sheet_4x.png",
+    "atlasRect4x": [
+      1888,
+      764,
+      96,
+      176
+    ],
+    "sha256": "cf7b628447872b9a5ae156a53ab69a3de166e9f41d9db3dc3a9bc63aafdc462d",
+    "status": "BATCH1_FOREST_REV2_NEEDS_GAME_QA"
+  }
+]

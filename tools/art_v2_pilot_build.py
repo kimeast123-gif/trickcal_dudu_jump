@@ -12,7 +12,7 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A = os.path.join(ROOT, 'assets', 'art_v2')
-CACHE = 'v2b1a'
+CACHE = 'v2b1r2'
 
 
 def px(path):
@@ -65,6 +65,20 @@ K = {
                      'edge_right': 'assets/art_v2/batch1/spirit_lava_wall_edge_right.png'},
            'w': 128, 'h': 192, 'edge': 10},
 }
+def cliff_outline(path, side):
+    """Columns from the outer edge to the first opaque pixel, per row (offline; the ground behind a rounded
+    cliff is clipped to this so no square block shows past the cliff's silhouette)."""
+    a = px(path)[:, :, 3] > 128
+    W = a.shape[1]; out = []
+    for r in range(a.shape[0]):
+        row = a[r] if side == 'left' else a[r][::-1]
+        out.append(int(np.argmax(row)) if row.any() else -1)
+    first = next(v for v in out if v >= 0)
+    return [first if v < 0 else v for v in out]
+
+
+K['gc']['outlineLeft'] = cliff_outline('assets/art_v2/batch1/forest_w1_ground_cliff_left.png', 'left')
+K['gc']['outlineRight'] = cliff_outline('assets/art_v2/batch1/forest_w1_ground_cliff_right.png', 'right')
 for k, v in K.items():
     if 'cut' in v:
         v['cutTable'] = splice_table(v['cut']); del v['cut']
@@ -183,10 +197,19 @@ js = r"""// ====================================================================
     const gt = K.gt, gb = K.gb, gc = K.gc, top = Math.round(y - gt.contactY);
     /* like the release, the ground body runs down past the bottom of the view, whatever the object height */
     const v = view(), bottom = Math.max(y + (a.h || 260), v.y2 + 40);
+    const openL = !groundNeighbour(a, -1), openR = !groundNeighbour(a, 1);
     ctx.save();
-    ctx.beginPath(); ctx.rect(x, top - 10, a.w, bottom - top + 10); ctx.clip();
-    // body under the top strip (the top strip's lower soil covers the join)
-    const bodyTop = top + gt.h - 20;
+    // clip the whole ground to the cliff silhouettes at open ends (no square block behind a rounded cliff)
+    ctx.beginPath();
+    const OL = gc.outlineLeft, OR = gc.outlineRight, n = OL.length;
+    ctx.moveTo(openL ? x + OL[0] : x, top - 10);
+    if (openL) { for (let r = 0; r < n; r += 3) ctx.lineTo(x + OL[r], top + r); ctx.lineTo(x + OL[n - 1], bottom); }
+    else ctx.lineTo(x, bottom);
+    if (openR) { ctx.lineTo(x + a.w - OR[n - 1], bottom); for (let r = n - 1; r >= 0; r -= 3) ctx.lineTo(x + a.w - OR[r], top + r); ctx.lineTo(x + a.w - OR[0], top - 10); }
+    else { ctx.lineTo(x + a.w, bottom); ctx.lineTo(x + a.w, top - 10); }
+    ctx.closePath(); ctx.clip();
+    // body starts exactly under the top strip: its first row continues the strip's last row (closest match)
+    const bodyTop = top + gt.h;
     for (let by = bodyTop, row = 0; by < Math.min(bottom, v.y2 + 20); by += gb.h, row++) {
       if (by + gb.h < v.y1 - 20) continue;
       let i = row;
@@ -195,8 +218,8 @@ js = r"""// ====================================================================
     const seed = a.visual?.seed || 202, names = ['a', 'b', 'c'];
     const order = [0, 1, 2].map(i => names[Math.floor(seededUnit(seed, i + 3) * 3) % 3]);
     runX('gt', order, x, a.w, top, gt.h);
-    if (!groundNeighbour(a, -1)) piece(gc.img.left, 0, 0, gc.w, gc.h, x, top);
-    if (!groundNeighbour(a, 1)) piece(gc.img.right, 0, 0, gc.w, gc.h, x + a.w - gc.w, top);
+    if (openL) piece(gc.img.left, 0, 0, gc.w, gc.h, x, top);
+    if (openR) piece(gc.img.right, 0, 0, gc.w, gc.h, x + a.w - gc.w, top);
     ctx.restore();
   }
   function drawWallW1(a, x, y) {

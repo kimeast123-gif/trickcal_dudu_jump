@@ -1,0 +1,143 @@
+{
+  "family": "forest_w1_ground_top_a",
+  "generatedOffline": true,
+  "algorithm": "off-line low-contrast seam selection; cap dimensions preserved; never sample Canvas getImageData",
+  "widthEntries": {
+    "320": {
+      "left": null,
+      "center": [
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 51,
+          "drawWidth": 51,
+          "internalSpliceDelta": 4.446
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 121,
+          "sourceWidth": 9,
+          "drawWidth": 9,
+          "internalSpliceDelta": 4.446
+        }
+      ],
+      "right": null,
+      "totalWidth": 320,
+      "internalCropDeltaMeanRGB": 4.446
+    },
+    "520": {
+      "left": null,
+      "center": [
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        }
+      ],
+      "right": null,
+      "totalWidth": 520,
+      "internalCropDeltaMeanRGB": 0
+    },
+    "860": {
+      "left": null,
+      "center": [
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 130,
+          "drawWidth": 130,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 0,
+          "sourceWidth": 39,
+          "drawWidth": 39,
+          "internalSpliceDelta": 5.2
+        },
+        {
+          "file": "forest_w1_ground_top_a.png",
+          "sourceX": 89,
+          "sourceWidth": 41,
+          "drawWidth": 41,
+          "internalSpliceDelta": 5.2
+        }
+      ],
+      "right": null,
+      "totalWidth": 860,
+      "internalCropDeltaMeanRGB": 5.2
+    }
+  }
+}

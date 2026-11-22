@@ -1,0 +1,135 @@
+{
+  "family": "forest_w1_under_support",
+  "generatedOffline": true,
+  "algorithm": "off-line low-contrast seam selection; cap dimensions preserved; never sample Canvas getImageData",
+  "widthEntries": {
+    "520": {
+      "left": "forest_w1_under_support_end_left.png",
+      "center": [
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 5.705
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 64,
+          "sourceWidth": 64,
+          "drawWidth": 64,
+          "internalSpliceDelta": 5.705
+        }
+      ],
+      "right": "forest_w1_under_support_end_right.png",
+      "totalWidth": 520,
+      "internalCropDeltaMeanRGB": 5.705
+    },
+    "1320": {
+      "left": "forest_w1_under_support_end_left.png",
+      "center": [
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 105,
+          "drawWidth": 105,
+          "internalSpliceDelta": 3.909
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 113,
+          "sourceWidth": 15,
+          "drawWidth": 15,
+          "internalSpliceDelta": 3.909
+        }
+      ],
+      "right": "forest_w1_under_support_end_right.png",
+      "totalWidth": 1320,
+      "internalCropDeltaMeanRGB": 3.909
+    }
+  }
+}

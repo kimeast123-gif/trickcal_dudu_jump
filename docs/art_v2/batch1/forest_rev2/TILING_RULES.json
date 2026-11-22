@@ -1,0 +1,65 @@
+{
+  "forest_w1_ground_top_a": {
+    "repeatMode": "repeat_x",
+    "sourceWidth": 130,
+    "sourceHeight": 95,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  },
+  "forest_w1_ground_top_b": {
+    "repeatMode": "repeat_x",
+    "sourceWidth": 130,
+    "sourceHeight": 95,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  },
+  "forest_w1_ground_top_c": {
+    "repeatMode": "repeat_x",
+    "sourceWidth": 130,
+    "sourceHeight": 95,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  },
+  "forest_w1_ground_body_a": {
+    "repeatMode": "repeat_xy",
+    "sourceWidth": 151,
+    "sourceHeight": 86,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  },
+  "forest_w1_ground_body_b": {
+    "repeatMode": "repeat_xy",
+    "sourceWidth": 151,
+    "sourceHeight": 86,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  },
+  "forest_w1_wall_body": {
+    "repeatMode": "repeat_y_center_crop",
+    "sourceWidth": 96,
+    "sourceHeight": 128,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  },
+  "forest_w1_wall_edge_left": {
+    "repeatMode": "repeat_y",
+    "sourceWidth": 8,
+    "sourceHeight": 128,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  },
+  "forest_w1_wall_edge_right": {
+    "repeatMode": "repeat_y",
+    "sourceWidth": 8,
+    "sourceHeight": 128,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  },
+  "forest_w1_under_support": {
+    "repeatMode": "repeat_x",
+    "sourceWidth": 128,
+    "sourceHeight": 44,
+    "edgePixelEqualityGuaranteed": true,
+    "note": "Only repeat the preprocessed 1x PNG; no runtime pixel reads"
+  }
+}
