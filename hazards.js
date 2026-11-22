@@ -708,8 +708,9 @@ function actor(kind,x,y=580,extra={}){
  const seed=Math.abs(((Math.round(x)*2654435761)^(kind.charCodeAt(0)*73856093))|0)||97;
  const anchorPlat=extra.platformId?platforms.find(pl=>pl.id===extra.platformId):null;
  const baseY=anchorPlat?anchorPlat.y:y;
- const minX=(typeof extra.patrolX1==='number')?extra.patrolX1:(anchorPlat?(anchorPlat.x+28):(extra.minX??20));
- const maxX=(typeof extra.patrolX2==='number')?extra.patrolX2:(anchorPlat?(anchorPlat.x+anchorPlat.w-28):(extra.maxX??(END-20)));
+ const edgeM=(typeof extra.edgeMargin==='number')?extra.edgeMargin:28; /* v1.8.6: per-actor distance kept from the platform ends */
+ const minX=(typeof extra.patrolX1==='number')?extra.patrolX1:(anchorPlat?(anchorPlat.x+edgeM):(extra.minX??20));
+ const maxX=(typeof extra.patrolX2==='number')?extra.patrolX2:(anchorPlat?(anchorPlat.x+anchorPlat.w-edgeM):(extra.maxX??(END-20)));
  const pDir=extra.patrolDir||-1;
  const clampedHome=extra.fullSpanPatrol?(pDir>0?minX:maxX):clamp(x,minX,maxX);
  const speedMult=extra.speedMult||1.0;
@@ -758,15 +759,15 @@ function resetHazards(){
   const doorX = BUKGYEONG_LANDMARK.doorCenterX;
   bukgyeongEvent = initBukgyeongEvent();
   actors = [
-   actor('guard1', 14740, 420, { id: 'G-01', platformId: 'M-G1-LOW1', patrol: 195, baseSpeed: 162, returnSpeed: 132, speedMult: 1.05, patrolDir: -1 }),
-   actor('guard2', 16040, 480, { id: 'G-02', platformId: 'M-G1-LOW2', patrol: 215, baseSpeed: 176, returnSpeed: 142, speedMult: 1.08, patrolDir: -1, delay: 0.30 }),
-   actor('guard1', 17760, 430, { id: 'G-03', platformId: 'M-GRD-BR1', patrol: 150, baseSpeed: 172, returnSpeed: 138, speedMult: 1.15, patrolDir: -1 }),
-   actor('guard2', 19360, 460, { id: 'G-04', platformId: 'M-GRD-BR2', patrol: 130, baseSpeed: 182, returnSpeed: 145, speedMult: 1.15, patrolDir: 1, delay: 0.35 }),
-   actor('guard1', 21220, 500, { id: 'G-05', platformId: 'M-G3-MID1', patrol: 130, baseSpeed: 168, returnSpeed: 138, speedMult: 1.08, patrolDir: -1 }),
-   actor('guard2', 21650, 420, { id: 'G-06', platformId: 'M-G3-UPPER', patrol: 120, baseSpeed: 184, returnSpeed: 146, speedMult: 1.10, patrolDir: 1, delay: 0.40 }),
-   actor('guard1', 22670, 500, { id: 'G-06B', platformId: 'M-G3-MID2', patrol: 120, baseSpeed: 172, returnSpeed: 140, speedMult: 1.08, patrolDir: -1, delay: 0.20 }),
-   actor('guard1', 23920, 480, { id: 'G-07-BR3', platformId: 'M-GRD-BR3A', patrol: 130, baseSpeed: 168, returnSpeed: 165, speedMult: 1.5, specialGuard: true, patrolDir: -1, delay: 0.0 }),
-   actor('guard2', 24600, 430, { id: 'G-08-BR3', platformId: 'M-GRD-BR3B', patrol: 130, baseSpeed: 182, returnSpeed: 174, speedMult: 1.5, specialGuard: true, patrolDir: 1, delay: 0.55 }),
+   actor('guard1', 14740, 420, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-01', platformId: 'M-G1-LOW1', patrol: 195, baseSpeed: 162, returnSpeed: 132, speedMult: 1.05, patrolDir: -1 }),
+   actor('guard2', 16040, 480, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-02', platformId: 'M-G1-LOW2', patrol: 215, baseSpeed: 176, returnSpeed: 142, speedMult: 1.08, patrolDir: -1, delay: 0.30 }),
+   actor('guard1', 17760, 430, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-03', platformId: 'M-GRD-BR1', patrol: 150, baseSpeed: 172, returnSpeed: 138, speedMult: 1.15, patrolDir: -1 }),
+   actor('guard2', 19360, 460, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-04', platformId: 'M-GRD-BR2', patrol: 130, baseSpeed: 182, returnSpeed: 145, speedMult: 1.15, patrolDir: -1, delay: 0.35 }),
+   actor('guard1', 21220, 500, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-05', platformId: 'M-G3-MID1', patrol: 130, baseSpeed: 168, returnSpeed: 138, speedMult: 1.08, patrolDir: -1 }),
+   actor('guard2', 21650, 420, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-06', platformId: 'M-G3-UPPER', patrol: 120, baseSpeed: 184, returnSpeed: 146, speedMult: 1.10, patrolDir: -1, delay: 0.40 }),
+   actor('guard1', 22670, 500, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-06B', platformId: 'M-G3-MID2', patrol: 120, baseSpeed: 172, returnSpeed: 140, speedMult: 1.08, patrolDir: -1, delay: 0.20 }),
+   actor('guard1', 23920, 480, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-07-BR3', platformId: 'M-GRD-BR3A', patrol: 130, baseSpeed: 168, returnSpeed: 165, speedMult: 1.5, specialGuard: true, patrolDir: -1, delay: 0.0 }),
+   actor('guard2', 24600, 430, { fullSpanPatrol: true, edgeMargin: 52, id: 'G-08-BR3', platformId: 'M-GRD-BR3B', patrol: 130, baseSpeed: 182, returnSpeed: 174, speedMult: 1.5, specialGuard: true, patrolDir: -1, delay: 0.55 }),
    actor('president', doorX, 580, { photo: true, cutout: 'president_cutout', patrol: 390, speed: 230, hiddenInDoor: true }),
    actor('vice', doorX, 580, { photo: true, cutout: 'vice_cutout', patrol: 510, speed: 305, hiddenInDoor: true })
   ];
@@ -779,25 +780,25 @@ function resetHazards(){
   // Right-side 4 descent fairies (EA-F07..F10) are accelerated (1.22x ~ 1.30x) to match the long S-curve shelves.
   actors = [
    // Left Ascent Fairies (EA-F01 ~ EA-F04): full platform end-to-end patrol (margin 28px)
-   actor('fairy1', 7268, 350, { id: 'EA-F01', platformId: 'EA-P01', fullSpanPatrol: true, patrolX1: 7268, patrolX2: 7622, patrolDir: 1, baseSpeed: 168, baseReturnSpeed: 132, speedMult: 1.0 }),
-   actor('fairy2', 8162, 70,  { id: 'EA-F02', platformId: 'EA-P02', fullSpanPatrol: true, patrolX1: 7948, patrolX2: 8162, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 }),
-   actor('fairy1', 7808, -280, { id: 'EA-F03', platformId: 'EA-P03', fullSpanPatrol: true, patrolX1: 7808, patrolX2: 8172, patrolDir: 1, baseSpeed: 170, baseReturnSpeed: 134, speedMult: 1.0 }),
-   actor('fairy2', 7702, -620, { id: 'EA-F04', platformId: 'EA-P04', fullSpanPatrol: true, patrolX1: 7408, patrolX2: 7702, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 }),
+   actor('fairy1', 7268, 350, { id: 'EA-F01', platformId: 'EA-P01', fullSpanPatrol: true, patrolX1: 7296, patrolX2: 7594, patrolDir: 1, baseSpeed: 168, baseReturnSpeed: 132, speedMult: 1.0 }),
+   actor('fairy2', 8162, 70,  { id: 'EA-F02', platformId: 'EA-P02', fullSpanPatrol: true, patrolX1: 7976, patrolX2: 8134, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 }),
+   actor('fairy1', 7808, -280, { id: 'EA-F03', platformId: 'EA-P03', fullSpanPatrol: true, patrolX1: 7836, patrolX2: 8144, patrolDir: 1, baseSpeed: 170, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy2', 7702, -620, { id: 'EA-F04', platformId: 'EA-P04', fullSpanPatrol: true, patrolX1: 7436, patrolX2: 7674, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 }),
    // Special Fairy (EA-FS01) on EA-P-SPEC (x=6820..7160, y=-640): guards EA-SPECIAL-01 (x=6865) across x=6910..7132 with 1.5x knockback
-   actor('fairy2', 7132, -640, { id: 'EA-FS01', platformId: 'EA-P-SPEC', fullSpanPatrol: true, patrolX1: 6910, patrolX2: 7132, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 140, speedMult: 1.05, isSpecialFairy: true, knockbackScale: 1.50 }),
+   actor('fairy2', 7132, -640, { id: 'EA-FS01', platformId: 'EA-P-SPEC', fullSpanPatrol: true, patrolX1: 6910, patrolX2: 7104, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 140, speedMult: 1.05, isSpecialFairy: true, knockbackScale: 1.50 }),
    // Central Long Bridge (EA-P-TOP-C: x=8330..9020, midpoint=8675): split cleanly into Left Half (EA-F05: 8358..8648) & Right Half (EA-F06: 8702..8992)
-   actor('fairy1', 8358, -680, { id: 'EA-F05', platformId: 'EA-P-TOP-C', fullSpanPatrol: true, patrolX1: 8358, patrolX2: 8648, patrolDir: 1, baseSpeed: 168, baseReturnSpeed: 134, speedMult: 1.0 }),
-   actor('fairy2', 8992, -680, { id: 'EA-F06', platformId: 'EA-P-TOP-C', fullSpanPatrol: true, patrolX1: 8702, patrolX2: 8992, patrolDir: -1, baseSpeed: 174, baseReturnSpeed: 138, speedMult: 1.0 }),
+   actor('fairy1', 8358, -680, { id: 'EA-F05', platformId: 'EA-P-TOP-C', fullSpanPatrol: true, patrolX1: 8386, patrolX2: 8648, patrolDir: 1, baseSpeed: 168, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy2', 8992, -680, { id: 'EA-F06', platformId: 'EA-P-TOP-C', fullSpanPatrol: true, patrolX1: 8702, patrolX2: 8964, patrolDir: -1, baseSpeed: 174, baseReturnSpeed: 138, speedMult: 1.0 }),
    // [FIX8 Gate 4]: Right-side 4-Tier Forced ㄹ-Descent Fairies (1 · 1 · 1 · 2 = 5 fairies total):
    // - Tier 1 (EA-P07: 9010..9820): EA-F07 (1 fairy, standard 1.0x speed: 170 / 134 px/s)
    // - Tier 2 (EA-P08: 9010..10040): EA-F08 (1 fairy, 1.5x standard speed: baseSpeed 175 * 1.50 = 263 px/s rush, baseReturnSpeed 136 * 1.50 = 204 px/s return!)
    // - Tier 3 (EA-P09: 8614..9820): EA-F09 (1 fairy, standard 1.0x speed: 172 / 134 px/s)
    // - Tier 4 (EA-P10: 8920..10040): EA-F10 (left half 8948..9450, 1.0x) + EA-F11 (right half 9500..10012, 1.0x)
-   actor('fairy1', 9792, -620, { id: 'EA-F07', platformId: 'EA-P07', fullSpanPatrol: true, patrolX1: 9038, patrolX2: 9792, patrolDir: -1, baseSpeed: 170, baseReturnSpeed: 134, speedMult: 1.0 }),
-   actor('fairy2', 9038, -300, { id: 'EA-F08', platformId: 'EA-P08', fullSpanPatrol: true, patrolX1: 9038, patrolX2: 10012, patrolDir: 1,  baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.50 }),
-   actor('fairy1', 9792, 20,   { id: 'EA-F09', platformId: 'EA-P09', fullSpanPatrol: true, patrolX1: 8642, patrolX2: 9792, patrolDir: -1, baseSpeed: 172, baseReturnSpeed: 134, speedMult: 1.0 }),
-   actor('fairy1', 8948, 350,  { id: 'EA-F10', platformId: 'EA-P10', fullSpanPatrol: true, patrolX1: 8948, patrolX2: 9450, patrolDir: 1,  baseSpeed: 172, baseReturnSpeed: 134, speedMult: 1.0 }),
-   actor('fairy2', 10012, 350, { id: 'EA-F11', platformId: 'EA-P10', fullSpanPatrol: true, patrolX1: 9500, patrolX2: 10012, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 })
+   actor('fairy1', 9792, -620, { id: 'EA-F07', platformId: 'EA-P07', fullSpanPatrol: true, patrolX1: 9066, patrolX2: 9764, patrolDir: -1, baseSpeed: 170, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy2', 9038, -300, { id: 'EA-F08', platformId: 'EA-P08', fullSpanPatrol: true, patrolX1: 9066, patrolX2: 9984, patrolDir: 1,  baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.50 }),
+   actor('fairy1', 9792, 20,   { id: 'EA-F09', platformId: 'EA-P09', fullSpanPatrol: true, patrolX1: 8670, patrolX2: 9764, patrolDir: -1, baseSpeed: 172, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy1', 8948, 350,  { id: 'EA-F10', platformId: 'EA-P10', fullSpanPatrol: true, patrolX1: 8976, patrolX2: 9450, patrolDir: 1,  baseSpeed: 172, baseReturnSpeed: 134, speedMult: 1.0 }),
+   actor('fairy2', 10012, 350, { id: 'EA-F11', platformId: 'EA-P10', fullSpanPatrol: true, patrolX1: 9500, patrolX2: 9984, patrolDir: -1, baseSpeed: 175, baseReturnSpeed: 136, speedMult: 1.0 })
   ];
  } else if (curId === 'erpien_b') {
   initTempleFriends();
@@ -1027,10 +1028,10 @@ function updateWalker(a,dt){
    a.y=pl.y;
    if(typeof a.patrolX1==='number')a.minX=a.patrolX1;
    else if(typeof a.customMinX==='number')a.minX=a.customMinX;
-   else a.minX=pl.x+28;
+   else a.minX=pl.x+(typeof a.edgeMargin==='number'?a.edgeMargin:28);
    if(typeof a.patrolX2==='number')a.maxX=a.patrolX2;
    else if(typeof a.customMaxX==='number')a.maxX=a.customMaxX;
-   else a.maxX=pl.x+pl.w-28;
+   else a.maxX=pl.x+pl.w-(typeof a.edgeMargin==='number'?a.edgeMargin:28);
    if(pl.dx)a.home=clamp(a.home+pl.dx,a.minX,a.maxX);
   }
  }
@@ -1084,7 +1085,8 @@ function updateWalker(a,dt){
  }else if(a.phase==='rush'){
   const dur=a.curRushDur||rushDur;
   const rawU=clamp(a.phaseTime/dur,0,1);
-  const curvedU=a.linearPatrol?rawU:naturalMoveCurve(rawU,prof.hesitateAt,prof.hesitateDur);
+  /* v1.8.6: Erpien A fairies run one smooth stroke (the mid-run hesitation read as stutter) */
+  const curvedU=a.linearPatrol?rawU:(isErpienAFairy?naturalMoveCurve(rawU,0,0):naturalMoveCurve(rawU,prof.hesitateAt,prof.hesitateDur));
   a.x=clamp(a.from+(a.to-a.from)*curvedU,a.minX,a.maxX);
   a.danger=isGuard?true:(rawU>=0.04&&rawU<=0.96);
   if(rawU>=1){
