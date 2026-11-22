@@ -151,6 +151,7 @@ js = r"""// ====================================================================
 //   cave ledges < 120px      cave tiny kit (28 | 12 x n | 28, contactY 2, 5px overhang)
 //   cave floor (Gabia)       cave floor kit (64 | 256 x n | 64, contactY 6)
 //   MW2, B1, B2, B3, B5      cave wall tile + edges; B1 (you can stand on it) gets a cave tiny cap
+//   wall ends near a ledge   drawn on behind the ledge so wall and ledge meet (drawing only)
 //   snow ledges              snow long kit (>= 120px) / snow tiny kit (< 120px)
 //   snow blinking ledges     snow glow kit (24 | 24 x n | 24, contactY 6, 5px overhang)
 // Everything else (other worlds, Challenge mode) keeps the release art, and so does any kit whose images are not
@@ -402,6 +403,71 @@ js = r"""// ====================================================================
     fillRect(w.img.edge_right, w.edge, w.h, x + a.w - w.edge, y, w.edge, a.h, v.y1 - 20, v.y2 + 20);
     ctx.restore();
   }
+
+  /* Wall ends that should meet a ledge (drawing only; collision unchanged). A wall whose top stops short under a
+     ledge (up to 120px) is drawn on up to the middle of that ledge; a wall that stands beside a ledge reaching lower
+     than the wall's bottom (up to 60px) is drawn on down to the ledge's bottom. The extra rock is drawn before the
+     platforms (drawSpiritBack), so it stays behind the ledge, and its texture continues the wall's own tiling. */
+  const solidKind = (b) => b.smDraw === 'rock' || b.smDraw === 'pillar' || b.smDraw === 'roof' || b.wall || b.ceiling || b.nonCollidable;
+  function ledgeArt(b) {
+    let k = null;
+    if (b.blink) k = GLOW[smZoneOf(b)] || null;
+    else if (b.smDraw === 'floor') k = 'cf';
+    else { const lk = spiritLongKit(b); k = lk && lk[0]; }
+    if (!k) return [b.y, b.y + (b.h || 20)];
+    const T = K[k], top = b.y - T.contactY;
+    return [top, top + T.h];
+  }
+  const wallExt = new WeakMap();
+  function extOf(a) {
+    if (wallExt.has(a)) return wallExt.get(a);
+    let up = 0, down = 0;
+    const bot = a.y + a.h, x1 = a.x, x2 = a.x + a.w;
+    let coveredTop = false, nearestUp = Infinity;
+    for (const b of platforms) {
+      if (b === a || !b.smDraw || solidKind(b)) continue;
+      const [t, btm] = ledgeArt(b);
+      const over = Math.min(x2, b.x + b.w) - Math.max(x1, b.x);
+      if (over >= a.w * 0.5) {
+        if (t <= a.y && btm >= a.y) coveredTop = true;
+        else if (btm < a.y && a.y - btm <= 120) nearestUp = Math.min(nearestUp, a.y - Math.round((t + btm) / 2));
+        if (t > bot && t - bot <= 120 && !(t <= bot && btm >= bot)) down = Math.max(down, Math.round((t + btm) / 2) - bot);
+      }
+      const beside = Math.abs(b.x - x2) <= 8 || Math.abs(x1 - (b.x + b.w)) <= 8;
+      if (beside && t < bot && btm > bot && btm - bot <= 60) down = Math.max(down, btm - bot);
+    }
+    if (!coveredTop && nearestUp !== Infinity) up = nearestUp;
+    const r = (up || down) ? { up, down } : null;
+    wallExt.set(a, r);
+    return r;
+  }
+  function drawWallExt(k, a, e) {
+    const w = K[k], v = view(), n = Math.ceil(Math.max(e.up, 1) / w.h);
+    const vy = a.y - n * w.h, vh = a.h + n * w.h + e.down;   /* same tile phase as the wall itself */
+    const clipTop = a.y - e.up, clipBot = a.y + a.h + e.down;
+    for (const [c1, c2] of [[clipTop, a.y], [a.y + a.h, clipBot]]) {
+      if (c2 <= c1 || c2 < v.y1 - 20 || c1 > v.y2 + 20 || a.x + a.w < v.x1 - 20 || a.x > v.x2 + 20) continue;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(a.x, c1, a.w, c2 - c1); ctx.clip();
+      fillRect(w.img.tile, w.w, w.h, a.x, vy, a.w, vh, v.y1 - 20, v.y2 + 20);
+      fillRect(w.img.edge_left, w.edge, w.h, a.x, vy, w.edge, vh, v.y1 - 20, v.y2 + 20);
+      fillRect(w.img.edge_right, w.edge, w.h, a.x + a.w - w.edge, vy, w.edge, vh, v.y1 - 20, v.y2 + 20);
+      ctx.restore();
+    }
+  }
+  if (typeof drawSpiritBack === 'function') {
+    const prevBack = drawSpiritBack;
+    drawSpiritBack = function () {
+      prevBack();
+      if (!spiritOn() || typeof isSpiritActive !== 'function' || !isSpiritActive()) return;
+      for (const a of platforms) {
+        const k = ZONE_WALLS[a.id];
+        if (!k || failed[k] || !ready(k)) continue;
+        try { const e = extOf(a); if (e) drawWallExt(k, a, e); } catch (err) { fail(k, err); }
+      }
+    };
+    window.drawSpiritBack = drawSpiritBack;
+  }
   if (typeof drawSpiritPlatform === 'function') {
     const prevSpirit = drawSpiritPlatform;
     drawSpiritPlatform = function (a, x, y) {
@@ -458,7 +524,8 @@ js = r"""// ====================================================================
       if (a.groundTile) return true;
       return thinOk(p, a);
     },
-    profile() { return forestProfile(); }
+    profile() { return forestProfile(); },
+    wallExt(a) { return ZONE_WALLS[a.id] ? extOf(a) : null; }
   };
 })();
 """

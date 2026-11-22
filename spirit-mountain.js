@@ -17,7 +17,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_8_0_261122'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_8_1_261122'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
@@ -125,9 +125,13 @@ const SM_WALLS = [
 const SM_CAPLESS = new Set(['SM-B2', 'SM-B3', 'SM-B5', 'SM-B6']);   // pillars whose top is hidden under a ledge
 const SM_ROOF = { x: 1632, y: -2705, w: 1918, h: 120 };   // v1.6.3: drawn only; the strip above it is a fall zone
 // Lava pools lying on the lava ledges: two on the hall floor L0 and (v1.6.6) one in the middle of L1, L2 and L9.
+// v1.8.1: widened so they matter. On L0 the walk from the cave (arriving at 2842..3131) to the climb onto L1 crosses
+// a 390px pool; a 100px rock island (2300..2400) under L1 lets you go straight up onto L1, and a fall from L1 lands
+// in the 480px pool. L1 / L2 / L9 pools 230-250px (a full jump). A hit pushes Dudu 40px past the nearer edge, which is
+// always solid ledge (island or L0 ends).
 const SM_LAVA = [
-  { x1: 2033, x2: 2217, y: -1301 }, { x1: 2463, x2: 2647, y: -1301 },
-  { x1: 2172, x2: 2292, y: -1510 }, { x1: 3007, x2: 3127, y: -1676 }, { x1: 1847, x2: 1967, y: -2104 }
+  { x1: 1820, x2: 2300, y: -1301 }, { x1: 2400, x2: 2790, y: -1301 },
+  { x1: 2060, x2: 2290, y: -1510 }, { x1: 2930, x2: 3180, y: -1676 }, { x1: 1760, x2: 2000, y: -2104 }
 ];
 const SM_FLOOR_Y = 580;
 const SM_WALL_X = 1719;      // the mountain's outer wall (start outside on its left, Gabia's cave on its right)
