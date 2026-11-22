@@ -1,6 +1,7 @@
-"""Build art-v2-pilot.js: the ART V2 test layer (approved pilot rev1, batch 1, batch 2 candidates).
+"""Build terrain-art.js: the terrain art of story 수인숲, World1 1-1..1-4 and Spirit Mountain (art renewal phase 2,
+approved 2026-11-22). Re-run after changing any PNG under assets/terrain/, and change CACHE when a PNG changes.
 
-    python tools/art_v2_pilot_build.py
+    python tools/terrain_art_build.py
 
 Everything that needs pixels is computed here, offline, from the delivered PNGs:
 - the place to cut a repeat tile when a run of tiles does not fill the width exactly ("two-part splice": keep
@@ -13,7 +14,9 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE = 'v2b3a'
+CACHE = 'ta1'   # image cache key (not a v-key, so tools/release.py leaves it alone)
+# seam-matched cut table of the cave long middle (approved v1.1; index = leftover length, value = source column)
+CAVE_CUTS = '[0,45,45,46,47,48,49,50,51,52,53,54,54,53,54,54,54,54,54,54,63,64,65,66,67,67,65,66,67,66,66,67,67,64,63,63,64,65,66,67,54,55,45,45,45,45,45,45,45,46,46,47,62,62,62,51,52,62,68,68,68,68,68,68,68,69,70,71,73,73,68,74,75,76,74,74,74,74,74,75,76,79,79,79,45,80,81,81,83,83,84,84,83,84,84,85,86,86,52,87,88,89,45,45,45,46,46,47,48,62,62,49,49,51,51,52,68,68,68,68,68,68,69,108,108,108,109,123,124,110,110,110,74,74,74,74,74,74,75,112,79,79,79,112,80,81,80,81,80,80,80,82,81,80,81,82,82,83,85,86,86,136,87,138,142,126,87,87,87,87,87,87,45,45,48,49,50,51,52,54,55,105,104,105,105,93,94,95,97,97,99,99,100,101,102,73,72,185,186,187,195,196,197,197,199,199,199,199,199,199,201,201,201,110,202,203,204,205,113,114,115,116,117,117,212,213,117,118,118,118,118,213,119,120,149,149,149,149,149,148,148,123,124,123,124,111,111,111,122,123,123,124,124,97,98,99,100,101,102,195,185,186,186,186,186,186,187,186,187,186,187,187,188,189,192,191,192,183,203,139,204,254,86,85,86,86,86,207,87,87,87,87,143,87,87,87,87,88,89,90,215,216,216,215,214,214,214,215,216,217,218,219,220,104,105,105,107,46,47,263,148,149,149,265,266,267,267,167,167,168,169,169,170,168,168,169,170,346,172,337,331,346,346,348,348,74,349,349,350,350,177,177,177,178,179,178,179,179,180,179,180,180,184,184,184,184,45,185,185,185,185,186,186,185,185,185,185,186,186,186,187,188,189,190,191,192,193,194,186,188,228,189,401,403]'
 
 
 def px(path):
@@ -48,7 +51,7 @@ def outline(path, side):
     return [first if v < 0 else v for v in out]
 
 
-B1, B2, B3, PI = 'assets/art_v2/batch1/', 'assets/art_v2/batch2/', 'assets/art_v2/batch3/', 'assets/art_v2/pilot/'
+FW, FS, SO, SC, SL, SS = (f'assets/terrain/{f}/' for f in ('forest_w1', 'forest_story', 'spirit_out', 'spirit_cave', 'spirit_lava', 'spirit_snow'))
 
 
 def forest_kits(prof, src_compact, src_ground, src_ext):
@@ -74,42 +77,44 @@ def forest_kits(prof, src_compact, src_ground, src_ext):
 
 
 K = {}
-K.update(forest_kits('w1', PI, B1, B2))
-K.update(forest_kits('story', B2, B2, B2))
+K.update(forest_kits('w1', FW, FW, FW))
+K.update(forest_kits('story', FS, FS, FS))
 K.update({
-    'us_w1': {'parts': {'mid': B1 + 'forest_w1_under_support.png', 'left': B1 + 'forest_w1_under_support_end_left.png',
-                        'right': B1 + 'forest_w1_under_support_end_right.png'},
-              'cap': 24, 'tile': 128, 'h': 44, 'cut': B1 + 'forest_w1_under_support.png'},
+    'us_w1': {'parts': {'mid': FW + 'forest_w1_under_support.png', 'left': FW + 'forest_w1_under_support_end_left.png',
+                        'right': FW + 'forest_w1_under_support_end_right.png'},
+              'cap': 24, 'tile': 128, 'h': 44, 'cut': FW + 'forest_w1_under_support.png'},
     # long ledges: World1 = candidate A (one image cut on its module lines), story = batch 2 kit with separate parts
-    'fa_w1': {'parts': {'img': 'assets/art_prototype/forest_standard_candidate_A.png'}, 'w': 441, 'h': 80, 'contactY': 21},
-    'fl_story': {'parts': {n: f'{B2}forest_story_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'mid_c', 'right')},
+    'fa_w1': {'parts': {'img': FW + 'forest_w1_long.png'}, 'w': 441, 'h': 80, 'contactY': 21},
+    'fl_story': {'parts': {n: f'{FS}forest_story_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'mid_c', 'right')},
                  'lw': 70, 'rw': 71, 'mw': 100, 'h': 80, 'contactY': 21},
     # Spirit lava (pilot rev1 long + batch 1 glow / wall)
-    'll': {'parts': {n: f'{PI}spirit_lava_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'right')},
-           'cap': 44, 'tile': 394, 'h': 74, 'contactY': 6, 'overhang': 6, 'cut': PI + 'spirit_lava_long_mid_a.png'},
-    'lg': {'parts': {n: f'{B1}spirit_lava_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
-           'cap': 24, 'tile': 24, 'h': 34, 'contactY': 2, 'overhang': 5, 'cut': B1 + 'spirit_lava_glow_fill_a.png'},
-    'lw': {'parts': {'tile': B1 + 'spirit_lava_wall_tile.png', 'edge_left': B1 + 'spirit_lava_wall_edge_left.png',
-                     'edge_right': B1 + 'spirit_lava_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
+    'll': {'parts': {n: f'{SL}spirit_lava_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'right')},
+           'cap': 44, 'tile': 394, 'h': 74, 'contactY': 6, 'overhang': 6, 'cut': SL + 'spirit_lava_long_mid_a.png'},
+    'lg': {'parts': {n: f'{SL}spirit_lava_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 24, 'tile': 24, 'h': 34, 'contactY': 2, 'overhang': 5, 'cut': SL + 'spirit_lava_glow_fill_a.png'},
+    'lw': {'parts': {'tile': SL + 'spirit_lava_wall_tile.png', 'edge_left': SL + 'spirit_lava_wall_edge_left.png',
+                     'edge_right': SL + 'spirit_lava_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
     # Spirit lakeside (batch 2)
-    'ol': {'parts': {n: f'{B2}spirit_out_long_{n}.png' for n in ('left', 'mid_a', 'right')},
-           'cap': 44, 'tile': 394, 'h': 72, 'contactY': 6, 'overhang': 6, 'cut': B2 + 'spirit_out_long_mid_a.png'},
-    'ow': {'parts': {'tile': B2 + 'spirit_out_wall_tile.png', 'edge_left': B2 + 'spirit_out_wall_edge_left.png',
-                     'edge_right': B2 + 'spirit_out_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
-    # Spirit cave (batch 3): long ledges stay on approved candidate A (art-prototype.js), shown with contact row 9
-    'ct': {'parts': {n: f'{B3}spirit_cave_tiny_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
-           'cap': 28, 'tile': 12, 'h': 48, 'contactY': 2, 'overhang': 5, 'cut': B3 + 'spirit_cave_tiny_fill_a.png'},
-    'cf': {'parts': {n: f'{B3}spirit_cave_floor_{n}.png' for n in ('left', 'mid', 'right')},
-           'cap': 64, 'tile': 256, 'h': 120, 'contactY': 6, 'cut': B3 + 'spirit_cave_floor_mid.png'},
-    'cw': {'parts': {'tile': B3 + 'spirit_cave_wall_tile.png', 'edge_left': B3 + 'spirit_cave_wall_edge_left.png',
-                     'edge_right': B3 + 'spirit_cave_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
+    'ol': {'parts': {n: f'{SO}spirit_out_long_{n}.png' for n in ('left', 'mid_a', 'right')},
+           'cap': 44, 'tile': 394, 'h': 72, 'contactY': 6, 'overhang': 6, 'cut': SO + 'spirit_out_long_mid_a.png'},
+    'ow': {'parts': {'tile': SO + 'spirit_out_wall_tile.png', 'edge_left': SO + 'spirit_out_wall_edge_left.png',
+                     'edge_right': SO + 'spirit_out_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
+    # Spirit cave: long ledges = approved candidate A (one 482px image, 44px caps, middle cut at a seam-matched column),
+    # contact row 9 (gate B: the metadata row 16 left the top line 7px above the platform)
+    'cl': {'parts': {'img': SC + 'spirit_cave_long.png'}, 'w': 482, 'h': 81, 'contactY': 9, 'cap': 44, 'overhang': 6},
+    'ct': {'parts': {n: f'{SC}spirit_cave_tiny_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 28, 'tile': 12, 'h': 48, 'contactY': 2, 'overhang': 5, 'cut': SC + 'spirit_cave_tiny_fill_a.png'},
+    'cf': {'parts': {n: f'{SC}spirit_cave_floor_{n}.png' for n in ('left', 'mid', 'right')},
+           'cap': 64, 'tile': 256, 'h': 120, 'contactY': 6, 'cut': SC + 'spirit_cave_floor_mid.png'},
+    'cw': {'parts': {'tile': SC + 'spirit_cave_wall_tile.png', 'edge_left': SC + 'spirit_cave_wall_edge_left.png',
+                     'edge_right': SC + 'spirit_cave_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
     # Spirit snow (batch 3)
-    'sl': {'parts': {n: f'{B3}spirit_snow_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'right')},
-           'cap': 44, 'tile': 394, 'h': 73, 'contactY': 6, 'overhang': 6, 'cut': B3 + 'spirit_snow_long_mid_a.png'},
-    'st': {'parts': {n: f'{B3}spirit_snow_tiny_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
-           'cap': 28, 'tile': 12, 'h': 56, 'contactY': 2, 'overhang': 5, 'cut': B3 + 'spirit_snow_tiny_fill_a.png'},
-    'sg': {'parts': {n: f'{B3}spirit_snow_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
-           'cap': 24, 'tile': 24, 'h': 40, 'contactY': 6, 'overhang': 5, 'cut': B3 + 'spirit_snow_glow_fill_a.png'},
+    'sl': {'parts': {n: f'{SS}spirit_snow_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'right')},
+           'cap': 44, 'tile': 394, 'h': 73, 'contactY': 6, 'overhang': 6, 'cut': SS + 'spirit_snow_long_mid_a.png'},
+    'st': {'parts': {n: f'{SS}spirit_snow_tiny_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 28, 'tile': 12, 'h': 56, 'contactY': 2, 'overhang': 5, 'cut': SS + 'spirit_snow_tiny_fill_a.png'},
+    'sg': {'parts': {n: f'{SS}spirit_snow_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 24, 'tile': 24, 'h': 40, 'contactY': 6, 'overhang': 5, 'cut': SS + 'spirit_snow_glow_fill_a.png'},
 })
 for k, v in K.items():
     if 'cut' in v:
@@ -119,10 +124,10 @@ for k, v in K.items():
     v['parts'] = {n: p + '?v=' + CACHE for n, p in v['parts'].items()}
 
 js = r"""// ============================================================================
-// ART V2 TEST LAYER (branch art-unification-phase2 only; never merge as is)
-// Generated by tools/art_v2_pilot_build.py. Do not edit by hand.
+// TERRAIN ART (art renewal phase 2, approved 2026-11-22; replaces the test layers art-prototype.js and art-v2-pilot.js)
+// Generated by tools/terrain_art_build.py from assets/terrain/. Do not edit by hand.
 //
-// Draws the ART V2 parts at 1:1 with each part's contact row on the platform top. Only drawing changes:
+// Draws the terrain parts at 1:1 with each part's contact row on the platform top. Only drawing changes:
 // platform objects, coordinates, collision and physics are untouched. Repeat tiles that do not fill a width
 // exactly are cut at an offline "two-part splice" table; cliff silhouettes are offline outlines (no pixel
 // reading in the browser, file:// safe).
@@ -142,22 +147,23 @@ js = r"""// ====================================================================
 //   MW3, MW4, B6             basalt wall tile + edges (the open drop above the hall stays undrawn)
 //   lakeside ledges (E1-E3)  lakeside long kit (44 | 394 x n | 44, contactY 6, 6px overhang)
 //   MW1                      lakeside rock wall tile + edges
-//   cave ledges >= 120px     approved candidate A (art-prototype.js), display contact row 9
+//   cave ledges >= 120px     cave long kit (44 | middle | 44, one seam-matched cut, contactY 9, 6px overhang)
 //   cave ledges < 120px      cave tiny kit (28 | 12 x n | 28, contactY 2, 5px overhang)
 //   cave floor (Gabia)       cave floor kit (64 | 256 x n | 64, contactY 6)
 //   MW2, B1, B2, B3, B5      cave wall tile + edges; B1 (you can stand on it) gets a cave tiny cap
 //   snow ledges              snow long kit (>= 120px) / snow tiny kit (< 120px)
 //   snow blinking ledges     snow glow kit (24 | 24 x n | 24, contactY 6, 5px overhang)
-// Toggles: ?artv2=0 turns this layer off (v1.1 prototype only); ?arttest=0 turns off every test layer.
+// Everything else (other worlds, Challenge mode) keeps the release art, and so does any kit whose images are not
+// loaded yet or whose drawing throws (that kit is switched off for the session with one console warning).
+// Comparison: add ?oldart=1 to the address to see the previous art (the new images are then not downloaded at all).
 // ============================================================================
 (function () {
   'use strict';
-  const q = location.search;
-  window.__DUDU_ART_V2_PILOT = !/[?&]arttest=0\b/.test(q) && !/[?&]artv2=0\b/.test(q);
+  window.__DUDU_TERRAIN_ART = !/[?&]oldart=1\b/.test(location.search);
   const K = __KITS__;
-  window.__DUDU_ART_V2 = K;
-  for (const k of Object.keys(K)) {
-    K[k].img = {};
+  window.__DUDU_TERRAIN_KITS = K;
+  for (const k of Object.keys(K)) K[k].img = {};
+  if (window.__DUDU_TERRAIN_ART) for (const k of Object.keys(K)) {
     for (const n of Object.keys(K[k].parts)) {
       const im = new Image();
       im.onload = () => { K[k].img[n] = im; };
@@ -165,7 +171,7 @@ js = r"""// ====================================================================
     }
   }
   const failed = {};
-  function fail(k, e) { failed[k] = true; console.warn('[art v2] ' + k + ' off:', e); }
+  function fail(k, e) { failed[k] = true; console.warn('[terrain-art] ' + k + ' off, release art instead:', e); }
   const ready = (...ks) => ks.every(k => Object.keys(K[k].parts).every(n => K[k].img[n]));
   function piece(im, sx, sy, w, h, dx, dy) { if (w > 0 && h > 0) ctx.drawImage(im, sx, sy, w, h, dx, dy, w, h); }
   function runX(k, names, x, total, top, h) {
@@ -196,7 +202,7 @@ js = r"""// ====================================================================
 
   // ---------------------------------------------------------------- forest (World1 + story)
   function forestProfile() {
-    if (!window.__DUDU_ART_V2_PILOT || typeof gameMode === 'undefined') return null;
+    if (!window.__DUDU_TERRAIN_ART || typeof gameMode === 'undefined') return null;
     if (gameMode === 'world') {
       const st = typeof world1Stages !== 'undefined' ? world1Stages[activeWorldStageIndex] : null;
       return (st && !st.worldId && ['1-1', '1-2', '1-3', '1-4'].includes(st.stageCode)) ? 'w1' : null;
@@ -354,11 +360,26 @@ js = r"""// ====================================================================
   // ---------------------------------------------------------------- Spirit Mountain (lava + lakeside)
   const ZONE_WALLS = { 'SM-MW3': 'lw', 'SM-MW4': 'lw', 'SM-B6': 'lw', 'SM-MW1': 'ow',
     'SM-MW2': 'cw', 'SM-B1': 'cw', 'SM-B2': 'cw', 'SM-B3': 'cw', 'SM-B5': 'cw' };
-  function spiritOn() { return window.__DUDU_ART_V2_PILOT && typeof smZoneOf === 'function'; }
-  /* the approved cave long ledge (candidate A, drawn by art-prototype.js) is shown with its top line on the
-     platform: display contact row 9 instead of the metadata 16 (gate B decision; collision unchanged) */
-  if (window.__DUDU_ART_V2_PILOT && window.__DUDU_ART_PROTOTYPE && window.__DUDU_ART_PROTOTYPE.cave) window.__DUDU_ART_PROTOTYPE.cave.contactY = 9;
-  // ledge kit for a Spirit Mountain platform: [kit, middle variants] or null (cave long ledges stay on candidate A)
+  function spiritOn() { return window.__DUDU_TERRAIN_ART && typeof smZoneOf === 'function'; }
+  /* Cave long ledge. The middle (source columns 44..438) repeats; the length that does not fit a whole number of
+     copies is removed at ONE cut, chosen offline so the two columns that end up side by side match best. */
+  const CAVE_CUTS = __CAVE_CUTS__;
+  function drawCaveLong(a, x, y) {
+    const C = K.cl, im = C.img.img, top = Math.round(y - C.contactY);
+    const seg = (sx, w, dx) => piece(im, sx, 0, w, C.h, dx, top);
+    const x0 = x - C.overhang, x1 = x + a.w + C.overhang, cap = Math.min(C.cap, Math.floor((x1 - x0) / 2));
+    seg(0, cap, x0); seg(C.w - cap, cap, x1 - cap);
+    if (cap < C.cap) return;
+    const m0 = C.cap, m1 = C.w - C.cap, P = m1 - m0, M = x1 - x0 - 2 * cap, full = Math.floor(M / P), rem = M - full * P;
+    let tx = x0 + cap;
+    for (let i = 0; i < full; i++) { seg(m0, P, tx); tx += P; }
+    if (rem > 0) {
+      const cut = CAVE_CUTS[rem] || (C.cap + 1), skip = P - rem;
+      seg(m0, cut - m0, tx); tx += cut - m0;
+      seg(cut + skip, m1 - cut - skip, tx);
+    }
+  }
+  // ledge kit for a Spirit Mountain platform: [kit, middle variants] (['cl', []] = cave long ledge) or null
   function spiritLongKit(a) {
     if (!spiritOn() || !a.smDraw || a.blink) return null;
     if (['rock', 'pillar', 'floor', 'roof', 'blink'].includes(a.smDraw)) return null;
@@ -366,7 +387,7 @@ js = r"""// ====================================================================
     const pick = (k, mids) => (!failed[k] && ready(k)) ? [k, mids] : null;
     if (z === 'lava') return tiny ? null : pick('ll', ['mid_a', 'mid_b']);
     if (z === 'out') return tiny ? null : pick('ol', ['mid_a']);
-    if (z === 'cave') return tiny ? pick('ct', ['fill_a', 'fill_b']) : null;
+    if (z === 'cave') return tiny ? pick('ct', ['fill_a', 'fill_b']) : pick('cl', []);
     if (z === 'snow') return tiny ? pick('st', ['fill_a', 'fill_b']) : pick('sl', ['mid_a', 'mid_b']);
     return null;
   }
@@ -400,7 +421,9 @@ js = r"""// ====================================================================
       }
       const lk = spiritLongKit(a);
       if (lk) {
-        try { const L = K[lk[0]]; capped(lk[0], lk[1], x - L.overhang, a.w + 2 * L.overhang, Math.round(y - L.contactY)); return; }
+        try {
+          if (lk[0] === 'cl') { drawCaveLong(a, x, y); return; }
+          const L = K[lk[0]]; capped(lk[0], lk[1], x - L.overhang, a.w + 2 * L.overhang, Math.round(y - L.contactY)); return; }
         catch (e) { fail(lk[0], e); }
       }
       return prevSpirit(a, x, y);
@@ -419,14 +442,13 @@ js = r"""// ====================================================================
     };
   }
 
-  // QA hook: does the V2 layer draw this object?
-  window.__artV2Pilot = {
+  // QA hook (tools/qa/art_v2_*.py): is this object drawn with the terrain art?
+  window.__terrainArt = {
     applies(a) {
       if (a.smDraw) {
         if (ZONE_WALLS[a.id]) return spiritOn();
         if (a.smDraw === 'floor') return spiritOn();
         if (a.blink) return spiritOn() && !!GLOW[smZoneOf(a)];
-        if (spiritOn() && smZoneOf(a) === 'cave' && a.w >= 120) return !!(window.__artProto && window.__artProto.applies(a));
         return !!spiritLongKit(a);
       }
       const p = forestProfile();
@@ -440,7 +462,7 @@ js = r"""// ====================================================================
   };
 })();
 """
-js = js.replace('__KITS__', json.dumps(K, separators=(',', ':')))
-open(os.path.join(ROOT, 'art-v2-pilot.js'), 'w', encoding='utf-8', newline='\n').write(js)
+js = js.replace('__KITS__', json.dumps(K, separators=(',', ':'))).replace('__CAVE_CUTS__', CAVE_CUTS)
+open(os.path.join(ROOT, 'terrain-art.js'), 'w', encoding='utf-8', newline='\n').write(js)
 print('written', len(js), 'bytes; kits', ', '.join(f"{k}{'(cut %d)' % len(v['cutTable']) if 'cutTable' in v else ''}" for k, v in K.items()))
 print('ext insets', {p: (K['gc_' + p]['extInsetLeft'], K['gc_' + p]['extInsetRight'], K['gc_' + p]['outlineLeft'][-1], K['gc_' + p]['outlineRight'][-1]) for p in ('w1', 'story')})

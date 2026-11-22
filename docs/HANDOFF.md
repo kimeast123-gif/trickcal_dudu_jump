@@ -22,6 +22,7 @@ Claude 앱 대화에서 진행한 리뉴얼 작업을 Claude Code로 넘기기 �
 | v1.4.1 | 마요가 붙잡은 뒤 재시작하거나 화면 밖에서 따라잡을 때 점프 상태가 남던 문제. 화면 가장자리에서 보이던 따라잡기 이동을 화면 밖으로. 인수인계 도구와 문서 |
 | v1.4.2 | HUD 흰 글씨가 크림 바탕에 묻히던 문제(v1.4 회귀), 가로 폰 옵션 창과 게임 화면 높이, 로비 문구, 모나티엄 B 탑 내부를 띠 단위로 미리 합성(31ms→20.5ms), `?fps=1` 정보 추가 |
 | v1.7.4 | 두두 발 위치: `SPRITE_FOOT`(시트별 발끝 행, 서기 176 등, 공중 동작 180)로 그림, rest_* 앵커를 서기 몸에 맞춰 다시 잼, 서기와 쉬는 동작은 `restBlend`로 교차 페이드 |
+| v1.8.0 | 아트 리뉴얼 2단계 통합(지시서 P2-E): 스토리 수인숲, 월드1 숲, 정령산 6개 지역의 발판·땅·벽을 GPT 제작 그림(승인본 83장, `assets/terrain/<지역>/`)으로. 시험 레이어 두 개(`art-prototype.js`, `art-v2-pilot.js`)를 `terrain-art.js` 하나로 합쳤다(`tools/terrain_art_build.py`가 생성, 반복 타일 자르는 위치와 절벽 윤곽을 미리 계산해 넣음, 브라우저에서 픽셀 읽기 없음). 그림 하나가 안 불러지거나 그리다 오류가 나면 그 부품만 예전 그림으로. `?oldart=1`이면 예전 그림이고 새 그림은 받지 않는다. 검수 기록 `docs/art_v2/` (P2-D 보고 `P2D_QA_REPORT.md`, P2-E 보고 `P2E_INTEGRATION.md`) |
 | v1.7.3 | 두두 스프라이트 방향: 모든 시트가 왼쪽을 봄 → meta의 idle·win·rest_* `facing`을 -1로(run/jump/spin과 같게), `spriteFacing` 기본값 -1. `updateAnimation`에 동작 전환 히스테리시스(공중 0.06초, 달리기 30/8px/s) |
 | v1.7.2 | 왕사탕 점검: `tools/qa/candy_audit.py`(정적 검사, PASS 필요), 움직이는 발판 위 사탕은 `attachRidingCandies`/`syncRidingCandies`로 발판을 따라감(`platformStep` 끝, loadLevel의 reset 뒤), 위치 수정 7개는 world.js `fixCandySpots` |
 | v1.7.1 | HUD 재배치(style.css 끝 v1.7.1 블록: `#mobileOptBtn`, `#sound`, `#full` 숨김, 체력 왼쪽 위, 숫자 숨김), 일시정지 메뉴 `#pauseSoundBtn`·`#pauseFullBtn`(`body[data-game-state=paused]`에서만 보임), 대시 링 `#dashRing`·`#vbtn-dash`에 `--dash`와 `data-dash-state`(game.js HUD 블록, 값이 바뀔 때만 씀) |
@@ -84,6 +85,7 @@ Claude 앱 대화에서 진행한 리뉴얼 작업을 Claude Code로 넘기기 �
 9. **월드3 대사와 난이도**: 정령산 NPC 대사는 임시(TEMP)라 사용자 확정 문구를 받아 `spirit-mountain.js`의 `s.smNpcs`만 바꾸면 된다. 바깥 구간이 2단 점프 위주라 직접 해 본 뒤 발판 추가나 강풍 세기(`SM_WIND.push`) 조정 여부를 정한다.
 10. **월드2 실기기 확인**: 야간 맵을 사람이 직접 해 보고 드론 사격 간격(v1.5.1에서 1.66초, 탄속 600px/s로 강화), 셔터 앞 대시 타이밍, 타워 이동 발판 속도가 "편하게 어렵다" 정도인지 사용자 피드백을 받는다. 수치는 `night-monatium.js`의 `DRONE`과 `mover(...)` 인자.
 11. **보류한 UX 제안 (2026-11-17, 사용자 결정 대기)**: 일시정지의 "처음부터 다시"가 구간인지 전체인지 모호함(범위를 밝히는 문구, 진행이 사라지면 "메인화면으로"에 확인 단계). 남은 시간 표시(위쪽 호를 따라 움직이는 작은 해)가 "해 지기 전에 집에"라는 목표에 비해 약함. 스토리 모드의 편안함과 긴장 사이 정도를 사용자가 정해야 한다.
+12. **낡은 테스트 (2026-11-22 확인)**: `regression.py`의 HUD 대비(v1.7.1에서 체력 숫자·대시 글자를 숨김)와 정령산 바람 주기(v1.6.6에서 7~10초마다 3초), `spirit_checks.py` 10개, `spirit_hops.py` 대부분이 v1.6.x 이전 맵·수치 기준이라 배포본에서도 실패한다. `spirit_hops.py`는 바람·점멸 때문에 같은 빌드에서도 몇 구간이 성공과 실패를 오간다. 아트와 별도로 고친다.
 
 ## 6. 측정 기준값 (v1.4.2, 비교용)
 
@@ -105,9 +107,12 @@ Claude 앱 대화에서 진행한 리뉴얼 작업을 Claude Code로 넘기기 �
 | `python tools/qa/night_checks.py [단어]` | 야간 맵 기믹 동작 25개 (`drone`, `field`, `npc`, `backdrop` …) |
 | `python tools/qa/night_run.py` | 야간 맵을 입력만으로 처음부터 클리어까지 연속 플레이 |
 | `python tools/qa/spirit_hops.py` / `spirit_checks.py` / `spirit_run.py` | 정령산 발판 79구간(강풍 포함), 기믹 25개, 바닥에서 정상까지 연속 등반 |
+| `python tools/terrain_art_build.py` | `assets/terrain/` 그림으로 `terrain-art.js` 생성. 그림을 바꾸면 이미지 캐시 키 `CACHE`도 바꾼다 |
+| `python tools/qa/art_v2_physics_identity.py` | 새 지형 그림이 그려지는 발판 전부(258곳)에서 그림 켜고 끈 물리가 프레임마다 같은지 |
+| `python tools/qa/art_v2_file_open.py` / `art_v2_load_probe.py` / `art_v2_scenes.py` / `art_v2_pilot_qa.py` | 파일로 열기·휴대폰, 로딩·프레임·메모리, 비율·체크포인트·바람·화면 크기, 지역별 적용률과 접지 |
 | `python tools/release.py v1.6.0` | 버전과 캐시 키 일괄 교체, 해시 목록 재생성 |
 
-환경 변수: `GAME_ROOT`(기본 저장소 최상단), `QA_PORT`(기본 8765), `CHROME`(기본 Playwright 내장 Chromium).
+환경 변수: `GAME_ROOT`(기본 저장소 최상단), `QA_PORT`(기본 8765), `QA_QUERY`(모든 페이지 주소에 붙일 값, 예: `?oldart=1`), `CHROME`(기본 Playwright 내장 Chromium).
 게임 상태는 전역 변수로 직접 다룬다: `p`(플레이어), `platforms`, `actors`, `levels`, `levelIndex`, `state`, `cam`, `camY`, `keys`. 테스트 스크립트의 `play(page, level, x, y)`가 메뉴를 건너뛰고 원하는 위치에서 바로 플레이 상태로 만든다.
 
 ## 8. 배포 절차

@@ -1,6 +1,6 @@
-"""Seam table for the cave prototype (art-prototype.js CAVE_CUTS).
+"""Seam table of the cave long ledge (CAVE_CUTS in tools/terrain_art_build.py).
 
-    python tools/art_cave_cuts.py          # prints the JS array; paste over CAVE_CUTS in art-prototype.js
+    python tools/art_cave_cuts.py          # prints the JS array; paste over CAVE_CUTS in tools/terrain_art_build.py, then rebuild
 
 The cave candidate is 3-sliced: caps [0,44) and [438,482), repeatable middle [44,438) (394px). When a ledge's middle
 needs rem = 1..393 px on top of whole copies, the drawer copies [44, cut) then [cut+skip, 438) with skip = 394-rem.
@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-C = np.asarray(Image.open(os.path.join(ROOT, 'assets/art_prototype/cave_standard_candidate_A.png')).convert('RGBA')).astype(int)
+C = np.asarray(Image.open(os.path.join(ROOT, 'assets/terrain/spirit_cave/spirit_cave_long.png')).convert('RGBA')).astype(int)
 H, W = C.shape[:2]
 CAP, M0, M1 = 44, 44, W - 44
 P = M1 - M0

@@ -20,7 +20,7 @@ from harness import serve, async_playwright
 
 OUT = os.path.join(os.path.dirname(__file__), 'out', 'art_v2_scenes')
 os.makedirs(OUT, exist_ok=True)
-MODES = (('release', '?arttest=0'), ('v2', ''))
+MODES = (('release', '?oldart=1'), ('v2', ''))
 STORY = "()=>{gameMode='story';loadLevel(0);levelIndex=0;state='paused';document.getElementById('overlay').hidden=true;const st=document.getElementById('story');if(st)st.hidden=true;}"
 SPIRIT = "()=>{devPracticeSpirit(2000,-1301);state='paused';}"
 W1 = "(i)=>{loadWorld1Stage(i,{section:0,entryRoute:'default'});state='paused';document.getElementById('overlay').hidden=true;}"
@@ -32,12 +32,12 @@ AT = """([x,y,dx,dy,mask])=>{cam=prevCam=rCam=x-640; camY=prevCamY=rCamY=y-430; 
   if(typeof spiritBgZone==='function'&&typeof smBgWeights!=='undefined'&&dx!==null){const z=spiritBgZone();smBgWeights.fill(0);smBgWeights[z]=1;}
   draw(); return canvas.toDataURL('image/png');}"""
 HOOK = """()=>{if(window.__dimLog)return; window.__dimLog={}; const o=ctx.drawImage.bind(ctx);
-  ctx.drawImage=function(im,...a){const s=(im&&im.src)||''; if(/art_v2|art_proto|art_v1|prototype/.test(s)){
+  ctx.drawImage=function(im,...a){const s=(im&&im.src)||''; if(['/terrain/forest_w1/','/terrain/forest_story/','/terrain/spirit_'].some(k=>s.includes(k))){
     let sx=1,sy=1; if(a.length===8){sx=a[6]/a[2];sy=a[7]/a[3];} else if(a.length===4){sx=a[2]/(im.naturalWidth||im.width);sy=a[3]/(im.naturalHeight||im.height);}
     const k=s.split('/').slice(-2).join('/').split('?')[0]; const r=window.__dimLog[k]||(window.__dimLog[k]={n:0,worst:0});
     r.n++; const d=Math.abs(sx/sy-1); if(d>r.worst){r.worst=d;r.ex=[sx,sy];}}
     return o(im,...a);};}"""
-TARGETS = """()=>platforms.filter(a=>!a.hidden&&((window.__artV2Pilot&&window.__artV2Pilot.applies(a))||(window.__artProto&&window.__artProto.applies(a)))).map(a=>[a.x+Math.min(a.w,1100)/2,a.y])"""
+TARGETS = """()=>platforms.filter(a=>!a.hidden&&(window.__terrainArt&&window.__terrainArt.applies(a))).map(a=>[a.x+Math.min(a.w,1100)/2,a.y])"""
 
 
 def img(url):

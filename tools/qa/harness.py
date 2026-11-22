@@ -6,7 +6,7 @@ with Playwright (Chromium). Everything runs headless.
 Environment variables
   GAME_ROOT   repository root to serve (default: two folders above this file)
   QA_PORT     local port (default 8765)
-  QA_QUERY    query string added to every page opened without one (e.g. ?arttest=0 for the release art)
+  QA_QUERY    query string added to every page opened without one (e.g. ?oldart=1 for the release art)
   CHROME      path to a Chromium binary (default: Playwright's bundled Chromium)
 """
 import os, functools, threading, http.server, socketserver, asyncio

@@ -27,7 +27,7 @@ async def enter(g, kind, st):
 
 LIST = """()=>platforms.map((a,i)=>({i,id:a.id||'',x:a.x,y:a.y,w:a.w,blink:!!a.blink,sm:a.smDraw||'',
    zone:(a.smDraw&&typeof smZoneOf==='function')?smZoneOf(a):'',wall:!!a.wall,ceiling:!!a.ceiling,ground:!!a.groundTile,noTop:!!a.noTopLand,
-   skin:(a.visual&&a.visual.material)||a.skin||'', pilot: !!(window.__artV2Pilot && window.__artV2Pilot.applies(a))}))"""
+   skin:(a.visual&&a.visual.material)||a.skin||'', pilot: !!(window.__terrainArt && window.__terrainArt.applies(a))}))"""
 FRAME = """([i, hide, dudu])=>{const a=platforms[i];
   const cx=a.x+Math.min(a.w,1100)/2-640, cy=a.y-430;
   cam=prevCam=rCam=cx; camY=prevCamY=rCamY=cy; camZoom=rCamZoom=1;
@@ -60,7 +60,7 @@ async def main():
     res = {'areas': {}, 'contact': [], 'shots': []}
     async with async_playwright() as pw:
         pages = {}
-        for mode, q in (('v2', ''), ('v11', '?artv2=0'), ('release', '?arttest=0')):
+        for mode, q in (('v2', ''), ('release', '?oldart=1')):
             b, pg, errs = await open_desktop(pw, query=q)
             pages[mode] = (b, pg, errs)
         pg = pages['v2'][1]
@@ -110,7 +110,7 @@ async def main():
             c = await contact(pg, P)
             res['contact'].append({'area': kind if kind != 'w1' else f'world1_{st + 1}', 'id': P['id'], 'w': P['w'], 'blink': P['blink'], 'top_minus_feet': c})
 
-        # same-camera before/after with Dudu on the platform: a few per area, three modes side by side
+        # same-camera before/after with Dudu on the platform: a few per area, release and new art side by side
         picks = {}
         for kind, st, P in targets:
             k = kind if kind != 'w1' else f'world1_{st + 1}'
@@ -119,7 +119,7 @@ async def main():
         for k, lst in picks.items():
             for kind, st, P in lst:
                 row = []
-                for mode in ('release', 'v11', 'v2'):
+                for mode in ('release', 'v2'):
                     g = pages[mode][1]
                     await enter(g, kind, st)
                     await g.wait_for_timeout(450)
@@ -127,11 +127,11 @@ async def main():
                     d = ImageDraw.Draw(im); d.rectangle((0, 0, 330, 24), fill=(0, 0, 0)); d.text((6, 6), f"{P['id']} w{int(P['w'])} {mode}", fill=(255, 255, 0))
                     d.line((0, 430, 30, 430), fill=(255, 0, 0), width=2); d.line((1250, 430, 1280, 430), fill=(255, 0, 0), width=2)
                     row.append(im)
-                big = Image.new('RGB', (1920, 360))
+                big = Image.new("RGB", (640 * len(row), 360))
                 for j, im in enumerate(row): big.paste(im.resize((640, 360)), (j * 640, 0))
                 fn = f"ba_{k}_{P['id']}.png"; big.save(os.path.join(OUT, fn)); res['shots'].append(fn)
                 # contact close-up (2x) around Dudu's feet, v2 only
-                cx = 640; crop = row[2].crop((cx - 160, 430 - 70, cx + 160, 430 + 40)).resize((640, 220), Image.NEAREST)
+                cx = 640; crop = row[-1].crop((cx - 160, 430 - 70, cx + 160, 430 + 40)).resize((640, 220), Image.NEAREST)
                 ImageDraw.Draw(crop).line((0, 140, 640, 140), fill=(255, 0, 0)); crop.save(os.path.join(OUT, f"contact_{k}_{P['id']}.png"))
 
         # seam strips: every used width on a flat background (v2 page), drawn through the real wrappers

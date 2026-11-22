@@ -3,7 +3,7 @@
     python tools/qa/art_v2_load_probe.py
 
 The game is served from a sub-folder (/trickcal_dudu_jump/index.html), the same relative-path layout as GitHub
-Pages. For the release art (?arttest=0) and the V2 art, the script visits the six V2 families, lets each run for
+Pages. For the release art (?oldart=1) and the V2 art, the script visits the six V2 families, lets each run for
 2.5 s with Dudu running, and records: responses with status >= 400 and failed requests, V2 images fetched and
 fetched more than once, average frame interval and frames over 50 ms, and the JS heap. Then the browser is closed,
 opened again on the same address, and checked for page errors and a running game clock.
@@ -60,22 +60,22 @@ async def probe(pw, query):
     await pg.evaluate(VISITS[-2][1]); await pg.wait_for_timeout(800)
     t1 = await pg.evaluate('()=>time'); await pg.wait_for_timeout(600); t2 = await pg.evaluate('()=>time')
     await b.close()
-    v2 = {u: n for u, n in fetched.items() if '/assets/art_v2/' in u}
+    v2 = {u: n for u, n in fetched.items() if re.search(r'/assets/terrain/(forest_w1|forest_story|spirit_[a-z]+)/', u)}
     return {'visits': rows, 'bad_responses': bad[:10], 'aborted_media': aborted[:10], 'page_errors': errs[:5],
             'art_v2_images': len(v2), 'art_v2_fetched_twice': [u[-60:] for u, n in v2.items() if n > 1],
             'reopen': {'page_errors': errs2[:5], 'clock_runs': t2 - t1 > 0.3}}
 
 
 def referenced_v2():
-    s = open(os.path.join(REPO, 'art-v2-pilot.js'), encoding='utf-8').read()
-    return sorted(set(re.findall(r"assets/art_v2/[\w/]+\.png", s)))
+    s = open(os.path.join(REPO, 'terrain-art.js'), encoding='utf-8').read()
+    return sorted(set(re.findall(r"assets/terrain/[\w/]+\.png", s)))
 
 
 async def main():
     srv = serve(root=os.path.dirname(REPO))
     out = {}
     async with async_playwright() as pw:
-        for name, q in (('release', '?arttest=0'), ('v2', '')):
+        for name, q in (('release', '?oldart=1'), ('v2', '')):
             out[name] = await probe(pw, q)
             print(name, json.dumps(out[name], ensure_ascii=False), flush=True)
     srv.shutdown()

@@ -1,12 +1,12 @@
-"""Art phase 2 (P2-D): proof that the V2 art layer does not touch gameplay, over every platform it redraws.
+"""Terrain art (art renewal phase 2): proof that the new art does not touch gameplay, over every platform it redraws.
 
     python tools/qa/art_v2_physics_identity.py
     ART_FAMILY=spirit python tools/qa/art_v2_physics_identity.py      # story | w1_0..w1_3 | spirit
 
-Same method as art_physics_identity.py, extended to all V2 targets: for every platform that art-v2-pilot.js or
-art-prototype.js redraws (story forest, World1 1-1..1-4, Spirit Mountain out/cave/lava/snow), Dudu is placed on it
+For every platform that terrain-art.js redraws (story forest, World1 1-1..1-4, Spirit Mountain out/cave/lava/snow),
+Dudu is placed on it
 and a scripted input (run, jump, double jump; both directions) is played with update(STEP) + draw() each step.
-The run is done with both art layers off and with both on, and x, y and the platform he stands on are compared
+The run is done with the terrain art off and on, and x, y and the platform he stands on are compared
 frame by frame. When a pair differs, an off-vs-off control is run at the same spot: if the control also differs
 the spot is time-dependent (blink, wind) rather than art-dependent, and is reported separately.
 """
@@ -14,11 +14,11 @@ import asyncio, os, sys, json
 sys.path.insert(0, os.path.dirname(__file__))
 from harness import serve, async_playwright, open_desktop, play
 
-SET = "(on)=>{window.__DUDU_ART_PROTOTYPE_TEST=on;window.__DUDU_ART_V2_PILOT=on;}"
+SET = "(on)=>{window.__DUDU_TERRAIN_ART=on;}"
 RUN = r"""(o)=>{
   window.__rafHold=window.__rafHold||[];
   if(!window.__rafOrigP){window.__rafOrigP=window.requestAnimationFrame;window.requestAnimationFrame=f=>{window.__rafHold.push(f);return 0};}
-  window.__DUDU_ART_PROTOTYPE_TEST=o.art;window.__DUDU_ART_V2_PILOT=o.art;
+  window.__DUDU_TERRAIN_ART=o.art;
   const trace=[];const dir=o.dir>0?'ArrowRight':'ArrowLeft';
   for(let i=0;i<240;i++){
     if(i===5)pressInput(dir,'qa_script');
@@ -30,11 +30,11 @@ RUN = r"""(o)=>{
     update(STEP);draw();
     trace.push([+p.x.toFixed(4),+p.y.toFixed(4),p.on?p.on.id||'?':'-']);
   }
-  window.__DUDU_ART_PROTOTYPE_TEST=true;window.__DUDU_ART_V2_PILOT=true;
+  window.__DUDU_TERRAIN_ART=true;
   return trace;}"""
 THAW = r"""()=>{if(window.__rafOrigP){window.requestAnimationFrame=window.__rafOrigP;delete window.__rafOrigP;
   const h=window.__rafHold;window.__rafHold=[];last=performance.now();acc=0;h.forEach(f=>requestAnimationFrame(f));}}"""
-LIST = r"""()=>platforms.filter(a=>!a.hidden&&((window.__artV2Pilot&&window.__artV2Pilot.applies(a))||(window.__artProto&&window.__artProto.applies(a))))
+LIST = r"""()=>platforms.filter(a=>!a.hidden&&(window.__terrainArt&&window.__terrainArt.applies(a)))
   .map(a=>({id:a.id||'',x:a.x,y:a.y,w:a.w,zone:(a.smDraw&&typeof smZoneOf==='function')?smZoneOf(a):''}))"""
 ENTER = {'story': "()=>{gameMode='story';loadLevel(0);levelIndex=0;state='paused';document.getElementById('overlay').hidden=true;}",
          'spirit': "()=>{devPracticeSpirit(2000,-1301);state='paused';}"}

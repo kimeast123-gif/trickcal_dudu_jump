@@ -56,7 +56,7 @@ async def open_page(pw, mobile, file):
     pg = await ctx.new_page()
     errs, warns = [], []
     pg.on('pageerror', lambda e: errs.append(str(e)[:200]))
-    pg.on('console', lambda m: warns.append(m.text[:200]) if m.type == 'warning' and ('art-prototype' in m.text or 'art v2' in m.text) else None)
+    pg.on('console', lambda m: warns.append(m.text[:200]) if m.type == 'warning' and 'terrain-art' in m.text else None)
     await pg.goto(('file:///' + ROOT.replace('\\', '/') + '/index.html') if file else harness.URL)
     await pg.wait_for_timeout(5000)
     return b, pg, errs, warns
