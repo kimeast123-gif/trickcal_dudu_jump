@@ -13,7 +13,7 @@
 // ============================================================================
 
 const GS_WORLD_ID = 'world4_ghostswamp';
-const GS_ASSET_Q = '?v=v1_9_1_261123'; // rewritten by tools/release.py on every deploy
+const GS_ASSET_Q = '?v=v1_9_2_261123'; // rewritten by tools/release.py on every deploy
 
 // Sinking swamp ledge (MECHANICS_EVENTS_SPEC A, v1.9 as the user described it): the ledge stays where it is; after
 // 1.0s of standing on it Dudu's body slowly sinks into its mud. Jumping out puts her footing back on top.
@@ -288,7 +288,9 @@ function buildGhostStage42() {
   for (const [id, sl, sr, sy, kind, red] of GS42_RIGHT) {
     const w = Math.max(110, Math.min(280, (sr - sl) * 5)), cx = (gs42x(sl) + gs42x(sr)) / 2;
     const extra = { id: 'GS42-' + id, gsDraw: kind, gsSkin: 'rotten' };
-    if (red) extra.rimTrigger = true;
+    // v1.9.2 (user): every fixed ledge in this Rim part strikes, not only the sketch's red ones. Not the checkpoint
+    // ledge (a restart lands Dudu there, which would set Rim off at once) and not the goal (the kidnap starts there).
+    if (red || (kind === 'ground' && id !== 'CP' && id !== 'GOAL')) extra.rimTrigger = true;
     if (kind === 'blink') {
       n++;
       extra.behavior = 'blink';
