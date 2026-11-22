@@ -1,0 +1,43 @@
+{
+ "families": {
+  "story": {
+   "platforms": 20,
+   "runs": 40,
+   "identical": 40
+  },
+  "w1_0": {
+   "platforms": 23,
+   "runs": 46,
+   "identical": 46
+  },
+  "w1_1": {
+   "platforms": 42,
+   "runs": 84,
+   "identical": 84
+  },
+  "w1_2": {
+   "platforms": 40,
+   "runs": 80,
+   "identical": 80
+  },
+  "w1_3": {
+   "platforms": 27,
+   "runs": 54,
+   "identical": 54
+  },
+  "spirit": {
+   "platforms": 106,
+   "runs": 212,
+   "identical": 212,
+   "by_zone": {
+    "cave": 30,
+    "lava": 11,
+    "out": 3,
+    "snow": 62
+   }
+  }
+ },
+ "art_diff": [],
+ "time_dependent": [],
+ "page_errors": []
+}

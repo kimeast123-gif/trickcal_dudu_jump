@@ -1,0 +1,333 @@
+{
+ "release": {},
+ "v2": {
+  "batch2/forest_story_ground_body_a.png": {
+   "n": 1524,
+   "worst": 0
+  },
+  "batch2/forest_story_ground_body_b.png": {
+   "n": 1489,
+   "worst": 0
+  },
+  "batch2/forest_story_ground_top_b.png": {
+   "n": 802,
+   "worst": 0
+  },
+  "batch2/forest_story_ground_top_a.png": {
+   "n": 378,
+   "worst": 0
+  },
+  "batch2/forest_story_ground_cliff_left.png": {
+   "n": 99,
+   "worst": 0
+  },
+  "batch2/forest_story_ground_cliff_left_ext.png": {
+   "n": 154,
+   "worst": 0
+  },
+  "batch2/forest_story_ground_top_c.png": {
+   "n": 631,
+   "worst": 0
+  },
+  "batch2/forest_story_ground_cliff_right.png": {
+   "n": 111,
+   "worst": 0
+  },
+  "batch2/forest_story_ground_cliff_right_ext.png": {
+   "n": 181,
+   "worst": 0
+  },
+  "batch2/forest_story_wall_body.png": {
+   "n": 112,
+   "worst": 0
+  },
+  "batch2/forest_story_wall_edge_left.png": {
+   "n": 112,
+   "worst": 0
+  },
+  "batch2/forest_story_wall_edge_right.png": {
+   "n": 112,
+   "worst": 0
+  },
+  "batch2/forest_story_wall_top.png": {
+   "n": 62,
+   "worst": 0
+  },
+  "batch2/forest_story_long_left.png": {
+   "n": 121,
+   "worst": 0
+  },
+  "batch2/forest_story_long_mid_a.png": {
+   "n": 263,
+   "worst": 0
+  },
+  "batch2/forest_story_long_right.png": {
+   "n": 121,
+   "worst": 0
+  },
+  "batch2/forest_story_long_mid_b.png": {
+   "n": 42,
+   "worst": 0
+  },
+  "batch2/forest_story_compact_left.png": {
+   "n": 42,
+   "worst": 0
+  },
+  "batch2/forest_story_compact_fill_a.png": {
+   "n": 152,
+   "worst": 0
+  },
+  "batch2/forest_story_compact_fill_b.png": {
+   "n": 68,
+   "worst": 0
+  },
+  "batch2/forest_story_compact_right.png": {
+   "n": 42,
+   "worst": 0
+  },
+  "batch1/forest_w1_ground_body_a.png": {
+   "n": 1335,
+   "worst": 0
+  },
+  "batch1/forest_w1_ground_body_b.png": {
+   "n": 1301,
+   "worst": 0
+  },
+  "batch1/forest_w1_ground_top_c.png": {
+   "n": 722,
+   "worst": 0
+  },
+  "batch1/forest_w1_ground_top_a.png": {
+   "n": 681,
+   "worst": 0
+  },
+  "batch1/forest_w1_ground_cliff_left.png": {
+   "n": 306,
+   "worst": 0
+  },
+  "batch2/forest_w1_ground_cliff_left_ext.png": {
+   "n": 520,
+   "worst": 0
+  },
+  "batch1/forest_w1_ground_cliff_right.png": {
+   "n": 306,
+   "worst": 0
+  },
+  "batch2/forest_w1_ground_cliff_right_ext.png": {
+   "n": 520,
+   "worst": 0
+  },
+  "pilot/forest_w1_compact_left.png": {
+   "n": 1653,
+   "worst": 0
+  },
+  "pilot/forest_w1_compact_fill_a.png": {
+   "n": 3753,
+   "worst": 0
+  },
+  "pilot/forest_w1_compact_fill_b.png": {
+   "n": 3210,
+   "worst": 0
+  },
+  "pilot/forest_w1_compact_right.png": {
+   "n": 1653,
+   "worst": 0
+  },
+  "art_prototype/forest_standard_candidate_A.png": {
+   "n": 7549,
+   "worst": 0
+  },
+  "batch1/forest_w1_ground_top_b.png": {
+   "n": 222,
+   "worst": 0
+  },
+  "batch1/forest_w1_under_support_end_left.png": {
+   "n": 85,
+   "worst": 0
+  },
+  "batch1/forest_w1_under_support.png": {
+   "n": 611,
+   "worst": 0
+  },
+  "batch1/forest_w1_under_support_end_right.png": {
+   "n": 85,
+   "worst": 0
+  },
+  "batch1/forest_w1_wall_body.png": {
+   "n": 609,
+   "worst": 0
+  },
+  "batch1/forest_w1_wall_edge_left.png": {
+   "n": 609,
+   "worst": 0
+  },
+  "batch1/forest_w1_wall_edge_right.png": {
+   "n": 609,
+   "worst": 0
+  },
+  "batch1/forest_w1_wall_top.png": {
+   "n": 94,
+   "worst": 0
+  },
+  "batch3/spirit_cave_floor_left.png": {
+   "n": 294,
+   "worst": 0
+  },
+  "batch3/spirit_cave_floor_mid.png": {
+   "n": 2352,
+   "worst": 0
+  },
+  "batch3/spirit_cave_floor_right.png": {
+   "n": 294,
+   "worst": 0
+  },
+  "batch3/spirit_cave_tiny_left.png": {
+   "n": 544,
+   "worst": 0
+  },
+  "batch3/spirit_cave_tiny_fill_a.png": {
+   "n": 1079,
+   "worst": 0
+  },
+  "batch3/spirit_cave_tiny_fill_b.png": {
+   "n": 781,
+   "worst": 0
+  },
+  "batch3/spirit_cave_tiny_right.png": {
+   "n": 544,
+   "worst": 0
+  },
+  "art_prototype/cave_standard_candidate_A.png": {
+   "n": 3252,
+   "worst": 0
+  },
+  "pilot/spirit_lava_long_left.png": {
+   "n": 297,
+   "worst": 0
+  },
+  "pilot/spirit_lava_long_mid_a.png": {
+   "n": 552,
+   "worst": 0
+  },
+  "pilot/spirit_lava_long_mid_b.png": {
+   "n": 486,
+   "worst": 0
+  },
+  "pilot/spirit_lava_long_right.png": {
+   "n": 297,
+   "worst": 0
+  },
+  "batch1/spirit_lava_glow_left.png": {
+   "n": 233,
+   "worst": 0
+  },
+  "batch1/spirit_lava_glow_fill_a.png": {
+   "n": 767,
+   "worst": 0
+  },
+  "batch1/spirit_lava_glow_fill_b.png": {
+   "n": 694,
+   "worst": 0
+  },
+  "batch1/spirit_lava_glow_right.png": {
+   "n": 233,
+   "worst": 0
+  },
+  "batch3/spirit_cave_wall_tile.png": {
+   "n": 773,
+   "worst": 0
+  },
+  "batch3/spirit_cave_wall_edge_left.png": {
+   "n": 623,
+   "worst": 0
+  },
+  "batch3/spirit_cave_wall_edge_right.png": {
+   "n": 623,
+   "worst": 0
+  },
+  "batch1/spirit_lava_wall_tile.png": {
+   "n": 293,
+   "worst": 0
+  },
+  "batch1/spirit_lava_wall_edge_left.png": {
+   "n": 293,
+   "worst": 0
+  },
+  "batch1/spirit_lava_wall_edge_right.png": {
+   "n": 293,
+   "worst": 0
+  },
+  "batch2/spirit_out_wall_tile.png": {
+   "n": 182,
+   "worst": 0
+  },
+  "batch2/spirit_out_wall_edge_left.png": {
+   "n": 91,
+   "worst": 0
+  },
+  "batch2/spirit_out_wall_edge_right.png": {
+   "n": 91,
+   "worst": 0
+  },
+  "batch2/spirit_out_long_left.png": {
+   "n": 54,
+   "worst": 0
+  },
+  "batch2/spirit_out_long_mid_a.png": {
+   "n": 100,
+   "worst": 0
+  },
+  "batch2/spirit_out_long_right.png": {
+   "n": 54,
+   "worst": 0
+  },
+  "batch3/spirit_snow_long_left.png": {
+   "n": 373,
+   "worst": 0
+  },
+  "batch3/spirit_snow_long_mid_a.png": {
+   "n": 674,
+   "worst": 0
+  },
+  "batch3/spirit_snow_long_right.png": {
+   "n": 373,
+   "worst": 0
+  },
+  "batch3/spirit_snow_tiny_left.png": {
+   "n": 980,
+   "worst": 0
+  },
+  "batch3/spirit_snow_tiny_fill_a.png": {
+   "n": 2805,
+   "worst": 0
+  },
+  "batch3/spirit_snow_tiny_fill_b.png": {
+   "n": 2396,
+   "worst": 0
+  },
+  "batch3/spirit_snow_tiny_right.png": {
+   "n": 980,
+   "worst": 0
+  },
+  "batch3/spirit_snow_long_mid_b.png": {
+   "n": 95,
+   "worst": 0
+  },
+  "batch3/spirit_snow_glow_left.png": {
+   "n": 455,
+   "worst": 0
+  },
+  "batch3/spirit_snow_glow_fill_a.png": {
+   "n": 834,
+   "worst": 0
+  },
+  "batch3/spirit_snow_glow_fill_b.png": {
+   "n": 938,
+   "worst": 0
+  },
+  "batch3/spirit_snow_glow_right.png": {
+   "n": 455,
+   "worst": 0
+  }
+ }
+}

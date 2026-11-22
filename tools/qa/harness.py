@@ -6,6 +6,7 @@ with Playwright (Chromium). Everything runs headless.
 Environment variables
   GAME_ROOT   repository root to serve (default: two folders above this file)
   QA_PORT     local port (default 8765)
+  QA_QUERY    query string added to every page opened without one (e.g. ?arttest=0 for the release art)
   CHROME      path to a Chromium binary (default: Playwright's bundled Chromium)
 """
 import os, functools, threading, http.server, socketserver, asyncio
@@ -48,7 +49,7 @@ async def open_desktop(pw, wait=8000, query=''):
     pg = await b.new_page(viewport={'width': 1280, 'height': 720})
     errs = []
     _collect(pg, errs)
-    await pg.goto(URL + query)
+    await pg.goto(URL + (query or os.environ.get('QA_QUERY', '')))
     await pg.wait_for_timeout(wait)
     return b, pg, errs
 
@@ -61,7 +62,7 @@ async def open_mobile(pw, wait=8000, query='', width=915, height=412):
     cdp = await ctx.new_cdp_session(pg)
     errs = []
     _collect(pg, errs)
-    await pg.goto(URL + query)
+    await pg.goto(URL + (query or os.environ.get('QA_QUERY', '')))
     await pg.wait_for_timeout(wait)
     return b, pg, cdp, errs
 

@@ -1,0 +1,180 @@
+{
+ "release": {
+  "visits": [
+   {
+    "visit": "story forest",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 4
+   },
+   {
+    "visit": "World1 1-1",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   },
+   {
+    "visit": "World1 1-2",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 5
+   },
+   {
+    "visit": "World1 1-3",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 5
+   },
+   {
+    "visit": "World1 1-4",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   },
+   {
+    "visit": "spirit out",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 5
+   },
+   {
+    "visit": "spirit cave",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   },
+   {
+    "visit": "spirit lava",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 5
+   },
+   {
+    "visit": "spirit snow",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   }
+  ],
+  "bad_responses": [],
+  "aborted_media": [
+   [
+    "failed",
+    "net::ERR_ABORTED",
+    "http://127.0.0.1:8794/trickcal_dudu_jump/assets/event/afternoon.mp3"
+   ],
+   [
+    "failed",
+    "net::ERR_ABORTED",
+    "http://127.0.0.1:8794/trickcal_dudu_jump/assets/event/sunset.mp3"
+   ],
+   [
+    "failed",
+    "net::ERR_ABORTED",
+    "http://127.0.0.1:8794/trickcal_dudu_jump/assets/event/opening.mp3"
+   ],
+   [
+    "failed",
+    "net::ERR_ABORTED",
+    "http://127.0.0.1:8794/trickcal_dudu_jump/assets/event/ending.mp3"
+   ]
+  ],
+  "page_errors": [],
+  "art_v2_images": 81,
+  "art_v2_fetched_twice": [],
+  "reopen": {
+   "page_errors": [],
+   "clock_runs": true
+  }
+ },
+ "v2": {
+  "visits": [
+   {
+    "visit": "story forest",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 4
+   },
+   {
+    "visit": "World1 1-1",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 4
+   },
+   {
+    "visit": "World1 1-2",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   },
+   {
+    "visit": "World1 1-3",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   },
+   {
+    "visit": "World1 1-4",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 5
+   },
+   {
+    "visit": "spirit out",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   },
+   {
+    "visit": "spirit cave",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   },
+   {
+    "visit": "spirit lava",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   },
+   {
+    "visit": "spirit snow",
+    "avg_frame_ms": 16.7,
+    "over_50ms": 0,
+    "heap_mb": 6
+   }
+  ],
+  "bad_responses": [],
+  "aborted_media": [
+   [
+    "failed",
+    "net::ERR_ABORTED",
+    "http://127.0.0.1:8794/trickcal_dudu_jump/assets/event/afternoon.mp3"
+   ],
+   [
+    "failed",
+    "net::ERR_ABORTED",
+    "http://127.0.0.1:8794/trickcal_dudu_jump/assets/event/sunset.mp3"
+   ],
+   [
+    "failed",
+    "net::ERR_ABORTED",
+    "http://127.0.0.1:8794/trickcal_dudu_jump/assets/event/opening.mp3"
+   ],
+   [
+    "failed",
+    "net::ERR_ABORTED",
+    "http://127.0.0.1:8794/trickcal_dudu_jump/assets/event/ending.mp3"
+   ]
+  ],
+  "page_errors": [],
+  "art_v2_images": 81,
+  "art_v2_fetched_twice": [],
+  "reopen": {
+   "page_errors": [],
+   "clock_runs": true
+  }
+ },
+ "v2_referenced": 81,
+ "v2_missing_files": []
+}
