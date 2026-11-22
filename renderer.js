@@ -31,7 +31,7 @@ const STRUCTURE_ASSET_LIST = [
 
 // Image cache keys (not rewritten by tools/release.py): bump a key when its images change. v1.8.3: the repainted
 // Monatium steel parts and tower structures (art renewal P3-A) get their own key so no browser keeps the old ones.
-function terrainAssetQ(k) { return /^monatium\/steel_/.test(k) ? '?v=p3a2' : /^erpien\/gate_/.test(k) ? '?v=p5g1' : '?v=31R'; }
+function terrainAssetQ(k) { return /^monatium\/steel_/.test(k) ? '?v=p3a2' : /^erpien\/gate_/.test(k) ? '?v=p5g1' : k === 'erpien/decoration_stone_planter_a' ? '?v=p191' /* v1.9.1: lost a stray grey strip on its top */ : '?v=31R'; }
 const STRUCTURE_ASSET_Q = '?v=p3a2';
 
 const TERRAIN_ASSET_LIST = [
@@ -1214,8 +1214,12 @@ function drawPitShade(viewW, viewH) {
     drawPitShade._all = platforms.filter(a => a.groundTile && a.y >= 480 && a.y <= 600).sort((a, b) => a.x - b.x);
   }
   const all = drawPitShade._all, lo = rCam - 400, hi = rCam + viewW + 400;
-  const grounds = [];
-  for (const a of all) { if (a.x + a.w >= lo && a.x <= hi) grounds.push(a); }
+  // v1.9.1: also take the ground just beyond each side, so a gap wider than the margin is shaded the whole time it
+  // is on screen (it used to pop in only once the far ground came within 400px, which flickered in Erpien B)
+  let i0 = -1, i1 = -1;
+  for (let i = 0; i < all.length; i++) { if (all[i].x + all[i].w >= lo && all[i].x <= hi) { if (i0 < 0) i0 = i; i1 = i; } }
+  if (i0 < 0) return;
+  const grounds = all.slice(Math.max(0, i0 - 1), Math.min(all.length, i1 + 2));
   if (grounds.length < 2) return;
   const bottom = rCamY + viewH + 40;
   for (let i = 0; i < grounds.length - 1; i++) {

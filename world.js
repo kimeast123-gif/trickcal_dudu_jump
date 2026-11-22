@@ -324,7 +324,8 @@ forest.segments=[{start:0,end:7400,bg:'forest-bg',skin:'grass',name:'수인숲',
 // F1 (0~1200)
 floor(forest,0,1200,'grass',580,{id:'F-GND-01',joinRight:true});
 checkpointAt(forest,150,'햇살 산책길','{MOVE}로 걷고, {JUMP}를 짧게 누르면 낮게, 꾹 누르면 높이 뛰어요');
-surface(forest,520,525,90,'grass',{id:'F-OBS-01',h:55,thin:false,wall:true});
+// v1.9.1 (user): drawn as an upright wall rooted in the ground (it read as a box sitting on it); same top, same jump
+wall(forest,520,525,90,375,'grass',{id:'F-OBS-01'});
 surface(forest,820,450,210,'grass',{id:'F-STEP-01'});
 sign(forest,680,375,'낮은 건 살짝, 높은 건 꾹!');
 
@@ -1189,12 +1190,14 @@ wall(erpien_a, 10040, -950, 76, 1415, 'stone', { id: 'EA-WALL-BARRIER-R', wallSi
 floor(erpien_a, 10200, 1000, 'stone', 580, { id: 'EA-GND-EXIT', checkpointSafe: true, joinRight: true });
 
 
-// v1.2: Erpien A blink timing. Every blinking plank stays on 3s; neighbours fade in a wave that follows the player.
+// v1.2: Erpien A blink timing. Neighbours fade in a wave that follows the player.
+// v1.9.1 (user): every blinking plank stays on 30% longer (3.0s -> 3.9s), and the three stair planks rising to the
+// left (EA-B03 -> B02 -> B01) blink in the reverse order (their phases were 0.45 / 0.9 / 1.35).
 for (const [id, ph] of [['E-GATE-BLINK-1',0.0],['E-GATE-BLINK-2',0.5],
-  ['EA-B04',0.0],['EA-B03',0.45],['EA-B02',0.9],['EA-B01',1.35],['EA-B05',0.6],
+  ['EA-B04',0.0],['EA-B03',1.35],['EA-B02',0.9],['EA-B01',0.45],['EA-B05',0.6],
   ['EA-B07',0.0],['EA-B08',-0.35],['EA-B09',-0.7],['EA-B10',-1.05]]) {
  const a = erpien_a.platforms.find(q => q.id === id);
- if (a) a.blink = { on: 3.0, warning: 0.75, off: 0.8, phase: ph };
+ if (a) a.blink = { on: 3.9, warning: 0.75, off: 0.8, phase: ph };
 }
 // The gate-to-city buffer is a walk with no hazards; its checkpoint flag is removed.
 // v1.7.0: the flag at the fairy tower entrance (6920) stays, so a fall in the hardest part of Erpien A no longer

@@ -103,7 +103,7 @@ const WORLDMAP_CARDS = [
     implementationStatus: 'playable',
     unlockCondition: null,
     action: 'openGhostStageSelect',
-    thumbnail: 'assets/world/ghostswamp/bg1.webp?v=v1_9_0_261123',
+    thumbnail: 'assets/world/ghostswamp/bg1.webp?v=v1_9_1_261123',
     fallbackThumb: makePlaceholderSvgDataUri('무시무시 유령늪', '안개 낀 늪', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
     statusBadge: '플레이 가능',
     isPlaceholderArt: false

@@ -830,9 +830,11 @@ function resetHazards(){
     shotCount: 0, burstCount: 1, bossBurstCount: 0, profileStage: 'A',
     speechTimer: 1.2, speechDuration: 0, speechText: '', lastSpeechIdx: -1
    }),
-   actor('fairy1', 3720, 580, { id: 'F-01', platformId: 'E-CITY-GND3', patrol: 190, baseSpeed: 178, speedMult: 1.20 }),
-   actor('fairy2', 5280, 580, { id: 'F-02', platformId: 'E-CITY-GND4', patrol: 190, baseSpeed: 212, speedMult: 1.20 }),
-   actor('fairy1', 7020, 580, { id: 'F-03', platformId: 'E-CITY-GND5', patrol: 185, baseSpeed: 192, speedMult: 1.20 }),
+   // v1.9.1 (user): like Erpien A, each fairy runs its ground end to end, 56px in from the edges (it used to patrol
+   // ~190px around the middle), in one smooth stroke (see isErpienFairy in updateActor)
+   actor('fairy1', 4064, 580, { id: 'F-01', platformId: 'E-CITY-GND3', fullSpanPatrol: true, patrolX1: 3236, patrolX2: 4064, patrolDir: -1, baseSpeed: 178, speedMult: 1.20 }),
+   actor('fairy2', 5624, 580, { id: 'F-02', platformId: 'E-CITY-GND4', fullSpanPatrol: true, patrolX1: 4816, patrolX2: 5624, patrolDir: -1, baseSpeed: 212, speedMult: 1.20 }),
+   actor('fairy1', 7364, 580, { id: 'F-03', platformId: 'E-CITY-GND5', fullSpanPatrol: true, patrolX1: 6536, patrolX2: 7364, patrolDir: -1, baseSpeed: 192, speedMult: 1.20 }),
    actor('marie', e.mariePerchX, e.mariePerchY, {
     id: 'MARIE', platformId: 'B-MARIE-PODIUM', retreating: false,
     groggyTimer: 0, invulnTimer: 0, groggyBubble: ''
@@ -874,6 +876,7 @@ function applyStunHit(sourceX,sourceKind='generic',customMsg=null){
   const margin=dir<0?p.x-p.on.x-26:p.on.x+p.on.w-p.x-26;
   if(margin>0)force=Math.min(force,Math.max(175,margin/0.26));
  }
+ if(sourceKind==='rim_slash')force*=1.5;/* v1.9.1: Rim's scythe slash in World 4 knocks Dudu 1.5 times as far */
  p.invulnerable=2.15;
  p.guardStun=1.50;
  p.guardKnock=0.26;
@@ -1037,6 +1040,8 @@ function updateWalker(a,dt){
  }
  const prof=a.profile||BEHAVIOR_PROFILES.guard1;
  const isErpienAFairy=(typeof currentLevelId==='function'&&currentLevelId()==='erpien_a'&&(a.kind==='fairy1'||a.kind==='fairy2'));
+ /* v1.9.1: Erpien B fairies run the same smooth stroke as Erpien A's (their mid-run hesitation read as stutter) */
+ const isErpienFairy=isErpienAFairy||(typeof currentLevelId==='function'&&currentLevelId()==='erpien_b'&&(a.kind==='fairy1'||a.kind==='fairy2'));
  const isGuard=a.kind.startsWith('guard')||!!a.isSpecialFairy||isErpienAFairy;
  const dirSign=a.patrolDir||-1;
  if(a.fullSpanPatrol){
@@ -1086,7 +1091,7 @@ function updateWalker(a,dt){
   const dur=a.curRushDur||rushDur;
   const rawU=clamp(a.phaseTime/dur,0,1);
   /* v1.8.6: Erpien A fairies run one smooth stroke (the mid-run hesitation read as stutter) */
-  const curvedU=a.linearPatrol?rawU:(isErpienAFairy?naturalMoveCurve(rawU,0,0):naturalMoveCurve(rawU,prof.hesitateAt,prof.hesitateDur));
+  const curvedU=a.linearPatrol?rawU:(isErpienFairy?naturalMoveCurve(rawU,0,0):naturalMoveCurve(rawU,prof.hesitateAt,prof.hesitateDur));
   a.x=clamp(a.from+(a.to-a.from)*curvedU,a.minX,a.maxX);
   a.danger=isGuard?true:(rawU>=0.04&&rawU<=0.96);
   if(rawU>=1){
@@ -1176,7 +1181,7 @@ function triggerMayoCatchReset(a){
    mayoAfter.x=Math.max(minChaseX,p.x-480);
    mayoAfter.prevX=mayoAfter.x;
    mayoAfter.y=580;
-   mayoAfter.prevY=580;mayoAfter.vy=0;mayoAfter.inAir=false;mayoAfter.supportRef=null;mayoAfter.supportHold=0;// v1.4.1: clear mid-jump state on reset
+   mayoAfter.prevY=580;mayoAfter.vy=0;mayoAfter.vx=0;mayoAfter.inAir=false;mayoAfter.supportRef=null;mayoAfter.supportHold=0;// v1.4.1: clear mid-jump state on reset
    mayoAfter.phase='chase';
    mayoAfter.fireCooldown=2.2;
   }else if(p.x<e.mayoActivateX){
@@ -1185,7 +1190,7 @@ function triggerMayoCatchReset(a){
    mayoAfter.x=e.mayoSpawnX??820;
    mayoAfter.prevX=mayoAfter.x;
    mayoAfter.y=580;
-   mayoAfter.prevY=580;mayoAfter.vy=0;mayoAfter.inAir=false;mayoAfter.supportRef=null;mayoAfter.supportHold=0;// v1.4.1: clear mid-jump state on reset
+   mayoAfter.prevY=580;mayoAfter.vy=0;mayoAfter.vx=0;mayoAfter.inAir=false;mayoAfter.supportRef=null;mayoAfter.supportHold=0;// v1.4.1: clear mid-jump state on reset
   }
  }
  notify('마요에게 붙잡혔어요! 체크포인트에서 다시 출발합니다.');
@@ -1531,7 +1536,7 @@ function updateMayo(a,dt){
    const safeSpawnX = Math.max(minChaseX, Math.min(e.mayoSpawnX ?? 820, p.x - 650));
    a.x=safeSpawnX;
    a.prevX=a.x;
-   a.y=580;a.prevY=580;a.vy=0;a.inAir=false;a.supportRef=null;a.supportHold=0;
+   a.y=580;a.prevY=580;a.vy=0;a.vx=0;a.inAir=false;a.supportRef=null;a.supportHold=0;
    a.currentSpeed=prof.speedClose;
    a.spawnGrace=1.40;
    a.phase='chase';
@@ -1572,7 +1577,8 @@ function updateMayo(a,dt){
  }
 
  const dxToPlayer=p.x-a.x;
- a.face=dxToPlayer>=0?1:-1;
+ /* v1.9.1: she only turns round when Dudu is clearly on the other side */
+ if(Math.abs(dxToPlayer)>40||!a.face)a.face=dxToPlayer>=0?1:-1;
 
  let support=null,bestDistY=Infinity;
  for(let i=0,len=platforms.length;i<len;i++){
@@ -1636,7 +1642,7 @@ function updateMayo(a,dt){
   a.prevX=a.x;
   a.y=groundAtBehind?groundAtBehind.y:510;
   a.prevY=a.y;
-  a.vy=0;a.inAir=false;a.supportRef=groundAtBehind||null;a.supportHold=0;
+  a.vy=0;a.vx=0;a.inAir=false;a.supportRef=groundAtBehind||null;a.supportHold=0;
  }
 
  if(a.phase==='attack'){
@@ -1684,16 +1690,17 @@ function updateMayo(a,dt){
   }
  }else{
   // Gate G5 (Section 7.1 & 7.2): Pure pursuit without close-range slowdown and ZERO wind-gun firing in E2!
+  // v1.9.1 (user: move more naturally): a running speed that eases up and down (accelerating, braking and turning
+  // round take a moment) and slows to a stop on Dudu instead of running at full speed and snapping onto her x
   const absDx=Math.abs(dxToPlayer);
   const targetSpeed=prof.chaseSpeed;
-  a.currentSpeed=(a.currentSpeed||targetSpeed)+Math.sign(targetSpeed-(a.currentSpeed||targetSpeed))*Math.min(Math.abs(targetSpeed-(a.currentSpeed||targetSpeed)),prof.accel*dt);
-  if(absDx>3){
-   a.x=clamp(a.x+Math.sign(dxToPlayer)*a.currentSpeed*dt,minChaseX,e.marieStart-60);
-   npcClip(a,'move');
-  }else{
-   a.x=p.x;
-   npcClip(a,'move');
-  }
+  const want=absDx>36?Math.sign(dxToPlayer)*targetSpeed:dxToPlayer/36*targetSpeed;
+  const accel=prof.accel*1.6;
+  a.vx=(a.vx||0)+clamp(want-(a.vx||0),-accel*dt,accel*dt);
+  a.currentSpeed=Math.abs(a.vx);
+  a.x=clamp(a.x+a.vx*dt,minChaseX,e.marieStart-60);
+  if(Math.abs(a.vx)>50)a.face=a.vx>0?1:-1;
+  npcClip(a,Math.abs(a.vx)>24?'move':'idle');
  }
 
  if(a.spawnGrace<=0&&touchesActor(a)){

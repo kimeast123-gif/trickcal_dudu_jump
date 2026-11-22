@@ -13,7 +13,7 @@
 // ============================================================================
 
 const GS_WORLD_ID = 'world4_ghostswamp';
-const GS_ASSET_Q = '?v=v1_9_0_261123'; // rewritten by tools/release.py on every deploy
+const GS_ASSET_Q = '?v=v1_9_1_261123'; // rewritten by tools/release.py on every deploy
 
 // Sinking swamp ledge (MECHANICS_EVENTS_SPEC A, v1.9 as the user described it): the ledge stays where it is; after
 // 1.0s of standing on it Dudu's body slowly sinks into its mud. Jumping out puts her footing back on top.
@@ -84,6 +84,8 @@ function loadGhostNpcAssets() {
   sc.onerror = () => { console.warn('[ghost swamp] failed to load the motion atlas'); _gsNpcRequested = false; };
   document.head.appendChild(sc);
 }
+// v1.9.1 (user): Rim and Shady drawn as tall as Mayo (129px on screen): Rim's standing pose is 107px, Shady's 99px
+const GS_CHAR_SCALE = { rim: 1.2, shady: 1.3 };
 // Draw one motion frame with the feet at (x, y). face 1 = looking right (the sheets look left).
 function gsSprite(key, t, x, y, face = -1, alpha = 1, loop = true) {
   const m = gsAtlas && gsAtlas.motions[key], im = gsImages['m_' + key];
@@ -93,26 +95,16 @@ function gsSprite(key, t, x, y, face = -1, alpha = 1, loop = true) {
   let f = m.frames[m.frames.length - 1];
   for (const fr of m.frames) { if (ms < fr[6]) { f = fr; break; } ms -= fr[6]; }
   if (!f[2]) return true;
-  const ss = gsAtlas.superSample;
+  const ss = gsAtlas.superSample, k = GS_CHAR_SCALE[key.split('_')[0]] || 1;
   ctx.save();
   if (alpha < 1) ctx.globalAlpha = alpha;
   ctx.translate(Math.round(x), Math.round(y));
   if (face > 0) ctx.scale(-1, 1);
-  ctx.drawImage(im, f[0], f[1], f[2], f[3], f[4], f[5], f[2] / ss, f[3] / ss);
+  ctx.drawImage(im, f[0], f[1], f[2], f[3], f[4] * k, f[5] * k, f[2] / ss * k, f[3] / ss * k);
   ctx.restore();
   return true;
 }
 window.gsSprite = gsSprite;
-
-// v1.9 (user): ledges and walls that cannot be landed on show it: a row of 수인숲 thorn sprouts along their top
-// (and touching them costs 1 health, like every thorn).
-function noLandingCrown(s, r, prefix) {
-  const n = Math.max(1, Math.round(r.w / 44));
-  for (let i = 0; i < n; i++) {
-    const x = Math.round(r.x + (r.w * (i + 0.5)) / n);
-    wTentacle(s, `${prefix}-CROWN-${r.id}-${i + 1}`, x, r.y, null, '착지 불가 표시', '착지할 수 없는 윗면의 가시');
-  }
-}
 
 // ----------------------------------------------------------------------------
 // 4-1 layout. [id, x, y, w, kind]  kind: ground (black on the sketch), sink (green)
@@ -251,7 +243,6 @@ const GS42_RIGHT = [
 const GS42_WALLS = [
   ['PILLAR', 1918, -377, 144, 1400, false],                                   // the big pillar, top just under the sliding ledge's track
   ['STUB', 2062, gs42y(207), gs42x(490) - 2062, 36, true],                    // short board on its right side
-  ['BAR', gs42x(625), gs42y(280), gs42x(683) - gs42x(625), 30, false],       // board above R12: no jumping straight up
   ['HANG1', gs42x(812), -900, 40, gs42y(105) + 900, false],                   // hangs from the ceiling over R22 (walk under it)
   ['HANG2', gs42x(1020), -900, 40, gs42y(135) + 900, false],                  // hangs from the ceiling: go down for the goal
   ['GOALPOST', gs42x(1088), gs42y(210), 40, gs42y(343) - gs42y(210), false]   // under the goal ledge's left end
@@ -307,10 +298,7 @@ function buildGhostStage42() {
     wSurface(s, Math.round(cx - w / 2), gs42y(sy), w, 'grass', extra);
   }
   for (const [id, x, y, w, h, top] of GS42_WALLS) wWall(s, x, y, w, h, 'wood', { id: 'GS42-' + id, gsDraw: 'wall', noTopLand: !top });
-  // the board above R12 cannot be landed on: thorns along its top (the other no-landing walls have their tops out of
-  // sight or tucked under a ledge)
-  const bar = GS42_WALLS.find(w => w[0] === 'BAR');
-  noLandingCrown(s, { id: 'BAR', x: bar[1], y: bar[2], w: bar[3] }, 'GS42');
+  // v1.9.1 (user): the thorn-topped board above R12 is removed altogether
   const cp = s.platforms.find(a => a.id === 'GS42-CP'), goal = s.platforms.find(a => a.id === 'GS42-GOAL');
   wCheckpoint(s, '저택 입구', 220, 580);
   wCheckpoint(s, '무너진 방', Math.round(cp.x + cp.w / 2), cp.y);
@@ -360,8 +348,8 @@ const GS43_PLATFORMS = [
 // Rim's chase (MECHANICS_EVENTS_SPEC D). Speeds in px/s; Dudu runs at 320.
 const GS_CHASE = {
   spawnGrace: 0.5,        // Rim appears on the start ledge when Dudu leaves it, and waits this long
-  normal: 290,            // close behind Dudu (who runs at 320 but loses time at every jump)
-  sprint: 345,            // reached at the first of the four small ledges, ramping up along the long upper ledge
+  normal: 320,            // v1.9.1 (user): as fast as Dudu runs
+  sprint: 345,            // speeds up across the last four small ledges, from SP1 (320) to SP4 (345)
   catchUp: 430, leash: 700,   // more than `leash` behind: she hurries at `catchUp`
   warpDist: 900,          // further behind than this and off screen: she reappears on Dudu's previous ledge
   hitDist: 36, hitDy: 80, // she catches Dudu when this close
@@ -706,10 +694,10 @@ function chaseReset(rescued) {
 
 function rimChaseSpeed() {
   const C = GS_CHASE, R = ghostRoute();
-  const top = R.find(a => a.id === 'GS43-TOP'), sp1 = R.find(a => a.id === 'GS43-SP1');
+  const sp1 = R.find(a => a.id === 'GS43-SP1'), sp4 = R.find(a => a.id === 'GS43-SP4');
   let v = C.normal;
-  // speeds up along the long upper ledge, full speed from the first of the four small ledges
-  if (p.x >= top.x) v = C.normal + (C.sprint - C.normal) * Math.max(0, Math.min(1, (p.x - top.x) / (sp1.x - top.x)));
+  // v1.9.1 (user): Dudu's speed until the last four small ledges, then she gathers speed across them
+  if (p.x >= sp1.x) v = C.normal + (C.sprint - C.normal) * Math.max(0, Math.min(1, (p.x - sp1.x) / (sp4.x - sp1.x)));
   const r = gsc.rim;
   if (r && p.x - r.x > C.leash) v = Math.max(v, C.catchUp);
   return v;
@@ -743,8 +731,13 @@ function updateChase(dt) {
   if (r.wait > 0) { r.wait -= dt; r.prevX = r.x; r.prevY = r.y; r.t += dt; return; }
   stepWalker(r, di, p.x, rimChaseSpeed(), dt);
   if (Math.abs(p.x - r.x) < C.hitDist && Math.abs(p.y - r.y) < C.hitDy && p.invulnerable <= 0) {
-    if (typeof applyStunHit === 'function') applyStunHit(r.x - 30 * (r.face || 1), 'rim', '림에게 붙잡힐 뻔했어요!');
-    r.wait = C.recover;
+    // v1.9.1 (user): caught by Rim = the map starts over from the beginning
+    if (typeof notify === 'function') notify('림에게 붙잡혔어요! 처음부터 다시 달려요');
+    if (typeof tone === 'function') tone(180, 0.2, 'sawtooth', 0.04);
+    checkpoint = 0;
+    if (typeof retryWorld1StageCheckpoint === 'function') retryWorld1StageCheckpoint();
+    window.__screenFade = { start: performance.now(), dur: 520, from: 0.92 };
+    return;
   }
 }
 
@@ -796,9 +789,12 @@ function updateShady(dt) {
   if (mv && mv !== (s.side || 1)) { s.turnT = (s.turnT || 0) + dt; if (s.turnT > 0.4) { s.side = mv; s.turnT = 0; } }
   else s.turnT = 0;
   const behind = -(s.side || 1);
-  const gap = Math.abs(p.x - s.x);
-  const v = gap > 320 ? GS_CHASE.shadyFast : GS_CHASE.shady;
-  stepWalker(s, di, p.x + behind * 90, v, dt);
+  const goal = p.x + behind * 110;   // a little further back now that she is drawn bigger
+  // v1.9.1 (user: walk more naturally): her speed follows the distance to her spot, so she eases off as she arrives
+  // and catches up briskly when left behind, instead of full speed and a dead stop
+  const dist = di === s.idx ? Math.abs(goal - s.x) : 400;
+  const v = Math.max(60, Math.min(GS_CHASE.shadyFast, dist * 2.4));
+  stepWalker(s, di, goal, v, dt);
   if (!s.moving && !s.air) s.face = p.x >= s.x ? 1 : -1;
 }
 
@@ -824,6 +820,7 @@ function updateFarewell(dt) {
 }
 
 function updateGhost43(dt) {
+  if (!ghostRoute().length || !ghostRoute()[0]) return;   // the route ledges are not loaded (another map is up)
   if (gsc.state === 'rescue') { updateRescue(dt); return; }
   if (gsc.state === 'farewell') { updateFarewell(dt); return; }
   if (gsc.state === 'wait' || gsc.state === 'chase') updateChase(dt);
@@ -887,7 +884,7 @@ function updateSlashes(dt) {
     if ((s.dir < 0 && s.x < s.end) || (s.dir > 0 && s.x > s.end)) { gs.slashes.splice(i, 1); continue; }
     if (!s.hit && Math.abs(p.x - s.x) < A.slashHalfW + 16 && p.y > s.y - A.slashHeight && p.y - 62 < s.y && p.invulnerable <= 0) {
       s.hit = true;
-      if (typeof applyStunHit === 'function') applyStunHit(s.x - s.dir * 40, 'rim', '림의 낫에 맞았어요!');
+      if (typeof applyStunHit === 'function') applyStunHit(s.x - s.dir * 40, 'rim_slash', '림의 낫에 맞았어요!');
     }
   }
 }
