@@ -1840,12 +1840,12 @@ function ensureWorldRegionAssets(regionId) {
  }
  for (const k of TERRAIN_ASSET_LIST) {
   if (prefixes.some(pf => k.startsWith(pf))) {
-   tasks.push(_loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=31R', true));
+   tasks.push(_loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp' + terrainAssetQ(k), true));
   }
  }
  if (regionId === 'monatium_a' || regionId === 'monatium_b') {
   for (const s of STRUCTURE_ASSET_LIST) {
-   tasks.push(_loadSingleWorldImg(structureImages, s, 'assets/structure/' + s + '.webp?v=30', true));
+   tasks.push(_loadSingleWorldImg(structureImages, s, 'assets/structure/' + s + '.webp' + STRUCTURE_ASSET_Q, true));
   }
  }
  if (typeof ensureNpcRegionAssets === 'function') {
@@ -1865,13 +1865,13 @@ function preloadRemainingWorldAssetsInBackground() {
    _loadSingleWorldImg(transitionFrames, i, `assets/transition/cloud_${String(i).padStart(2,'0')}.webp?v=16`, true);
   }
   for (const s of STRUCTURE_ASSET_LIST) {
-   _loadSingleWorldImg(structureImages, s, 'assets/structure/' + s + '.webp?v=30', true);
+   _loadSingleWorldImg(structureImages, s, 'assets/structure/' + s + '.webp' + STRUCTURE_ASSET_Q, true);
   }
   for (const bg of worldFiles) {
    _loadSingleWorldImg(worldImages, bg, 'assets/world/' + bg + '.webp?v=30', true);
   }
   for (const k of TERRAIN_ASSET_LIST) {
-   _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=31R', true);
+   _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp' + terrainAssetQ(k), true);
   }
  }, 400);
 }

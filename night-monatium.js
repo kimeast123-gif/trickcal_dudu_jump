@@ -91,7 +91,7 @@ function buildNightStage() {
     loadNightAssets();
     // the story's steel platform and wall art (only the monatium/ terrain files, not its backgrounds)
     if (typeof TERRAIN_ASSET_LIST !== 'undefined' && typeof _loadSingleWorldImg === 'function') {
-      for (const k of TERRAIN_ASSET_LIST) if (k.startsWith('monatium/')) _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp?v=31R', true);
+      for (const k of TERRAIN_ASSET_LIST) if (k.startsWith('monatium/')) _loadSingleWorldImg(terrainImages, k, 'assets/terrain/' + k + '.webp' + terrainAssetQ(k), true);
     }
     night.dashHintShown = false;   // once per stage entry (a checkpoint retry does not show it again)
   };

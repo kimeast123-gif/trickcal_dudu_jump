@@ -29,6 +29,11 @@ const STRUCTURE_ASSET_LIST = [
   'rooftop_truss'
 ];
 
+// Image cache keys (not rewritten by tools/release.py): bump a key when its images change. v1.8.3: the repainted
+// Monatium steel parts and tower structures (art renewal P3-A) get their own key so no browser keeps the old ones.
+function terrainAssetQ(k) { return /^monatium\/steel_/.test(k) ? '?v=p3a1' : '?v=31R'; }
+const STRUCTURE_ASSET_Q = '?v=p3a1';
+
 const TERRAIN_ASSET_LIST = [
   'forest/left', 'forest/middle_a', 'forest/middle_b', 'forest/middle_c', 'forest/right',
   'forest/single_small', 'forest/single_medium',
@@ -528,14 +533,19 @@ function drawTowerStructures() {
     ctx.rect(sh.x1, sh.y1, spanW, spanH);
     ctx.clip();
 
+    /* v1.8.3: the repainted tower_backdrop is a finished, opaque interior; the navy gradient and the light rails are
+       only the fallback for when it is not loaded */
+    const backdropOk = Boolean(backdrop && backdrop.width > 0);
+    if (!backdropOk) {
     const grad = ctx.createLinearGradient(0, sh.y1, 0, sh.y2);
     grad.addColorStop(0, 'rgba(42, 56, 78, 0.72)');
     grad.addColorStop(0.5, 'rgba(34, 46, 66, 0.76)');
     grad.addColorStop(1, 'rgba(26, 36, 52, 0.82)');
     ctx.fillStyle = grad;
     ctx.fillRect(sh.x1, sh.y1, spanW, spanH);
+    }
 
-    if (backdrop) {
+    if (backdropOk) {
       const tileW = 480, tileH = 480;
       for (let gy = sh.y1; gy < sh.y2; gy += tileH) {
         for (let gx = sh.x1; gx < sh.x2; gx += tileW) {
@@ -544,6 +554,7 @@ function drawTowerStructures() {
       }
     }
 
+    if (!backdropOk) {
     ctx.fillStyle = 'rgba(186, 224, 255, 0.10)';
     for (const rx of (sh.rails || [])) {
       ctx.fillRect(rx - 28, sh.y1 + 24, 56, spanH - 48);
@@ -556,6 +567,7 @@ function drawTowerStructures() {
       ctx.moveTo(rx, sh.y1 + 40);
       ctx.lineTo(rx, sh.y2 - 20);
       ctx.stroke();
+    }
     }
 
     if (sh.hasBottomPit) {
@@ -2339,6 +2351,17 @@ function draw() {
 const MB_SHAFT_STRIP_H = 480;
 const _mbShaftStrips = new Map();
 function paintMonatiumShaftInterior(c, sh, backdrop, rx1, ry1, rx2, ry2) {
+  /* v1.8.3: the repainted tower_backdrop is a finished, opaque interior: draw it alone (no gradient, no rails) */
+  if (backdrop) {
+    const tileW = 480, tileH = 480;
+    const row0 = Math.max(0, Math.floor((ry1 - sh.y1) / tileH)), col0 = Math.max(0, Math.floor((rx1 - sh.x1) / tileW));
+    for (let gy = sh.y1 + row0 * tileH; gy < Math.min(sh.y2, ry2); gy += tileH) {
+      for (let gx = sh.x1 + col0 * tileW; gx < Math.min(sh.x2, rx2); gx += tileW) {
+        c.drawImage(backdrop, gx, gy, tileW, tileH);
+      }
+    }
+    return;
+  }
   const grad = c.createLinearGradient(0, sh.y1, 0, sh.y2);
   grad.addColorStop(0, 'rgba(42, 56, 78, 0.74)');
   grad.addColorStop(0.5, 'rgba(34, 46, 66, 0.78)');
