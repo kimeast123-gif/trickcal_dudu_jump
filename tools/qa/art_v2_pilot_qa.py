@@ -19,7 +19,7 @@ ENTER = {
     'spirit': "()=>{devPracticeSpirit(2000,-1301);state='paused';}",
 }
 LIST = """()=>platforms.map((a,i)=>({i,id:a.id||'',x:a.x,y:a.y,w:a.w,blink:!!a.blink,sm:a.smDraw||'',
-   zone:(a.smDraw&&typeof smZoneOf==='function')?smZoneOf(a):'',wall:!!a.wall,ground:!!a.groundTile,
+   zone:(a.smDraw&&typeof smZoneOf==='function')?smZoneOf(a):'',wall:!!a.wall,ceiling:!!a.ceiling,ground:!!a.groundTile,noTop:!!a.noTopLand,
    skin:(a.visual&&a.visual.material)||a.skin||'', pilot: !!(window.__artV2Pilot && window.__artV2Pilot.applies(a))}))"""
 FRAME = """([i, hide, dudu])=>{const a=platforms[i];
   const cx=a.x+Math.min(a.w,1100)/2-640, cy=a.y-430;
@@ -61,16 +61,18 @@ async def main():
         for st in range(4):
             await pg.evaluate(ENTER['w1'], st); await pg.wait_for_timeout(500)
             L = await pg.evaluate(LIST)
-            tgt = [a for a in L if not a['wall'] and not a['ground'] and not a['sm'] and a['skin'] == 'grass' and a['w'] < 141]
-            res['areas'][f'world1_{st + 1}'] = {'target_lt141': len(tgt), 'pilot': sum(a['pilot'] for a in tgt),
-                                               'missing': [(a['id'], a['w']) for a in tgt if not a['pilot']]}
-            targets += [('w1', st, a) for a in tgt if a['pilot']]
+            fam = [a for a in L if not a['sm'] and (a['skin'] == 'grass' or (a['skin'] == 'wood' and (a['wall'] or a['ceiling'])))]   # every World1 forest object (whole family)
+            res['areas'][f'world1_{st + 1}'] = {'target': len(fam), 'v2': sum(a['pilot'] for a in fam),
+                                               'missing': [(a['id'], a['w']) for a in fam if not a['pilot']]}
+            # contact is measured where Dudu stands: ledges, ground, and walls you can stand on
+            targets += [('w1', st, a) for a in fam if a['pilot'] and not a['ceiling'] and (not a['wall'] or not a['noTop'])]
         await pg.evaluate(ENTER['spirit']); await pg.wait_for_timeout(800)
         L = await pg.evaluate(LIST)
-        tgt = [a for a in L if a['zone'] == 'lava' and a['sm'] not in ('rock', 'pillar', 'floor', 'roof', 'blink') and not a['blink'] and a['w'] >= 120]
-        res['areas']['spirit_lava'] = {'target_long': len(tgt), 'pilot': sum(a['pilot'] for a in tgt),
-                                       'missing': [(a['id'], a['w']) for a in tgt if not a['pilot']]}
-        targets += [('spirit', None, a) for a in tgt if a['pilot']]
+        lw = {'SM-MW3', 'SM-MW4', 'SM-B6'}
+        fam = [a for a in L if (a['zone'] == 'lava' and a['sm'] not in ('rock', 'pillar', 'floor', 'roof')) or a['id'] in lw]
+        res['areas']['spirit_lava'] = {'target': len(fam), 'v2': sum(a['pilot'] for a in fam),
+                                       'missing': [(a['id'], a['w']) for a in fam if not a['pilot']]}
+        targets += [('spirit', None, a) for a in fam if a['pilot'] and a['id'] not in lw]
 
         # contact for every pilot platform (v2 page)
         cur = None
@@ -129,6 +131,6 @@ async def main():
     res['contact_summary'] = {'n': len(res['contact']), 'measured': len(vals), 'min': min(vals) if vals else None,
                               'max': max(vals) if vals else None, 'within_2px': sum(abs(v) <= 2 for v in vals)}
     json.dump(res, open(os.path.join(OUT, 'art_v2_pilot_qa.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    print(json.dumps({'areas': res['areas'], 'contact': res['contact_summary'], 'errors': res.get('page_errors')}, ensure_ascii=False, indent=1))
+    print(json.dumps({'areas': {k: (v['v2'], v['target'], v['missing']) for k, v in res['areas'].items()}, 'contact': res['contact_summary'], 'errors': res.get('page_errors')}, ensure_ascii=False))
 
 asyncio.run(main())

@@ -1,0 +1,72 @@
+{
+  "forest_w1_ground_top_a": {
+    "tileWidth": 130,
+    "tileHeight": 95,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "forest_w1_ground_top_b": {
+    "tileWidth": 130,
+    "tileHeight": 95,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "forest_w1_ground_top_c": {
+    "tileWidth": 130,
+    "tileHeight": 95,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "forest_w1_ground_body_a": {
+    "tileWidth": 151,
+    "tileHeight": 86,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "forest_w1_ground_body_b": {
+    "tileWidth": 151,
+    "tileHeight": 86,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "forest_w1_wall_body": {
+    "tileWidth": 96,
+    "tileHeight": 128,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "forest_w1_wall_edge_left": {
+    "tileWidth": 8,
+    "tileHeight": 128,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "forest_w1_wall_edge_right": {
+    "tileWidth": 8,
+    "tileHeight": 128,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "forest_w1_under_support": {
+    "tileWidth": 128,
+    "tileHeight": 44,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "spirit_lava_glow_fill_a": {
+    "tileWidth": 24,
+    "tileHeight": 34,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "spirit_lava_glow_fill_b": {
+    "tileWidth": 24,
+    "tileHeight": 34,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "spirit_lava_wall_tile": {
+    "tileWidth": 128,
+    "tileHeight": 192,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "spirit_lava_wall_edge_left": {
+    "tileWidth": 10,
+    "tileHeight": 192,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  },
+  "spirit_lava_wall_edge_right": {
+    "tileWidth": 10,
+    "tileHeight": 192,
+    "rule": "periodic x/y repeat, crop final partial tile from x0/y0"
+  }
+}

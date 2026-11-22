@@ -1,0 +1,122 @@
+{
+  "family": "spirit_lava_glow",
+  "generatedOffline": true,
+  "algorithm": "two-part interior omission at minimum RGBA cut seam; both outer edges preserved",
+  "widthEntries": {
+    "83": {
+      "left": "spirit_lava_glow_left.png",
+      "center": [
+        {
+          "file": "spirit_lava_glow_fill_a.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "spirit_lava_glow_fill_b.png",
+          "sourceX": 0,
+          "sourceWidth": 2,
+          "drawWidth": 2,
+          "internalSpliceDelta": 4.374
+        },
+        {
+          "file": "spirit_lava_glow_fill_b.png",
+          "sourceX": 15,
+          "sourceWidth": 9,
+          "drawWidth": 9,
+          "internalSpliceDelta": 4.374
+        }
+      ],
+      "right": "spirit_lava_glow_right.png",
+      "endToCapSeamMaxRGBA": 0,
+      "totalWidth": 83
+    },
+    "120": {
+      "left": "spirit_lava_glow_left.png",
+      "center": [
+        {
+          "file": "spirit_lava_glow_fill_a.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "spirit_lava_glow_fill_b.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "spirit_lava_glow_fill_a.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        }
+      ],
+      "right": "spirit_lava_glow_right.png",
+      "endToCapSeamMaxRGBA": 0,
+      "totalWidth": 120
+    },
+    "188": {
+      "left": "spirit_lava_glow_left.png",
+      "center": [
+        {
+          "file": "spirit_lava_glow_fill_a.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "spirit_lava_glow_fill_b.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "spirit_lava_glow_fill_a.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "spirit_lava_glow_fill_b.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "spirit_lava_glow_fill_a.png",
+          "sourceX": 0,
+          "sourceWidth": 24,
+          "drawWidth": 24,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "spirit_lava_glow_fill_b.png",
+          "sourceX": 0,
+          "sourceWidth": 5,
+          "drawWidth": 5,
+          "internalSpliceDelta": 2.566
+        },
+        {
+          "file": "spirit_lava_glow_fill_b.png",
+          "sourceX": 9,
+          "sourceWidth": 15,
+          "drawWidth": 15,
+          "internalSpliceDelta": 2.566
+        }
+      ],
+      "right": "spirit_lava_glow_right.png",
+      "endToCapSeamMaxRGBA": 0,
+      "totalWidth": 188
+    }
+  }
+}

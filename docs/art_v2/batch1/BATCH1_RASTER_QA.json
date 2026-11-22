@@ -1,0 +1,187 @@
+{
+  "forest_w1_ground_top_a": {
+    "width": 130,
+    "height": 95,
+    "alphaCorner": 0,
+    "contactY": 25,
+    "contactCoverage": 1.0,
+    "repeatMode": "repeat_x",
+    "xEdgeDeltaMax": 0
+  },
+  "forest_w1_ground_top_b": {
+    "width": 130,
+    "height": 95,
+    "alphaCorner": 0,
+    "contactY": 25,
+    "contactCoverage": 1.0,
+    "repeatMode": "repeat_x",
+    "xEdgeDeltaMax": 0
+  },
+  "forest_w1_ground_top_c": {
+    "width": 130,
+    "height": 95,
+    "alphaCorner": 0,
+    "contactY": 25,
+    "contactCoverage": 1.0,
+    "repeatMode": "repeat_x",
+    "xEdgeDeltaMax": 0
+  },
+  "forest_w1_ground_body_a": {
+    "width": 151,
+    "height": 86,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_xy",
+    "xEdgeDeltaMax": 0,
+    "yEdgeDeltaMax": 0
+  },
+  "forest_w1_ground_body_b": {
+    "width": 151,
+    "height": 86,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_xy",
+    "xEdgeDeltaMax": 0,
+    "yEdgeDeltaMax": 0
+  },
+  "forest_w1_ground_cliff_left": {
+    "width": 81,
+    "height": 159,
+    "alphaCorner": 0,
+    "contactY": 25,
+    "contactCoverage": 0.9753086419753086,
+    "repeatMode": "end_left"
+  },
+  "forest_w1_ground_cliff_right": {
+    "width": 81,
+    "height": 159,
+    "alphaCorner": 0,
+    "contactY": 25,
+    "contactCoverage": 0.9753086419753086,
+    "repeatMode": "end_right"
+  },
+  "forest_w1_wall_top": {
+    "width": 96,
+    "height": 24,
+    "alphaCorner": 0,
+    "contactY": 6,
+    "contactCoverage": 0.9791666666666666,
+    "repeatMode": "crop_center"
+  },
+  "forest_w1_wall_body": {
+    "width": 96,
+    "height": 128,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_y_center_crop",
+    "yEdgeDeltaMax": 0
+  },
+  "forest_w1_wall_edge_left": {
+    "width": 8,
+    "height": 128,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_y",
+    "yEdgeDeltaMax": 0
+  },
+  "forest_w1_wall_edge_right": {
+    "width": 8,
+    "height": 128,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_y",
+    "yEdgeDeltaMax": 0
+  },
+  "forest_w1_under_support": {
+    "width": 128,
+    "height": 44,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_x",
+    "xEdgeDeltaMax": 0
+  },
+  "forest_w1_under_support_end_left": {
+    "width": 24,
+    "height": 44,
+    "alphaCorner": 0,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "end_left"
+  },
+  "forest_w1_under_support_end_right": {
+    "width": 24,
+    "height": 44,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "end_right"
+  },
+  "spirit_lava_glow_left": {
+    "width": 24,
+    "height": 34,
+    "alphaCorner": 0,
+    "contactY": 2,
+    "contactCoverage": 0.9166666666666666,
+    "repeatMode": "end_left"
+  },
+  "spirit_lava_glow_fill_a": {
+    "width": 24,
+    "height": 34,
+    "alphaCorner": 0,
+    "contactY": 2,
+    "contactCoverage": 1.0,
+    "repeatMode": "repeat_x",
+    "xEdgeDeltaMax": 0
+  },
+  "spirit_lava_glow_fill_b": {
+    "width": 24,
+    "height": 34,
+    "alphaCorner": 0,
+    "contactY": 2,
+    "contactCoverage": 1.0,
+    "repeatMode": "repeat_x",
+    "xEdgeDeltaMax": 0
+  },
+  "spirit_lava_glow_right": {
+    "width": 24,
+    "height": 34,
+    "alphaCorner": 0,
+    "contactY": 2,
+    "contactCoverage": 0.9166666666666666,
+    "repeatMode": "end_right"
+  },
+  "spirit_lava_wall_tile": {
+    "width": 128,
+    "height": 192,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_xy",
+    "xEdgeDeltaMax": 0,
+    "yEdgeDeltaMax": 0
+  },
+  "spirit_lava_wall_edge_left": {
+    "width": 10,
+    "height": 192,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_y",
+    "yEdgeDeltaMax": 0
+  },
+  "spirit_lava_wall_edge_right": {
+    "width": 10,
+    "height": 192,
+    "alphaCorner": 255,
+    "contactY": null,
+    "contactCoverage": null,
+    "repeatMode": "repeat_y",
+    "yEdgeDeltaMax": 0
+  }
+}

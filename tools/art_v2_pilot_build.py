@@ -1,121 +1,311 @@
-"""Build art-v2-pilot.js from the delivered pilot manifest and offline crop tables (no pixel reading in the browser).
+"""Build art-v2-pilot.js: the ART V2 test layer (approved pilot rev1 + batch 1 candidates).
 
     python tools/art_v2_pilot_build.py
+
+Everything that needs pixels is computed here, offline, from the delivered PNGs: the place to cut a repeat tile
+when a run of tiles does not fill the width exactly ("two-part splice": keep columns [0,a) and [b,T) so that the
+seam a-1 | b is the closest match and both outer edges stay intact). The browser never reads pixels (file:// safe).
 """
 import json, os
+import numpy as np
+from PIL import Image
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-P = os.path.join(ROOT, 'docs', 'art_v2', 'pilot')
-man = json.load(open(os.path.join(P, 'ART_V2_PILOT_MANIFEST.json'), encoding='utf-8'))
+A = os.path.join(ROOT, 'assets', 'art_v2')
+CACHE = 'v2b1a'
 
 
-def table(name):
-    t = json.load(open(os.path.join(P, name), encoding='utf-8'))
-    tile = t['middleTileWidthPx']
-    out = {}
-    for par, rows in t['partialCropPositionsByParity'].items():
-        arr = [0] * tile
-        for k, v in rows.items():
-            arr[int(k)] = v['srcX']
-        out[par] = arr
-    return t, out
+def px(path):
+    return np.array(Image.open(os.path.join(ROOT, path)).convert('RGBA')).astype(np.int32)
 
 
-ft, fcut = table('forest_w1_offline_crop_table.json')
-lt, lcut = table('spirit_lava_offline_crop_table.json')
-parts = man['parts'] if isinstance(man, dict) and 'parts' in man else man
-names = {p['name']: p for p in (parts if isinstance(parts, list) else [])}
+def splice_table(path):
+    """For a horizontally periodic tile of width T: for every leftover r (1..T-1) the column a where the kept
+    columns are [0,a) + [T-(r-a), T). a == r means a plain [0,r) crop."""
+    t = px(path); T = t.shape[1]
+    out = [0] * T
+    for r in range(1, T):
+        best = (1e18, r)
+        for a in range(1, r):
+            b = T - (r - a)
+            d = float(np.abs(t[:, a - 1] - t[:, b]).mean())
+            if d < best[0]: best = (d, a)
+        # plain crop: seam is between column r-1 and the next tile's column 0 (= this tile's column 0)
+        d0 = float(np.abs(t[:, r - 1] - t[:, 0]).mean())
+        if d0 <= best[0]: best = (d0, r)
+        out[r] = best[1]
+    return out
 
-js = f"""// ============================================================================
-// ART V2 PILOT (branch art-unification-phase2 only; never merge as is)
-//
-// Two pilot kits delivered in DUDU_ART_V2_PILOT_ASSETS_CLAUDE_261122.zip, drawn at 1:1 with their contact row on
-// the platform top. Only drawing changes: platform objects, coordinates, collision and physics are untouched.
-//   forest_w1 compact  24 | 16 x n | 24  x 64, contactY {ft['contactY']}: World1 수인숲 (1-1..1-4) ledges narrower than
-//                      141px (gate B option A), blinking ones included (blink alpha is applied by drawPlatform).
-//   spirit_lava long   44 | 394 x n | 44 x 74, contactY {lt['contactY']}: Spirit Mountain lava ledges of 120px and wider
-//                      (L0, L1, L2, L9, I0), 6px overhang on each side like the release art.
-// The leftover middle length is cut at the offline seam table built from the delivered PNGs
-// (tools/art_v2_pilot_build.py <- docs/art_v2/pilot/*_offline_crop_table.json).
-// Toggles: ?artv2=0 turns only this pilot off; ?arttest=0 turns off every test layer (release art).
+
+def rel(p): return p.replace(os.sep, '/')
+
+
+K = {
+    # --- forest World1 (pilot rev1 compact + batch 1 ground / wall / support), candidate A for long ledges
+    'fc': {'parts': {n: f'assets/art_v2/pilot/forest_w1_compact_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 24, 'tile': 16, 'h': 64, 'contactY': 18, 'cut': 'assets/art_v2/pilot/forest_w1_compact_fill_a.png'},
+    'gt': {'parts': {n: f'assets/art_v2/batch1/forest_w1_ground_top_{n}.png' for n in ('a', 'b', 'c')},
+           'tile': 130, 'h': 95, 'contactY': 25, 'cut': 'assets/art_v2/batch1/forest_w1_ground_top_a.png'},
+    'gb': {'parts': {n: f'assets/art_v2/batch1/forest_w1_ground_body_{n}.png' for n in ('a', 'b')}, 'tile': 151, 'h': 86},
+    'gc': {'parts': {'left': 'assets/art_v2/batch1/forest_w1_ground_cliff_left.png', 'right': 'assets/art_v2/batch1/forest_w1_ground_cliff_right.png'},
+           'w': 81, 'h': 159, 'contactY': 25},
+    'wl': {'parts': {'top': 'assets/art_v2/batch1/forest_w1_wall_top.png', 'body': 'assets/art_v2/batch1/forest_w1_wall_body.png',
+                     'edge_left': 'assets/art_v2/batch1/forest_w1_wall_edge_left.png', 'edge_right': 'assets/art_v2/batch1/forest_w1_wall_edge_right.png'},
+           'w': 96, 'h': 128, 'topH': 24, 'topContactY': 6, 'edge': 8},
+    'us': {'parts': {'mid': 'assets/art_v2/batch1/forest_w1_under_support.png', 'left': 'assets/art_v2/batch1/forest_w1_under_support_end_left.png',
+                     'right': 'assets/art_v2/batch1/forest_w1_under_support_end_right.png'},
+           'cap': 24, 'tile': 128, 'h': 44, 'cut': 'assets/art_v2/batch1/forest_w1_under_support.png'},
+    'fa': {'parts': {'img': 'assets/art_prototype/forest_standard_candidate_A.png'}, 'w': 441, 'h': 80, 'contactY': 21},
+    # --- Spirit lava (pilot rev1 long + batch 1 glow / wall)
+    'll': {'parts': {n: f'assets/art_v2/pilot/spirit_lava_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'right')},
+           'cap': 44, 'tile': 394, 'h': 74, 'contactY': 6, 'overhang': 6, 'cut': 'assets/art_v2/pilot/spirit_lava_long_mid_a.png'},
+    'lg': {'parts': {n: f'assets/art_v2/batch1/spirit_lava_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 24, 'tile': 24, 'h': 34, 'contactY': 2, 'overhang': 5, 'cut': 'assets/art_v2/batch1/spirit_lava_glow_fill_a.png'},
+    'lw': {'parts': {'tile': 'assets/art_v2/batch1/spirit_lava_wall_tile.png', 'edge_left': 'assets/art_v2/batch1/spirit_lava_wall_edge_left.png',
+                     'edge_right': 'assets/art_v2/batch1/spirit_lava_wall_edge_right.png'},
+           'w': 128, 'h': 192, 'edge': 10},
+}
+for k, v in K.items():
+    if 'cut' in v:
+        v['cutTable'] = splice_table(v['cut']); del v['cut']
+    for n, p in v['parts'].items():
+        im = Image.open(os.path.join(ROOT, p)); assert im.mode == 'RGBA', p
+    v['parts'] = {n: rel(p) + '?v=' + CACHE for n, p in v['parts'].items()}
+
+js = r"""// ============================================================================
+// ART V2 TEST LAYER (branch art-unification-phase2 only; never merge as is)
 // Generated by tools/art_v2_pilot_build.py. Do not edit by hand.
+//
+// Draws the ART V2 parts at 1:1 with each part's contact row on the platform top. Only drawing changes:
+// platform objects, coordinates, collision and physics are untouched. Repeat tiles that do not fill a width
+// exactly are cut at an offline "two-part splice" table (no pixel reading in the browser, file:// safe).
+//
+// World1 수인숲 1-1..1-4 (whole family, gate B option A):
+//   ledges < 141px            pilot rev1 compact kit (24 | 16 x n | 24, contactY 18)
+//   ledges >= 141px           candidate A long kit (left 70 | middle 100 x n | right 71, contactY 21), incl. the
+//                             old single_small / single_medium widths
+//   ground                    batch 1 ground top a/b/c (contactY 25) over ground body a/b, cliffs at open ends
+//   walls                     batch 1 wall body + edges; wall top cap only on walls you can stand on
+//   under-ledge slabs, ceiling batch 1 under support (24 | 128 x n | 24)
+// Spirit Mountain lava:
+//   ledges >= 120px           pilot rev1 long kit (44 | 394 x n | 44, contactY 6, 6px overhang)
+//   blinking ledges           batch 1 glow kit (24 | 24 x n | 24, contactY 2, 5px overhang); blink alpha/shake are
+//                             applied by drawSpiritLedge as before
+//   MW3, MW4, B6              batch 1 basalt wall tile + edges (the open drop above the hall stays undrawn)
+// Toggles: ?artv2=0 turns this layer off (v1.1 prototype only); ?arttest=0 turns off every test layer.
 // ============================================================================
-(function () {{
+(function () {
   'use strict';
   const q = location.search;
-  window.__DUDU_ART_V2_PILOT = !/[?&]arttest=0\\b/.test(q) && !/[?&]artv2=0\\b/.test(q);
-  const KIT = {{
-    forest: {{ dir: 'assets/art_v2/pilot/forest_w1_compact_', h: 64, contactY: {ft['contactY']}, cap: 24, tile: {ft['middleTileWidthPx']}, overhang: 0,
-      cut: {json.dumps(fcut)}, img: {{}} }},
-    lava: {{ dir: 'assets/art_v2/pilot/spirit_lava_long_', h: 74, contactY: {lt['contactY']}, cap: 44, tile: {lt['middleTileWidthPx']}, overhang: 6,
-      cut: {json.dumps(lcut)}, img: {{}} }}
-  }};
-  window.__DUDU_ART_V2 = KIT;
-  const PARTS = {{ forest: ['left', 'fill_a', 'fill_b', 'right'], lava: ['left', 'mid_a', 'mid_b', 'right'] }};
-  for (const k of Object.keys(KIT)) for (const n of PARTS[k]) {{
-    const im = new Image();
-    im.onload = () => {{ KIT[k].img[n] = im; }};
-    im.src = KIT[k].dir + n + '.png?v=pilot261122r1';
-  }}
-  const failed = {{}};
-  function fail(k, e) {{ failed[k] = true; console.warn('[art v2 pilot] ' + k + ' off:', e); }}
-  function ready(K, names) {{ return names.every(n => K.img[n]); }}
-  // 1:1 slice: source columns sx..sx+w drawn at dx (no scaling)
-  function piece(im, sx, w, dx, top, h) {{ if (w > 0) ctx.drawImage(im, sx, 0, w, h, dx, top, w, h); }}
-  // left cap | full middle tiles (alternating variants) | seam-matched partial tile | right cap
-  function drawKit(K, mids, x0, total, top) {{
-    const L = K.img.left, R = K.img.right;
-    piece(L, 0, K.cap, x0, top, K.h);
-    let x = x0 + K.cap, rest = total - 2 * K.cap, i = 0;
-    while (rest >= K.tile) {{ piece(K.img[mids[i % 2]], 0, K.tile, x, top, K.h); x += K.tile; rest -= K.tile; i++; }}
-    if (rest > 0) {{ const par = String(i % 2); piece(K.img[mids[i % 2]], K.cut[par][rest] || 0, rest, x, top, K.h); x += rest; }}
-    piece(R, 0, K.cap, x, top, K.h);
-  }}
+  window.__DUDU_ART_V2_PILOT = !/[?&]arttest=0\b/.test(q) && !/[?&]artv2=0\b/.test(q);
+  const K = __KITS__;
+  window.__DUDU_ART_V2 = K;
+  for (const k of Object.keys(K)) {
+    K[k].img = {};
+    for (const n of Object.keys(K[k].parts)) {
+      const im = new Image();
+      im.onload = () => { K[k].img[n] = im; };
+      im.src = K[k].parts[n];
+    }
+  }
+  const failed = {};
+  function fail(k, e) { failed[k] = true; console.warn('[art v2] ' + k + ' off:', e); }
+  const ready = (...ks) => ks.every(k => Object.keys(K[k].parts).every(n => K[k].img[n]));
+  // 1:1 slice: source rect drawn at the same size
+  function piece(im, sx, sy, w, h, dx, dy) { if (w > 0 && h > 0) ctx.drawImage(im, sx, sy, w, h, dx, dy, w, h); }
+  // a horizontal run of `total` px from repeat tiles (variants alternate), leftover cut by the splice table
+  function runX(k, names, x, total, top, h) {
+    const T = K[k].tile, tab = K[k].cutTable;
+    let i = 0;
+    while (total >= T) { piece(K[k].img[names[i % names.length]], 0, 0, T, h, x, top); x += T; total -= T; i++; }
+    if (total > 0) {
+      const im = K[k].img[names[i % names.length]], a = tab[total] || total, b = T - (total - a);
+      piece(im, 0, 0, a, h, x, top);
+      if (a < total) piece(im, b, 0, T - b, h, x + a, top);
+    }
+  }
+  function capped(k, mids, x0, total, top) {
+    const C = K[k].cap, h = K[k].h;
+    piece(K[k].img.left, 0, 0, C, h, x0, top);
+    runX(k, mids, x0 + C, total - 2 * C, top, h);
+    piece(K[k].img.right, 0, 0, C, h, x0 + total - C, top);
+  }
+  // vertical fill of a rect with a tile (columns cropped from the tile's centre when the rect is narrower)
+  function fillRect(im, tw, th, x, y, w, h, y1, y2) {
+    const sx = Math.max(0, Math.floor((tw - w) / 2)), cw = Math.min(w, tw);
+    for (let cx = 0; cx < w; cx += cw) {
+      const ww = Math.min(cw, w - cx);
+      let ty = y + Math.floor((Math.max(y1, y) - y) / th) * th;
+      for (; ty < Math.min(y + h, y2); ty += th) {
+        const hh = Math.min(th, y + h - ty);
+        piece(im, sx, 0, ww, hh, x + cx, ty);
+      }
+    }
+  }
+  const view = () => (typeof smView === 'function') ? smView() : { x1: rCam, x2: rCam + W, y1: rCamY, y2: rCamY + H };
 
-  function forestApplies(a) {{
-    if (!window.__DUDU_ART_V2_PILOT || failed.forest || !ready(KIT.forest, PARTS.forest)) return false;
-    if (a.wall || a.ceiling || a.groundTile || a.smDraw || a.nonCollidable) return false;
-    if ((a.visual?.material || a.skin || 'grass') !== 'grass') return false;
-    if (typeof gameMode === 'undefined' || gameMode !== 'world') return false;
+  // ---------------------------------------------------------------- World1 forest
+  function inW1() {
+    if (!window.__DUDU_ART_V2_PILOT || typeof gameMode === 'undefined' || gameMode !== 'world') return false;
     const st = typeof world1Stages !== 'undefined' ? world1Stages[activeWorldStageIndex] : null;
-    if (!st || st.worldId || st.stageCode === '1-5') return false;   /* World1 수인숲 1-1..1-4 only */
-    return a.w >= 2 * KIT.forest.cap && a.w < 141;
-  }}
-  function lavaApplies(a) {{
-    if (!window.__DUDU_ART_V2_PILOT || failed.lava || !ready(KIT.lava, PARTS.lava)) return false;
-    if (!a.smDraw || a.blink || typeof smZoneOf !== 'function') return false;
+    return !!st && !st.worldId && ['1-1', '1-2', '1-3', '1-4'].includes(st.stageCode);
+  }
+  const grass = (a) => (a.visual?.material || a.skin || 'grass') === 'grass';
+  /* the tree-interior walls of 1-2 use the 'wood' skin; the release draws them with the same forest soil, so they take the V2 forest wall too */
+  const forestWall = (a) => grass(a) || (a.visual?.material || a.skin) === 'wood';
+  function drawLongA(a, drawX, drawY) {
+    const F = K.fa, im = F.img.img, top = Math.round(drawY - F.contactY), lw = 70, rw = 71, mids = [70, 170, 270];
+    if (a.w <= lw + rw) {
+      const halfW = Math.round(a.w * 0.5), rightHalfW = a.w - halfW;
+      piece(im, 0, 0, halfW, F.h, drawX, top);
+      piece(im, 370 + rw - rightHalfW, 0, rightHalfW, F.h, drawX + halfW, top);
+      return;
+    }
+    const plan = makePlatformModulePlan(a.w, lw, rw, 100, 0), seed = a.visual?.seed || 202;
+    piece(im, 0, 0, lw, F.h, drawX, top);
+    let x = drawX + lw;
+    const neutral = (w) => { piece(im, 70 + Math.round((100 - w) * 0.5), 0, w, F.h, x, top); x += w; };
+    if (plan.neutralLeft > 0) neutral(plan.neutralLeft);
+    for (let i = 0; i < plan.count; i++) { piece(im, mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3], 0, 100, F.h, x, top); x += 100; }
+    if (plan.neutralRight > 0) neutral(plan.neutralRight);
+    piece(im, 370, 0, rw, F.h, drawX + a.w - rw, top);
+  }
+  function w1Thin(a) { return inW1() && !failed.w1 && ready('fc', 'fa') && !a.wall && !a.ceiling && !a.groundTile && !a.smDraw && !a.nonCollidable && grass(a); }
+  function groundNeighbour(a, side) {
+    for (const b of platforms) {
+      if (b === a || !b.groundTile || Math.abs(b.y - a.y) > 4) continue;
+      if (side < 0 && Math.abs(b.x + b.w - a.x) <= 2) return true;
+      if (side > 0 && Math.abs(a.x + a.w - b.x) <= 2) return true;
+    }
+    return false;
+  }
+  function drawGroundW1(a, x, y) {
+    const gt = K.gt, gb = K.gb, gc = K.gc, top = Math.round(y - gt.contactY);
+    /* like the release, the ground body runs down past the bottom of the view, whatever the object height */
+    const v = view(), bottom = Math.max(y + (a.h || 260), v.y2 + 40);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, top - 10, a.w, bottom - top + 10); ctx.clip();
+    // body under the top strip (the top strip's lower soil covers the join)
+    const bodyTop = top + gt.h - 20;
+    for (let by = bodyTop, row = 0; by < Math.min(bottom, v.y2 + 20); by += gb.h, row++) {
+      if (by + gb.h < v.y1 - 20) continue;
+      let i = row;
+      for (let bx = x; bx < x + a.w; bx += gb.tile, i++) piece(gb.img[i % 2 ? 'b' : 'a'], 0, 0, Math.min(gb.tile, x + a.w - bx), gb.h, bx, by);
+    }
+    const seed = a.visual?.seed || 202, names = ['a', 'b', 'c'];
+    const order = [0, 1, 2].map(i => names[Math.floor(seededUnit(seed, i + 3) * 3) % 3]);
+    runX('gt', order, x, a.w, top, gt.h);
+    if (!groundNeighbour(a, -1)) piece(gc.img.left, 0, 0, gc.w, gc.h, x, top);
+    if (!groundNeighbour(a, 1)) piece(gc.img.right, 0, 0, gc.w, gc.h, x + a.w - gc.w, top);
+    ctx.restore();
+  }
+  function drawWallW1(a, x, y) {
+    const wl = K.wl, v = view();
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, a.w, a.h); ctx.clip();
+    fillRect(wl.img.body, wl.w, wl.h, x, y, a.w, a.h, v.y1 - 20, v.y2 + 20);
+    fillRect(wl.img.edge_left, wl.edge, wl.h, x, y, wl.edge, a.h, v.y1 - 20, v.y2 + 20);
+    fillRect(wl.img.edge_right, wl.edge, wl.h, x + a.w - wl.edge, y, wl.edge, a.h, v.y1 - 20, v.y2 + 20);
+    ctx.restore();
+    if (!a.noTopLand) {   /* only walls you can stand on get the grass cap */
+      const sx = Math.max(0, Math.floor((wl.w - a.w) / 2));
+      piece(wl.img.top, sx, 0, Math.min(a.w, wl.w), wl.topH, x, Math.round(y - wl.topContactY));
+    }
+  }
+  function drawUnderW1(a, x, y) { capped('us', ['mid'], x, a.w, Math.round(y)); }
+
+  if (typeof drawThinPlatformVisual === 'function') {
+    const prevThin = drawThinPlatformVisual;
+    drawThinPlatformVisual = function (a, drawX, drawY) {
+      if (w1Thin(a)) {
+        try {
+          if (a.w < 141) capped('fc', ['fill_a', 'fill_b'], drawX, a.w, Math.round(drawY - K.fc.contactY));
+          else drawLongA(a, drawX, drawY);
+          return;
+        } catch (e) { fail('w1', e); }
+      }
+      return prevThin(a, drawX, drawY);
+    };
+  }
+  if (typeof drawGroundVisual === 'function') {
+    const prevGround = drawGroundVisual;
+    drawGroundVisual = function (a, drawX, drawY) {
+      if (inW1() && !failed.w1g && ready('gt', 'gb', 'gc') && a.groundTile && grass(a)) {
+        try { drawGroundW1(a, drawX, drawY); return; } catch (e) { fail('w1g', e); }
+      }
+      return prevGround(a, drawX, drawY);
+    };
+  }
+  if (typeof drawStructuralWall === 'function') {
+    const prevWall = drawStructuralWall;
+    drawStructuralWall = function (a, drawX, drawY) {
+      if (inW1() && !failed.w1w && ready('wl', 'us') && forestWall(a) && (a.wall || a.ceiling)) {
+        try {
+          if (a.ceiling || /UNDER/.test(a.id || '')) drawUnderW1(a, drawX, drawY); else drawWallW1(a, drawX, drawY);
+          return;
+        } catch (e) { fail('w1w', e); }
+      }
+      return prevWall(a, drawX, drawY);
+    };
+  }
+
+  // ---------------------------------------------------------------- Spirit lava
+  const LAVA_WALLS = new Set(['SM-MW3', 'SM-MW4', 'SM-B6']);
+  function lavaOn() { return window.__DUDU_ART_V2_PILOT && typeof smZoneOf === 'function'; }
+  function lavaLong(a) {
+    if (!lavaOn() || failed.lava || !ready('ll') || !a.smDraw || a.blink) return false;
     if (['rock', 'pillar', 'floor', 'roof', 'blink'].includes(a.smDraw)) return false;
     return smZoneOf(a) === 'lava' && a.w >= 120;
-  }}
-
-  if (typeof drawThinPlatformVisual === 'function') {{
-    const prevThin = drawThinPlatformVisual;
-    drawThinPlatformVisual = function (a, drawX, drawY) {{
-      if (forestApplies(a)) {{
-        try {{
-          drawKit(KIT.forest, ['fill_a', 'fill_b'], drawX, a.w, Math.round(drawY - KIT.forest.contactY));
-          return;
-        }} catch (e) {{ fail('forest', e); }}
-      }}
-      return prevThin(a, drawX, drawY);
-    }};
-  }}
-  if (typeof drawSpiritPlatform === 'function') {{
+  }
+  function drawLavaWall(a, x, y) {
+    const lw = K.lw, v = view();
+    if (y + a.h < v.y1 - 20 || y > v.y2 + 20) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, a.w, a.h); ctx.clip();
+    fillRect(lw.img.tile, lw.w, lw.h, x, y, a.w, a.h, v.y1 - 20, v.y2 + 20);
+    fillRect(lw.img.edge_left, lw.edge, lw.h, x, y, lw.edge, a.h, v.y1 - 20, v.y2 + 20);
+    fillRect(lw.img.edge_right, lw.edge, lw.h, x + a.w - lw.edge, y, lw.edge, a.h, v.y1 - 20, v.y2 + 20);
+    ctx.restore();
+  }
+  if (typeof drawSpiritPlatform === 'function') {
     const prevSpirit = drawSpiritPlatform;
-    drawSpiritPlatform = function (a, x, y) {{
-      if (lavaApplies(a)) {{
-        try {{
-          const K = KIT.lava;
-          drawKit(K, ['mid_a', 'mid_b'], x - K.overhang, a.w + 2 * K.overhang, Math.round(y - K.contactY));
-          return;
-        }} catch (e) {{ fail('lava', e); }}
-      }}
+    drawSpiritPlatform = function (a, x, y) {
+      try {
+        if (lavaOn() && !failed.lavaw && ready('lw') && LAVA_WALLS.has(a.id)) { drawLavaWall(a, x, y); return; }
+      } catch (e) { fail('lavaw', e); }
+      if (lavaLong(a)) {
+        try { const L = K.ll; capped('ll', ['mid_a', 'mid_b'], x - L.overhang, a.w + 2 * L.overhang, Math.round(y - L.contactY)); return; }
+        catch (e) { fail('lava', e); }
+      }
       return prevSpirit(a, x, y);
-    }};
+    };
     window.drawSpiritPlatform = drawSpiritPlatform;
-  }}
-  // QA hook
-  window.__artV2Pilot = {{ applies(a) {{ return a.smDraw ? lavaApplies(a) : forestApplies(a); }}, kind(a) {{ return a.smDraw ? 'lava' : 'forest'; }} }};
-}})();
+  }
+  if (typeof drawSpiritGlow === 'function') {
+    const prevGlow = drawSpiritGlow;
+    drawSpiritGlow = function (a, x, y) {
+      if (lavaOn() && !failed.glow && ready('lg') && smZoneOf(a) === 'lava') {
+        try { const G = K.lg; capped('lg', ['fill_a', 'fill_b'], x - G.overhang, a.w + 2 * G.overhang, Math.round(y - G.contactY)); return; }
+        catch (e) { fail('glow', e); }
+      }
+      return prevGlow(a, x, y);
+    };
+  }
+
+  // QA hook: does the V2 layer draw this object?
+  window.__artV2Pilot = {
+    applies(a) {
+      if (a.smDraw) return LAVA_WALLS.has(a.id) ? lavaOn() : (a.blink ? lavaOn() && smZoneOf(a) === 'lava' : lavaLong(a));
+      if (!inW1()) return false;
+      if ((a.wall || a.ceiling) && forestWall(a)) return true;
+      if (!grass(a)) return false;
+      if (a.groundTile) return true;
+      return w1Thin(a);
+    },
+    kind(a) { return a.smDraw ? 'lava' : 'forest'; }
+  };
+})();
 """
+js = js.replace('__KITS__', json.dumps(K, separators=(',', ':')))
 open(os.path.join(ROOT, 'art-v2-pilot.js'), 'w', encoding='utf-8', newline='\n').write(js)
-print('written', len(js), 'bytes; forest cut', len(fcut['0']), 'lava cut', len(lcut['0']))
+print('written', len(js), 'bytes;', ', '.join(f"{k}:{len(v.get('cutTable', []))}" for k, v in K.items()))

@@ -1,0 +1,135 @@
+{
+  "family": "forest_w1_under_support",
+  "generatedOffline": true,
+  "algorithm": "two-part interior omission at minimum RGBA cut seam; both outer edges preserved",
+  "widthEntries": {
+    "520": {
+      "left": "forest_w1_under_support_end_left.png",
+      "center": [
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 32,
+          "drawWidth": 32,
+          "internalSpliceDelta": 3.758
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 72,
+          "sourceWidth": 56,
+          "drawWidth": 56,
+          "internalSpliceDelta": 3.758
+        }
+      ],
+      "right": "forest_w1_under_support_end_right.png",
+      "endToCapSeamMaxRGBA": 0,
+      "totalWidth": 520
+    },
+    "1320": {
+      "left": "forest_w1_under_support_end_left.png",
+      "center": [
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 128,
+          "drawWidth": 128,
+          "internalSpliceDelta": 0
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 0,
+          "sourceWidth": 35,
+          "drawWidth": 35,
+          "internalSpliceDelta": 1.66
+        },
+        {
+          "file": "forest_w1_under_support.png",
+          "sourceX": 43,
+          "sourceWidth": 85,
+          "drawWidth": 85,
+          "internalSpliceDelta": 1.66
+        }
+      ],
+      "right": "forest_w1_under_support_end_right.png",
+      "endToCapSeamMaxRGBA": 0,
+      "totalWidth": 1320
+    }
+  }
+}
