@@ -77,6 +77,8 @@ def main():
         if a.shape != o.shape: continue
         so, sn = sharpness(o), sharpness(a)
         check(f'{n}: sharpness >= original', sn >= so * 0.95, f'{sn:.1f} (original {so:.1f})')
+        # P7: 3-4x the original's edge energy was speckle noise and over-sharpened brick grids in the game
+        check(f'{n}: not noisier than 1.8x original', sn <= so * 1.8, f'{sn:.1f} (original {so:.1f})')
         ho, hn = shading(o), shading(a)
         if ho > 0: check(f'{n}: shading >= original', hn >= ho * 0.9, f'{hn:.1f} (original {ho:.1f})')
         fo, fn = flat(o), flat(a)
