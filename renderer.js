@@ -31,7 +31,7 @@ const STRUCTURE_ASSET_LIST = [
 
 // Image cache keys (not rewritten by tools/release.py): bump a key when its images change. v1.8.3: the repainted
 // Monatium steel parts and tower structures (art renewal P3-A) get their own key so no browser keeps the old ones.
-function terrainAssetQ(k) { return /^monatium\/steel_/.test(k) ? '?v=p3a2' : '?v=31R'; }
+function terrainAssetQ(k) { return /^monatium\/steel_/.test(k) ? '?v=p3a2' : /^erpien\/gate_/.test(k) ? '?v=p5g1' : '?v=31R'; }
 const STRUCTURE_ASSET_Q = '?v=p3a2';
 
 const TERRAIN_ASSET_LIST = [
@@ -151,7 +151,7 @@ const TERRAIN_SPECS = {
     folder: 'erpien', prefix: 'gate_',
     thinWalk: 43, thinScale: 0.50,
     smallWalk: 32, medWalk: 44,
-    groundWalk: 58, groundScale: 0.54, bodyTopOffset: 96,
+    groundWalk: 58, groundScale: 0.54, bodyTopOffset: 174,   /* v1.8.4: P5 gate body starts right under the 175px top strip */
     decorations: [
       { key: 'erpien/decoration_gate_flower', walkOffset: 54, scale: 0.52 }
     ]
@@ -1283,7 +1283,8 @@ function drawGroundVisual(a, drawX, drawY) {
   // [v7 §2.2 & §2.3]:
   // - For `forest` (`grass`) and `village`, `ground_cliff_left/right` (150x295) has its opaque dirt shaft at cols 12..138 (0.09 inset, NOT 0.36!).
   // - On `step_up_join`, extend the lower step's dirt body 22px into the higher step so there is zero vertical seam between steps!
-  const cliffInsetRatio = (mat === 'grass' || mat === 'village') ? 0.09 : 0.36;
+  /* v1.8.4: the repainted Erpien gate cliffs (art renewal P5) run straight down about 13% in from their outer edge */
+  const cliffInsetRatio = (mat === 'grass' || mat === 'village') ? 0.09 : (mat === 'gate' ? 0.13 : 0.36);
   const bodyX1 = leftJoint.kind === 'wall_butt_join'
     ? (drawX - 6)
     : (leftJoint.kind === 'step_up_join'
@@ -1393,7 +1394,8 @@ function drawGroundVisual(a, drawX, drawY) {
     if (vx2 > vx1 && bottomY > y0) {
       ctx.save();
       const dg = ctx.createLinearGradient(0, y0, 0, y0 + 300);
-      dg.addColorStop(0, 'rgba(24, 18, 12, 0.26)');
+      /* v1.8.4: on the repainted Erpien gate ground the shade fades in instead of starting as a hard dark line */
+      dg.addColorStop(0, mat === 'gate' ? 'rgba(24, 18, 12, 0)' : 'rgba(24, 18, 12, 0.26)');
       dg.addColorStop(0.12, 'rgba(24, 18, 12, 0.04)');
       dg.addColorStop(0.55, 'rgba(18, 14, 10, 0.20)');
       dg.addColorStop(1, 'rgba(12, 10, 8, 0.42)');
