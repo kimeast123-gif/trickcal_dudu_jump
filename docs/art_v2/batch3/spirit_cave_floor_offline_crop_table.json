@@ -1,0 +1,52 @@
+{
+  "1908": {
+    "width": 1908,
+    "left_px": 64,
+    "right_px": 64,
+    "center_parts": [
+      {
+        "name": "spirit_cave_floor_mid",
+        "src_x0": 0,
+        "src_x1": 256,
+        "width": 256
+      },
+      {
+        "name": "spirit_cave_floor_mid",
+        "src_x0": 0,
+        "src_x1": 256,
+        "width": 256
+      },
+      {
+        "name": "spirit_cave_floor_mid",
+        "src_x0": 0,
+        "src_x1": 256,
+        "width": 256
+      },
+      {
+        "name": "spirit_cave_floor_mid",
+        "src_x0": 0,
+        "src_x1": 256,
+        "width": 256
+      },
+      {
+        "name": "spirit_cave_floor_mid",
+        "src_x0": 0,
+        "src_x1": 256,
+        "width": 256
+      },
+      {
+        "name": "spirit_cave_floor_mid",
+        "src_x0": 0,
+        "src_x1": 256,
+        "width": 256
+      },
+      {
+        "name": "spirit_cave_floor_mid",
+        "src_x0": 0,
+        "src_x1": 244,
+        "width": 244
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 5.69
+  }
+}

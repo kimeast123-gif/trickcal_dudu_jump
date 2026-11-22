@@ -1,0 +1,36 @@
+{
+  "405": {
+    "width": 405,
+    "left_px": 44,
+    "right_px": 44,
+    "center_parts": [
+      {
+        "name": "spirit_out_long_mid_a",
+        "src_x0": 0,
+        "src_x1": 317,
+        "width": 317
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 11.13
+  },
+  "492": {
+    "width": 492,
+    "left_px": 44,
+    "right_px": 44,
+    "center_parts": [
+      {
+        "name": "spirit_out_long_mid_a",
+        "src_x0": 0,
+        "src_x1": 394,
+        "width": 394
+      },
+      {
+        "name": "spirit_out_long_mid_a",
+        "src_x0": 384,
+        "src_x1": 394,
+        "width": 10
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 4.45
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "64": {
+    "width": 64,
+    "left_px": 24,
+    "right_px": 24,
+    "center_parts": [
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 5,
+        "src_x1": 21,
+        "width": 16
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 8.04
+  },
+  "150": {
+    "width": 150,
+    "left_px": 24,
+    "right_px": 24,
+    "center_parts": [
+      {
+        "name": "spirit_snow_glow_fill_a",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_a",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 0,
+        "src_x1": 6,
+        "width": 6
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 5.42
+  },
+  "276": {
+    "width": 276,
+    "left_px": 24,
+    "right_px": 24,
+    "center_parts": [
+      {
+        "name": "spirit_snow_glow_fill_a",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_a",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_a",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_a",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_a",
+        "src_x0": 0,
+        "src_x1": 24,
+        "width": 24
+      },
+      {
+        "name": "spirit_snow_glow_fill_b",
+        "src_x0": 12,
+        "src_x1": 24,
+        "width": 12
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 10.25
+  }
+}

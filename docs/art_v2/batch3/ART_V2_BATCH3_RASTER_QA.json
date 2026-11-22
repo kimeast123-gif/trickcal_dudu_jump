@@ -1,0 +1,252 @@
+{
+  "batch": "ART_V2_BATCH3",
+  "asset_count": 31,
+  "new_count": 22,
+  "correction_count": 9,
+  "contact": {
+    "spirit_cave_tiny_left": {
+      "expected": 2,
+      "measured_first_90pct_opaque": 2,
+      "ok": true
+    },
+    "spirit_cave_tiny_fill_a": {
+      "expected": 2,
+      "measured_first_90pct_opaque": 2,
+      "ok": true
+    },
+    "spirit_cave_tiny_fill_b": {
+      "expected": 2,
+      "measured_first_90pct_opaque": 2,
+      "ok": true
+    },
+    "spirit_cave_tiny_right": {
+      "expected": 2,
+      "measured_first_90pct_opaque": 2,
+      "ok": true
+    },
+    "spirit_cave_floor_left": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_cave_floor_mid": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_cave_floor_right": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_snow_long_left": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_snow_long_mid_a": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_snow_long_mid_b": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_snow_long_right": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_snow_tiny_left": {
+      "expected": 2,
+      "measured_first_90pct_opaque": 2,
+      "ok": true
+    },
+    "spirit_snow_tiny_fill_a": {
+      "expected": 2,
+      "measured_first_90pct_opaque": 2,
+      "ok": true
+    },
+    "spirit_snow_tiny_fill_b": {
+      "expected": 2,
+      "measured_first_90pct_opaque": 2,
+      "ok": true
+    },
+    "spirit_snow_tiny_right": {
+      "expected": 2,
+      "measured_first_90pct_opaque": 2,
+      "ok": true
+    },
+    "spirit_snow_glow_left": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_snow_glow_fill_a": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_snow_glow_fill_b": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_snow_glow_right": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "forest_w1_ground_top_a": {
+      "expected": 25,
+      "measured_first_90pct_opaque": 25,
+      "ok": true
+    },
+    "forest_w1_ground_top_b": {
+      "expected": 25,
+      "measured_first_90pct_opaque": 25,
+      "ok": true
+    },
+    "forest_w1_ground_top_c": {
+      "expected": 25,
+      "measured_first_90pct_opaque": 25,
+      "ok": true
+    },
+    "forest_story_ground_top_a": {
+      "expected": 25,
+      "measured_first_90pct_opaque": 25,
+      "ok": true
+    },
+    "forest_story_ground_top_b": {
+      "expected": 25,
+      "measured_first_90pct_opaque": 25,
+      "ok": true
+    },
+    "forest_story_ground_top_c": {
+      "expected": 25,
+      "measured_first_90pct_opaque": 25,
+      "ok": true
+    },
+    "spirit_out_long_left": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_out_long_mid_a": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    },
+    "spirit_out_long_right": {
+      "expected": 6,
+      "measured_first_90pct_opaque": 6,
+      "ok": true
+    }
+  },
+  "seams": {
+    "spirit_cave_tiny": {
+      "repeat_rgba_edge_max": 0,
+      "names": [
+        "spirit_cave_tiny_left",
+        "spirit_cave_tiny_fill_a",
+        "spirit_cave_tiny_fill_b",
+        "spirit_cave_tiny_right"
+      ]
+    },
+    "spirit_cave_floor": {
+      "repeat_rgba_edge_max": 0,
+      "names": [
+        "spirit_cave_floor_left",
+        "spirit_cave_floor_mid",
+        "spirit_cave_floor_right"
+      ]
+    },
+    "spirit_snow_long": {
+      "repeat_rgba_edge_max": 0,
+      "names": [
+        "spirit_snow_long_left",
+        "spirit_snow_long_mid_a",
+        "spirit_snow_long_mid_b",
+        "spirit_snow_long_right"
+      ]
+    },
+    "spirit_snow_tiny": {
+      "repeat_rgba_edge_max": 0,
+      "names": [
+        "spirit_snow_tiny_left",
+        "spirit_snow_tiny_fill_a",
+        "spirit_snow_tiny_fill_b",
+        "spirit_snow_tiny_right"
+      ]
+    },
+    "spirit_snow_glow": {
+      "repeat_rgba_edge_max": 0,
+      "names": [
+        "spirit_snow_glow_left",
+        "spirit_snow_glow_fill_a",
+        "spirit_snow_glow_fill_b",
+        "spirit_snow_glow_right"
+      ]
+    },
+    "spirit_out_long": {
+      "repeat_rgba_edge_max": 0,
+      "names": [
+        "spirit_out_long_left",
+        "spirit_out_long_mid_a",
+        "spirit_out_long_right"
+      ]
+    },
+    "spirit_cave_wall_tile": {
+      "repeat_rgba_edge_max_x": 0,
+      "repeat_rgba_edge_max_y": 0
+    },
+    "forest_w1_ground_top": {
+      "repeat_rgba_edge_max": 0
+    },
+    "forest_story_ground_top": {
+      "repeat_rgba_edge_max": 0
+    }
+  },
+  "forest_top_body_mean_rgb_differences": [
+    {
+      "name": "forest_w1_ground_top_a",
+      "before_mean_rgb_diff": 0.666,
+      "after_mean_rgb_diff": 0.037,
+      "target_limit": 3
+    },
+    {
+      "name": "forest_w1_ground_top_b",
+      "before_mean_rgb_diff": 1.251,
+      "after_mean_rgb_diff": 0.041,
+      "target_limit": 3
+    },
+    {
+      "name": "forest_w1_ground_top_c",
+      "before_mean_rgb_diff": 1.519,
+      "after_mean_rgb_diff": 0.027,
+      "target_limit": 3
+    },
+    {
+      "name": "forest_story_ground_top_a",
+      "before_mean_rgb_diff": 0.732,
+      "after_mean_rgb_diff": 0.018,
+      "target_limit": 3
+    },
+    {
+      "name": "forest_story_ground_top_b",
+      "before_mean_rgb_diff": 1.378,
+      "after_mean_rgb_diff": 0.045,
+      "target_limit": 3
+    },
+    {
+      "name": "forest_story_ground_top_c",
+      "before_mean_rgb_diff": 1.71,
+      "after_mean_rgb_diff": 0.03,
+      "target_limit": 3
+    }
+  ],
+  "gameplay_test": "NOT_RUN_STATIC_ARTWORK_ONLY",
+  "manual_visual_qa": "REQUIRED_IN_CLAUDE_GAME_BROWSER"
+}

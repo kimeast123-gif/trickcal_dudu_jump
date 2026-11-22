@@ -1,0 +1,62 @@
+{
+  "64": {
+    "width": 64,
+    "left_px": 28,
+    "right_px": 28,
+    "center_parts": [
+      {
+        "name": "spirit_cave_tiny_fill_b",
+        "src_x0": 4,
+        "src_x1": 12,
+        "width": 8
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 7.76
+  },
+  "74": {
+    "width": 74,
+    "left_px": 28,
+    "right_px": 28,
+    "center_parts": [
+      {
+        "name": "spirit_cave_tiny_fill_a",
+        "src_x0": 0,
+        "src_x1": 12,
+        "width": 12
+      },
+      {
+        "name": "spirit_cave_tiny_fill_b",
+        "src_x0": 0,
+        "src_x1": 6,
+        "width": 6
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 10.13
+  },
+  "82": {
+    "width": 82,
+    "left_px": 28,
+    "right_px": 28,
+    "center_parts": [
+      {
+        "name": "spirit_cave_tiny_fill_a",
+        "src_x0": 0,
+        "src_x1": 12,
+        "width": 12
+      },
+      {
+        "name": "spirit_cave_tiny_fill_b",
+        "src_x0": 0,
+        "src_x1": 12,
+        "width": 12
+      },
+      {
+        "name": "spirit_cave_tiny_fill_b",
+        "src_x0": 0,
+        "src_x1": 2,
+        "width": 2
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 2.4
+  }
+}

@@ -84,6 +84,15 @@ async def main():
         res['areas']['spirit_out'] = {'target': len(fam), 'v2': sum(a['pilot'] for a in fam),
                                       'missing': [(a['id'], a['w']) for a in fam if not a['pilot']]}
         targets += [('spirit', None, a) for a in fam if a['pilot'] and a['id'] != 'SM-MW1']
+        cw = {'SM-MW2', 'SM-B1', 'SM-B2', 'SM-B3', 'SM-B5'}
+        fam = [a for a in L if (a['zone'] == 'cave' and a['sm'] not in ('rock', 'pillar', 'roof')) or a['id'] in cw]
+        res['areas']['spirit_cave'] = {'target': len(fam), 'v2': sum(a['pilot'] for a in fam),
+                                       'missing': [(a['id'], a['w']) for a in fam if not a['pilot']]}
+        targets += [('spirit', None, a) for a in fam if a['pilot'] and a['id'] not in cw]
+        fam = [a for a in L if a['zone'] == 'snow' and a['sm'] not in ('rock', 'pillar', 'roof') and not a['id'].startswith('SM-B')]
+        res['areas']['spirit_snow'] = {'target': len(fam), 'v2': sum(a['pilot'] for a in fam),
+                                       'missing': [(a['id'], a['w']) for a in fam if not a['pilot']]}
+        targets += [('spirit', None, a) for a in fam if a['pilot']]
         await enter(pg, 'story', None); await pg.wait_for_timeout(600)
         L = await pg.evaluate(LIST)
         fam = [a for a in L if not a['sm'] and a['skin'] == 'grass']

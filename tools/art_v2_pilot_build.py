@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE = 'v2b2a'
+CACHE = 'v2b3a'
 
 
 def px(path):
@@ -48,7 +48,7 @@ def outline(path, side):
     return [first if v < 0 else v for v in out]
 
 
-B1, B2, PI = 'assets/art_v2/batch1/', 'assets/art_v2/batch2/', 'assets/art_v2/pilot/'
+B1, B2, B3, PI = 'assets/art_v2/batch1/', 'assets/art_v2/batch2/', 'assets/art_v2/batch3/', 'assets/art_v2/pilot/'
 
 
 def forest_kits(prof, src_compact, src_ground, src_ext):
@@ -96,6 +96,20 @@ K.update({
            'cap': 44, 'tile': 394, 'h': 72, 'contactY': 6, 'overhang': 6, 'cut': B2 + 'spirit_out_long_mid_a.png'},
     'ow': {'parts': {'tile': B2 + 'spirit_out_wall_tile.png', 'edge_left': B2 + 'spirit_out_wall_edge_left.png',
                      'edge_right': B2 + 'spirit_out_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
+    # Spirit cave (batch 3): long ledges stay on approved candidate A (art-prototype.js), shown with contact row 9
+    'ct': {'parts': {n: f'{B3}spirit_cave_tiny_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 28, 'tile': 12, 'h': 48, 'contactY': 2, 'overhang': 5, 'cut': B3 + 'spirit_cave_tiny_fill_a.png'},
+    'cf': {'parts': {n: f'{B3}spirit_cave_floor_{n}.png' for n in ('left', 'mid', 'right')},
+           'cap': 64, 'tile': 256, 'h': 120, 'contactY': 6, 'cut': B3 + 'spirit_cave_floor_mid.png'},
+    'cw': {'parts': {'tile': B3 + 'spirit_cave_wall_tile.png', 'edge_left': B3 + 'spirit_cave_wall_edge_left.png',
+                     'edge_right': B3 + 'spirit_cave_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
+    # Spirit snow (batch 3)
+    'sl': {'parts': {n: f'{B3}spirit_snow_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'right')},
+           'cap': 44, 'tile': 394, 'h': 73, 'contactY': 6, 'overhang': 6, 'cut': B3 + 'spirit_snow_long_mid_a.png'},
+    'st': {'parts': {n: f'{B3}spirit_snow_tiny_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 28, 'tile': 12, 'h': 56, 'contactY': 2, 'overhang': 5, 'cut': B3 + 'spirit_snow_tiny_fill_a.png'},
+    'sg': {'parts': {n: f'{B3}spirit_snow_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 24, 'tile': 24, 'h': 40, 'contactY': 6, 'overhang': 5, 'cut': B3 + 'spirit_snow_glow_fill_a.png'},
 })
 for k, v in K.items():
     if 'cut' in v:
@@ -128,6 +142,12 @@ js = r"""// ====================================================================
 //   MW3, MW4, B6             basalt wall tile + edges (the open drop above the hall stays undrawn)
 //   lakeside ledges (E1-E3)  lakeside long kit (44 | 394 x n | 44, contactY 6, 6px overhang)
 //   MW1                      lakeside rock wall tile + edges
+//   cave ledges >= 120px     approved candidate A (art-prototype.js), display contact row 9
+//   cave ledges < 120px      cave tiny kit (28 | 12 x n | 28, contactY 2, 5px overhang)
+//   cave floor (Gabia)       cave floor kit (64 | 256 x n | 64, contactY 6)
+//   MW2, B1, B2, B3, B5      cave wall tile + edges; B1 (you can stand on it) gets a cave tiny cap
+//   snow ledges              snow long kit (>= 120px) / snow tiny kit (< 120px)
+//   snow blinking ledges     snow glow kit (24 | 24 x n | 24, contactY 6, 5px overhang)
 // Toggles: ?artv2=0 turns this layer off (v1.1 prototype only); ?arttest=0 turns off every test layer.
 // ============================================================================
 (function () {
@@ -332,16 +352,25 @@ js = r"""// ====================================================================
   }
 
   // ---------------------------------------------------------------- Spirit Mountain (lava + lakeside)
-  const ZONE_WALLS = { 'SM-MW3': 'lw', 'SM-MW4': 'lw', 'SM-B6': 'lw', 'SM-MW1': 'ow' };
+  const ZONE_WALLS = { 'SM-MW3': 'lw', 'SM-MW4': 'lw', 'SM-B6': 'lw', 'SM-MW1': 'ow',
+    'SM-MW2': 'cw', 'SM-B1': 'cw', 'SM-B2': 'cw', 'SM-B3': 'cw', 'SM-B5': 'cw' };
   function spiritOn() { return window.__DUDU_ART_V2_PILOT && typeof smZoneOf === 'function'; }
+  /* the approved cave long ledge (candidate A, drawn by art-prototype.js) is shown with its top line on the
+     platform: display contact row 9 instead of the metadata 16 (gate B decision; collision unchanged) */
+  if (window.__DUDU_ART_V2_PILOT && window.__DUDU_ART_PROTOTYPE && window.__DUDU_ART_PROTOTYPE.cave) window.__DUDU_ART_PROTOTYPE.cave.contactY = 9;
+  // ledge kit for a Spirit Mountain platform: [kit, middle variants] or null (cave long ledges stay on candidate A)
   function spiritLongKit(a) {
     if (!spiritOn() || !a.smDraw || a.blink) return null;
-    if (['rock', 'pillar', 'floor', 'roof', 'blink'].includes(a.smDraw) || a.w < 120) return null;
-    const z = smZoneOf(a);
-    if (z === 'lava' && !failed.ll && ready('ll')) return ['ll', ['mid_a', 'mid_b']];
-    if (z === 'out' && !failed.ol && ready('ol')) return ['ol', ['mid_a']];
+    if (['rock', 'pillar', 'floor', 'roof', 'blink'].includes(a.smDraw)) return null;
+    const z = smZoneOf(a), tiny = a.w < 120;
+    const pick = (k, mids) => (!failed[k] && ready(k)) ? [k, mids] : null;
+    if (z === 'lava') return tiny ? null : pick('ll', ['mid_a', 'mid_b']);
+    if (z === 'out') return tiny ? null : pick('ol', ['mid_a']);
+    if (z === 'cave') return tiny ? pick('ct', ['fill_a', 'fill_b']) : null;
+    if (z === 'snow') return tiny ? pick('st', ['fill_a', 'fill_b']) : pick('sl', ['mid_a', 'mid_b']);
     return null;
   }
+  const GLOW = { lava: 'lg', snow: 'sg' };
   function drawZoneWall(k, a, x, y) {
     const w = K[k], v = view();
     if (y + a.h < v.y1 - 20 || y > v.y2 + 20) return;
@@ -357,7 +386,17 @@ js = r"""// ====================================================================
     drawSpiritPlatform = function (a, x, y) {
       const wk = ZONE_WALLS[a.id];
       if (wk && spiritOn() && !failed[wk] && ready(wk)) {
-        try { drawZoneWall(wk, a, x, y); return; } catch (e) { fail(wk, e); }
+        try {
+          drawZoneWall(wk, a, x, y);
+          /* a pillar you can stand on gets the cave small-ledge kit as its cap (capless pillars hide under a ledge) */
+          if (a.smDraw === 'pillar' && !(typeof SM_CAPLESS !== 'undefined' && SM_CAPLESS.has(a.id)) && wk === 'cw' && ready('ct')) {
+            const T = K.ct; capped('ct', ['fill_a', 'fill_b'], x - 4, a.w + 8, Math.round(y - T.contactY));
+          }
+          return;
+        } catch (e) { fail(wk, e); }
+      }
+      if (a.smDraw === 'floor' && spiritOn() && !failed.cf && ready('cf')) {
+        try { capped('cf', ['mid'], x, a.w, Math.round(y - K.cf.contactY)); return; } catch (e) { fail('cf', e); }
       }
       const lk = spiritLongKit(a);
       if (lk) {
@@ -371,9 +410,10 @@ js = r"""// ====================================================================
   if (typeof drawSpiritGlow === 'function') {
     const prevGlow = drawSpiritGlow;
     drawSpiritGlow = function (a, x, y) {
-      if (spiritOn() && !failed.lg && ready('lg') && smZoneOf(a) === 'lava') {
-        try { const G = K.lg; capped('lg', ['fill_a', 'fill_b'], x - G.overhang, a.w + 2 * G.overhang, Math.round(y - G.contactY)); return; }
-        catch (e) { fail('lg', e); }
+      const gk = spiritOn() ? GLOW[smZoneOf(a)] : null;
+      if (gk && !failed[gk] && ready(gk)) {
+        try { const G = K[gk]; capped(gk, ['fill_a', 'fill_b'], x - G.overhang, a.w + 2 * G.overhang, Math.round(y - G.contactY)); return; }
+        catch (e) { fail(gk, e); }
       }
       return prevGlow(a, x, y);
     };
@@ -384,7 +424,9 @@ js = r"""// ====================================================================
     applies(a) {
       if (a.smDraw) {
         if (ZONE_WALLS[a.id]) return spiritOn();
-        if (a.blink) return spiritOn() && smZoneOf(a) === 'lava';
+        if (a.smDraw === 'floor') return spiritOn();
+        if (a.blink) return spiritOn() && !!GLOW[smZoneOf(a)];
+        if (spiritOn() && smZoneOf(a) === 'cave' && a.w >= 120) return !!(window.__artProto && window.__artProto.applies(a));
         return !!spiritLongKit(a);
       }
       const p = forestProfile();

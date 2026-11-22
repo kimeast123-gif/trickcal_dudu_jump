@@ -1,0 +1,68 @@
+{
+  "120": {
+    "width": 120,
+    "left_px": 44,
+    "right_px": 44,
+    "center_parts": [
+      {
+        "name": "spirit_snow_long_mid_a",
+        "src_x0": 362,
+        "src_x1": 394,
+        "width": 32
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 7.92
+  },
+  "851": {
+    "width": 851,
+    "left_px": 44,
+    "right_px": 44,
+    "center_parts": [
+      {
+        "name": "spirit_snow_long_mid_a",
+        "src_x0": 0,
+        "src_x1": 394,
+        "width": 394
+      },
+      {
+        "name": "spirit_snow_long_mid_a",
+        "src_x0": 0,
+        "src_x1": 369,
+        "width": 369
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 7.46
+  },
+  "1371": {
+    "width": 1371,
+    "left_px": 44,
+    "right_px": 44,
+    "center_parts": [
+      {
+        "name": "spirit_snow_long_mid_a",
+        "src_x0": 0,
+        "src_x1": 394,
+        "width": 394
+      },
+      {
+        "name": "spirit_snow_long_mid_b",
+        "src_x0": 0,
+        "src_x1": 394,
+        "width": 394
+      },
+      {
+        "name": "spirit_snow_long_mid_a",
+        "src_x0": 0,
+        "src_x1": 394,
+        "width": 394
+      },
+      {
+        "name": "spirit_snow_long_mid_a",
+        "src_x0": 0,
+        "src_x1": 101,
+        "width": 101
+      }
+    ],
+    "crop_remnant_edge_mean_rgba_cost": 13.66
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "cave": [
+    "spirit_cave_tiny_left",
+    "spirit_cave_tiny_fill_a",
+    "spirit_cave_tiny_fill_b",
+    "spirit_cave_tiny_right",
+    "spirit_cave_floor_left",
+    "spirit_cave_floor_mid",
+    "spirit_cave_floor_right",
+    "spirit_cave_wall_tile",
+    "spirit_cave_wall_edge_left",
+    "spirit_cave_wall_edge_right"
+  ],
+  "snow": [
+    "spirit_snow_long_left",
+    "spirit_snow_long_mid_a",
+    "spirit_snow_long_mid_b",
+    "spirit_snow_long_right",
+    "spirit_snow_tiny_left",
+    "spirit_snow_tiny_fill_a",
+    "spirit_snow_tiny_fill_b",
+    "spirit_snow_tiny_right",
+    "spirit_snow_glow_left",
+    "spirit_snow_glow_fill_a",
+    "spirit_snow_glow_fill_b",
+    "spirit_snow_glow_right"
+  ],
+  "forest_corrections": [
+    "forest_w1_ground_top_a",
+    "forest_w1_ground_top_b",
+    "forest_w1_ground_top_c",
+    "forest_story_ground_top_a",
+    "forest_story_ground_top_b",
+    "forest_story_ground_top_c"
+  ],
+  "out_corrections": [
+    "spirit_out_long_left",
+    "spirit_out_long_mid_a",
+    "spirit_out_long_right"
+  ]
+}

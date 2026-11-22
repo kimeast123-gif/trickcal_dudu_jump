@@ -1,0 +1,591 @@
+[
+  {
+    "name": "spirit_cave_tiny_left",
+    "width": 28,
+    "height": 48,
+    "contactY": 2,
+    "repeatMode": "cap_left",
+    "family": "spirit_cave",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 72,
+      "y": 72,
+      "w": 112,
+      "h": 192,
+      "contactY4x": 8
+    }
+  },
+  {
+    "name": "spirit_cave_tiny_fill_a",
+    "width": 12,
+    "height": 48,
+    "contactY": 2,
+    "repeatMode": "repeat_x",
+    "family": "spirit_cave",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 256,
+      "y": 72,
+      "w": 48,
+      "h": 192,
+      "contactY4x": 8
+    }
+  },
+  {
+    "name": "spirit_cave_tiny_fill_b",
+    "width": 12,
+    "height": 48,
+    "contactY": 2,
+    "repeatMode": "repeat_x",
+    "family": "spirit_cave",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 376,
+      "y": 72,
+      "w": 48,
+      "h": 192,
+      "contactY4x": 8
+    }
+  },
+  {
+    "name": "spirit_cave_tiny_right",
+    "width": 28,
+    "height": 48,
+    "contactY": 2,
+    "repeatMode": "cap_right",
+    "family": "spirit_cave",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 496,
+      "y": 72,
+      "w": 112,
+      "h": 192,
+      "contactY4x": 8
+    }
+  },
+  {
+    "name": "spirit_cave_floor_left",
+    "width": 64,
+    "height": 120,
+    "contactY": 6,
+    "repeatMode": "cap_left",
+    "family": "spirit_cave",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 680,
+      "y": 72,
+      "w": 256,
+      "h": 480,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_cave_floor_mid",
+    "width": 256,
+    "height": 120,
+    "contactY": 6,
+    "repeatMode": "repeat_x",
+    "family": "spirit_cave",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 1008,
+      "y": 72,
+      "w": 1024,
+      "h": 480,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_cave_floor_right",
+    "width": 64,
+    "height": 120,
+    "contactY": 6,
+    "repeatMode": "cap_right",
+    "family": "spirit_cave",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 2104,
+      "y": 72,
+      "w": 256,
+      "h": 480,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_snow_long_left",
+    "width": 44,
+    "height": 73,
+    "contactY": 6,
+    "repeatMode": "cap_left",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 72,
+      "y": 72,
+      "w": 176,
+      "h": 292,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_snow_long_mid_a",
+    "width": 394,
+    "height": 73,
+    "contactY": 6,
+    "repeatMode": "repeat_x",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 320,
+      "y": 72,
+      "w": 1576,
+      "h": 292,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_snow_long_mid_b",
+    "width": 394,
+    "height": 73,
+    "contactY": 6,
+    "repeatMode": "repeat_x",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 1968,
+      "y": 72,
+      "w": 1576,
+      "h": 292,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_snow_long_right",
+    "width": 44,
+    "height": 73,
+    "contactY": 6,
+    "repeatMode": "cap_right",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 3616,
+      "y": 72,
+      "w": 176,
+      "h": 292,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_snow_tiny_left",
+    "width": 28,
+    "height": 56,
+    "contactY": 2,
+    "repeatMode": "cap_left",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 72,
+      "y": 436,
+      "w": 112,
+      "h": 224,
+      "contactY4x": 8
+    }
+  },
+  {
+    "name": "spirit_snow_tiny_fill_a",
+    "width": 12,
+    "height": 56,
+    "contactY": 2,
+    "repeatMode": "repeat_x",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 256,
+      "y": 436,
+      "w": 48,
+      "h": 224,
+      "contactY4x": 8
+    }
+  },
+  {
+    "name": "spirit_snow_tiny_fill_b",
+    "width": 12,
+    "height": 56,
+    "contactY": 2,
+    "repeatMode": "repeat_x",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 376,
+      "y": 436,
+      "w": 48,
+      "h": 224,
+      "contactY4x": 8
+    }
+  },
+  {
+    "name": "spirit_snow_tiny_right",
+    "width": 28,
+    "height": 56,
+    "contactY": 2,
+    "repeatMode": "cap_right",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 496,
+      "y": 436,
+      "w": 112,
+      "h": 224,
+      "contactY4x": 8
+    }
+  },
+  {
+    "name": "spirit_snow_glow_left",
+    "width": 24,
+    "height": 40,
+    "contactY": 6,
+    "repeatMode": "cap_left",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 680,
+      "y": 436,
+      "w": 96,
+      "h": 160,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_snow_glow_fill_a",
+    "width": 24,
+    "height": 40,
+    "contactY": 6,
+    "repeatMode": "repeat_x",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 848,
+      "y": 436,
+      "w": 96,
+      "h": 160,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_snow_glow_fill_b",
+    "width": 24,
+    "height": 40,
+    "contactY": 6,
+    "repeatMode": "repeat_x",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 1016,
+      "y": 436,
+      "w": 96,
+      "h": 160,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_snow_glow_right",
+    "width": 24,
+    "height": 40,
+    "contactY": 6,
+    "repeatMode": "cap_right",
+    "family": "spirit_snow",
+    "source": "AI-painted rock texture with calibrated edge",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_snow_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 1184,
+      "y": 436,
+      "w": 96,
+      "h": 160,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_cave_wall_tile",
+    "width": 128,
+    "height": 192,
+    "contactY": null,
+    "repeatMode": "repeat_xy",
+    "family": "spirit_cave",
+    "source": "AI-generated cave wall painting, periodic texture normalized",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 2432,
+      "y": 72,
+      "w": 512,
+      "h": 768,
+      "contactY4x": null
+    }
+  },
+  {
+    "name": "spirit_cave_wall_edge_left",
+    "width": 10,
+    "height": 192,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "spirit_cave",
+    "source": "same cave wall rock with irregular exterior silhouette",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 3016,
+      "y": 72,
+      "w": 40,
+      "h": 768,
+      "contactY4x": null
+    }
+  },
+  {
+    "name": "spirit_cave_wall_edge_right",
+    "width": 10,
+    "height": 192,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "spirit_cave",
+    "source": "same cave wall rock with irregular exterior silhouette",
+    "kind": "new",
+    "outputScale": 1,
+    "sheet": "spirit_cave_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 3128,
+      "y": 72,
+      "w": 40,
+      "h": 768,
+      "contactY4x": null
+    }
+  },
+  {
+    "name": "forest_w1_ground_top_a",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_w1",
+    "source": "approved B1/B2 top with final 10-row soil transition corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "forest_w1_ground_top_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 72,
+      "y": 72,
+      "w": 520,
+      "h": 380,
+      "contactY4x": 100
+    }
+  },
+  {
+    "name": "forest_w1_ground_top_b",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_w1",
+    "source": "approved B1/B2 top with final 10-row soil transition corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "forest_w1_ground_top_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 664,
+      "y": 72,
+      "w": 520,
+      "h": 380,
+      "contactY4x": 100
+    }
+  },
+  {
+    "name": "forest_w1_ground_top_c",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_w1",
+    "source": "approved B1/B2 top with final 10-row soil transition corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "forest_w1_ground_top_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 1256,
+      "y": 72,
+      "w": 520,
+      "h": 380,
+      "contactY4x": 100
+    }
+  },
+  {
+    "name": "forest_story_ground_top_a",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved B1/B2 top with final 10-row soil transition corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "forest_story_ground_top_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 72,
+      "y": 72,
+      "w": 520,
+      "h": 380,
+      "contactY4x": 100
+    }
+  },
+  {
+    "name": "forest_story_ground_top_b",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved B1/B2 top with final 10-row soil transition corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "forest_story_ground_top_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 664,
+      "y": 72,
+      "w": 520,
+      "h": 380,
+      "contactY4x": 100
+    }
+  },
+  {
+    "name": "forest_story_ground_top_c",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved B1/B2 top with final 10-row soil transition corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "forest_story_ground_top_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 1256,
+      "y": 72,
+      "w": 520,
+      "h": 380,
+      "contactY4x": 100
+    }
+  },
+  {
+    "name": "spirit_out_long_left",
+    "width": 44,
+    "height": 72,
+    "contactY": 6,
+    "repeatMode": "cap_left",
+    "family": "spirit_out",
+    "source": "approved lakeside mossy stone, underside alpha silhouette corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "spirit_out_long_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 72,
+      "y": 72,
+      "w": 176,
+      "h": 288,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_out_long_mid_a",
+    "width": 394,
+    "height": 72,
+    "contactY": 6,
+    "repeatMode": "repeat_x",
+    "family": "spirit_out",
+    "source": "approved lakeside mossy stone, underside alpha silhouette corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "spirit_out_long_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 320,
+      "y": 72,
+      "w": 1576,
+      "h": 288,
+      "contactY4x": 24
+    }
+  },
+  {
+    "name": "spirit_out_long_right",
+    "width": 44,
+    "height": 72,
+    "contactY": 6,
+    "repeatMode": "cap_right",
+    "family": "spirit_out",
+    "source": "approved lakeside mossy stone, underside alpha silhouette corrected",
+    "kind": "correction",
+    "outputScale": 1,
+    "sheet": "spirit_out_long_retouch_sheet_4x.png",
+    "sheetRect4x": {
+      "x": 1968,
+      "y": 72,
+      "w": 176,
+      "h": 288,
+      "contactY4x": 24
+    }
+  }
+]
