@@ -225,7 +225,7 @@ const GS42_LEFT = [
 //   TOPRIDE: the box at the line's left end (sketch 55-100, y 101) rides the line 55..517 over the top of the pillar
 //   LOWRIDE: the box on the bottom line (sketch 930-980, y 413) rides 910..1120; the line's red marks = Rim strikes
 const GS42_HMOVERS = [
-  ['TOPRIDE', 307, 2386, -428, 200, 18, 0],
+  ['TOPRIDE', 407, 2386, -428, 200, 13, 0],   // v1.9 (user): faster, left stop 100px (half a ledge) further right: less waiting
   ['LOWRIDE', gs42x(910), gs42x(1120), gs42y(413), 250, 9, 1]
 ];
 // the lift on the sketch's black line at x 340: ledge at its foot, rising to just under the upper-left steps
@@ -513,8 +513,7 @@ function buildGhostStage412() {
     if (peg) wSurface(s, x - 17, y, 34, 'grass', { id: 'GS412-PEG-' + id.slice(3), gsDraw: 'peg', gsSkin: 'swamp', nonCollidable: true });
   }
   const T = GS412_WALL;
-  wWall(s, T.x, T.y, T.w, T.h, 'wood', { id: 'GS412-' + T.id, gsDraw: 'wall', gsSkin: 'swamp', noTopLand: true });
-  noLandingCrown(s, T, 'GS412');
+  wWall(s, T.x, T.y, T.w, T.h, 'wood', { id: 'GS412-' + T.id, gsDraw: 'wall', gsSkin: 'swamp', noTopLand: true });   // no thorns on top (user)
   wCheckpoint(s, '늪 입구', 220, 580);
   wCheckpoint(s, '가시 벽 위', 3830, -329);
   wCheckpoint(s, '늪 건너편', 5700, 76);
@@ -1437,8 +1436,16 @@ function completeGhostStage(code) {
   window.__gsHideDudu = false;
   gs.kidnap = null;
   const nextBuilt = next && ghostStageIndex(next) >= 0;
-  // 4-2 ends with Rim carrying Dudu off: straight on into 4-3 (spec C)
-  if (code === 'ghost_swamp_2' && nextBuilt) { startGhostStage(next); return; }
+  // v1.9 (user): every stage runs straight on into the next one (short fade, no result window); only the last stage
+  // shows the result window. 유령늪 3 already ends dark (the kidnap), so it needs no extra fade.
+  if (nextBuilt) {
+    startGhostStage(next);
+    if (code !== 'ghost_swamp_2') {
+      window.__screenFade = { start: performance.now(), dur: 520, from: 0.92 };
+      if (typeof notify === 'function') notify(`${GS_STAGE_INFO[code].name} 통과! ${GS_STAGE_INFO[next].name}로 가요`);
+    }
+    return;
+  }
   if (typeof tone === 'function' && code !== 'ghost_swamp_2') tone(960, 0.22, 'triangle', 0.06);
   if (typeof releaseAllInputs === 'function') releaseAllInputs(); else keys.clear();
   state = 'paused';

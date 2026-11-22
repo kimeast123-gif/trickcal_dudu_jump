@@ -1795,6 +1795,14 @@ function completeWorld1Stage(clearedGoal = null) {
   if (typeof releaseAllInputs === 'function') releaseAllInputs();
   else keys.clear();
 
+  // v1.9 (user): a cleared stage runs straight on into the next one (short fade, no result window); only the last
+  // stage (1-5) shows the result window
+  if (nextCode) {
+    loadWorld1Stage(activeWorldStageIndex + 1, { section: 0, entryRoute: nextEntryRoute });
+    window.__screenFade = { start: performance.now(), dur: 520, from: 0.92 };
+    if (typeof notify === 'function') notify(`${stg.stageCode} 통과! ${nextCode}로 가요`);
+    return;
+  }
   state = 'paused';
   worldMapScreen = 'world1ClearModal';
   renderWorld1ClearModal(stg, rec, Boolean(nextCode), exitRoute, nextEntryRoute);
