@@ -31,8 +31,8 @@ const STRUCTURE_ASSET_LIST = [
 
 // Image cache keys (not rewritten by tools/release.py): bump a key when its images change. v1.8.3: the repainted
 // Monatium steel parts and tower structures (art renewal P3-A) get their own key so no browser keeps the old ones.
-function terrainAssetQ(k) { return /^monatium\/steel_/.test(k) ? '?v=p3a1' : '?v=31R'; }
-const STRUCTURE_ASSET_Q = '?v=p3a1';
+function terrainAssetQ(k) { return /^monatium\/steel_/.test(k) ? '?v=p3a2' : '?v=31R'; }
+const STRUCTURE_ASSET_Q = '?v=p3a2';
 
 const TERRAIN_ASSET_LIST = [
   'forest/left', 'forest/middle_a', 'forest/middle_b', 'forest/middle_c', 'forest/right',
