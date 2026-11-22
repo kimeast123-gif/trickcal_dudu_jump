@@ -17,7 +17,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_8_1_261122'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_8_2_261122'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
@@ -749,6 +749,9 @@ function drawLavaPools() {
     hg.addColorStop(0, `rgba(255,200,90,${0.45 + 0.25 * pulse})`); hg.addColorStop(1, 'rgba(255,120,40,0)');
     ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(0, 0, w * 0.75, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
+    // v1.8.2: the pool body (sunk into the ledge) comes from terrain-art.js when its images are loaded; the drawn
+    // crust / molten bar / rim below is the fallback. Heat glow, bubbles, flames and embers stay drawn here.
+    if (!(typeof window.drawLavaPoolArt === 'function' && window.drawLavaPoolArt(l))) {
     // crust rim
     ctx.fillStyle = '#2b0d07';
     ctx.beginPath(); ctx.roundRect(l.x1 - 6, y - 9, w + 12, 22, 8); ctx.fill();
@@ -762,6 +765,7 @@ function drawLavaPools() {
     // bright pulsing rim line so the edge of the danger is clear
     ctx.strokeStyle = `rgba(255,240,170,${0.55 + 0.35 * pulse})`; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.roundRect(l.x1 - 3, y - 8, w + 6, 18, 7); ctx.stroke();
+    }
     // bubbles that swell and pop
     for (let i = 0; i < 4; i++) {
       const ph = (time * 0.8 + i * 0.27 + l.x1 * 0.001) % 1;

@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE = 'ta1'   # image cache key (not a v-key, so tools/release.py leaves it alone)
+CACHE = 'ta2'   # image cache key (not a v-key, so tools/release.py leaves it alone)
 # seam-matched cut table of the cave long middle (approved v1.1; index = leftover length, value = source column)
 CAVE_CUTS = '[0,45,45,46,47,48,49,50,51,52,53,54,54,53,54,54,54,54,54,54,63,64,65,66,67,67,65,66,67,66,66,67,67,64,63,63,64,65,66,67,54,55,45,45,45,45,45,45,45,46,46,47,62,62,62,51,52,62,68,68,68,68,68,68,68,69,70,71,73,73,68,74,75,76,74,74,74,74,74,75,76,79,79,79,45,80,81,81,83,83,84,84,83,84,84,85,86,86,52,87,88,89,45,45,45,46,46,47,48,62,62,49,49,51,51,52,68,68,68,68,68,68,69,108,108,108,109,123,124,110,110,110,74,74,74,74,74,74,75,112,79,79,79,112,80,81,80,81,80,80,80,82,81,80,81,82,82,83,85,86,86,136,87,138,142,126,87,87,87,87,87,87,45,45,48,49,50,51,52,54,55,105,104,105,105,93,94,95,97,97,99,99,100,101,102,73,72,185,186,187,195,196,197,197,199,199,199,199,199,199,201,201,201,110,202,203,204,205,113,114,115,116,117,117,212,213,117,118,118,118,118,213,119,120,149,149,149,149,149,148,148,123,124,123,124,111,111,111,122,123,123,124,124,97,98,99,100,101,102,195,185,186,186,186,186,186,187,186,187,186,187,187,188,189,192,191,192,183,203,139,204,254,86,85,86,86,86,207,87,87,87,87,143,87,87,87,87,88,89,90,215,216,216,215,214,214,214,215,216,217,218,219,220,104,105,105,107,46,47,263,148,149,149,265,266,267,267,167,167,168,169,169,170,168,168,169,170,346,172,337,331,346,346,348,348,74,349,349,350,350,177,177,177,178,179,178,179,179,180,179,180,180,184,184,184,184,45,185,185,185,185,186,186,185,185,185,185,186,186,186,187,188,189,190,191,192,193,194,186,188,228,189,401,403]'
 
@@ -92,6 +92,15 @@ K.update({
            'cap': 44, 'tile': 394, 'h': 74, 'contactY': 6, 'overhang': 6, 'cut': SL + 'spirit_lava_long_mid_a.png'},
     'lg': {'parts': {n: f'{SL}spirit_lava_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
            'cap': 24, 'tile': 24, 'h': 34, 'contactY': 2, 'overhang': 5, 'cut': SL + 'spirit_lava_glow_fill_a.png'},
+    # lava pool sunk into a lava ledge (v1.8.2): rim 32 | molten 64 x n | rim 32, ledge top line on row 10
+    'lp': {'parts': {n: f'{SL}spirit_lava_pool_{n}.png' for n in ('left', 'mid', 'right')},
+           'cap': 32, 'tile': 64, 'h': 40, 'contactY': 10, 'cut': SL + 'spirit_lava_pool_mid.png'},
+    # wall bottom ends for walls that end in the air (v1.8.2): row 0 continues the wall tile's last row
+    'lb': {'parts': {'img': SL + 'spirit_lava_wall_bottom.png'}, 'w': 128, 'h': 40},
+    'cb': {'parts': {'img': SC + 'spirit_cave_wall_bottom.png'}, 'w': 128, 'h': 40},
+    'ob': {'parts': {'img': SO + 'spirit_out_wall_bottom.png'}, 'w': 128, 'h': 40},
+    'fb_w1': {'parts': {'img': FW + 'forest_w1_wall_bottom.png'}, 'w': 96, 'h': 32},
+    'fb_story': {'parts': {'img': FS + 'forest_story_wall_bottom.png'}, 'w': 96, 'h': 32},
     'lw': {'parts': {'tile': SL + 'spirit_lava_wall_tile.png', 'edge_left': SL + 'spirit_lava_wall_edge_left.png',
                      'edge_right': SL + 'spirit_lava_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
     # Spirit lakeside (batch 2)
@@ -152,6 +161,8 @@ js = r"""// ====================================================================
 //   cave floor (Gabia)       cave floor kit (64 | 256 x n | 64, contactY 6)
 //   MW2, B1, B2, B3, B5      cave wall tile + edges; B1 (you can stand on it) gets a cave tiny cap
 //   wall ends near a ledge   drawn on behind the ledge so wall and ledge meet (drawing only)
+//   wall ends in the air     bottom cap (lava / cave / lakeside 128x40, forest 96x32)
+//   lava pools               sunk pool kit (32 | 64 x n | 32, ledge top on row 10) via drawLavaPoolArt
 //   snow ledges              snow long kit (>= 120px) / snow tiny kit (< 120px)
 //   snow blinking ledges     snow glow kit (24 | 24 x n | 24, contactY 6, 5px overhang)
 // Everything else (other worlds, Challenge mode) keeps the release art, and so does any kit whose images are not
@@ -198,6 +209,13 @@ js = r"""// ====================================================================
       let ty = y + Math.floor((Math.max(y1, y) - y) / th) * th;
       for (; ty < Math.min(y + h, y2); ty += th) piece(im, sx, 0, ww, Math.min(th, y + h - ty), x + cx, ty);
     }
+  }
+  /* bottom end of a wall that hangs in the air: the cap's row 0 continues the wall texture; centre-cropped to the
+     wall width, repeated side by side when the wall is wider than the cap (the caps tile seamlessly) */
+  function bottomCap(k, x, w, y) {
+    const C = K[k], im = C.img.img;
+    if (w <= C.w) { piece(im, Math.floor((C.w - w) / 2), 0, w, C.h, x, y); return; }
+    for (let cx = 0; cx < w; cx += C.w) piece(im, 0, 0, Math.min(C.w, w - cx), C.h, x + cx, y);
   }
   const view = () => (typeof smView === 'function') ? smView() : { x1: rCam, x2: rCam + W, y1: rCamY, y2: rCamY + H };
 
@@ -295,6 +313,23 @@ js = r"""// ====================================================================
       for (let ey = extTop; ey < extEnd; ey += gc.extH) if (ey + gc.extH > v.y1 - 20) piece(gc.img.ext_right, 0, 0, gc.w, gc.extH, x + a.w - gc.w, ey);
     }
   }
+  // is anything (ground, ledge, another wall) right under or around the bottom of this forest wall?
+  const forestSupport = new WeakMap();
+  function forestBottomSupported(a) {
+    if (forestSupport.has(a)) return forestSupport.get(a);
+    const bot = a.y + a.h;
+    let r = bot > 2000;   /* walls running off the bottom of the level */
+    for (const b of platforms) {
+      if (r) break;
+      if (b === a || b.hidden || b.nonCollidable) continue;
+      const over = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+      if (over < a.w * 0.4) continue;   /* a ledge end just touching the corner does not hold the wall up */
+      const bh = b.groundTile ? 400 : (b.h || 20);
+      if (b.y <= bot + 30 && b.y + bh >= bot - 4) r = true;
+    }
+    forestSupport.set(a, r);
+    return r;
+  }
   function drawWall(p, a, x, y) {
     const wl = K[pk('wl', p)], v = view();
     ctx.save();
@@ -303,6 +338,10 @@ js = r"""// ====================================================================
     fillRect(wl.img.edge_left, wl.edge, wl.h, x, y, wl.edge, a.h, v.y1 - 20, v.y2 + 20);
     fillRect(wl.img.edge_right, wl.edge, wl.h, x + a.w - wl.edge, y, wl.edge, a.h, v.y1 - 20, v.y2 + 20);
     ctx.restore();
+    const fb = 'fb_' + p;
+    if (!failed[fb] && ready(fb) && !forestBottomSupported(a)) {
+      try { bottomCap(fb, x, a.w, y + a.h); } catch (e) { fail(fb, e); }
+    }
     if (!a.noTopLand) {   /* only walls you can stand on get the grass cap */
       const sx = Math.max(0, Math.floor((wl.w - a.w) / 2));
       piece(wl.img.top, sx, 0, Math.min(a.w, wl.w), wl.topH, x, Math.round(y - wl.topContactY));
@@ -418,6 +457,22 @@ js = r"""// ====================================================================
     const T = K[k], top = b.y - T.contactY;
     return [top, top + T.h];
   }
+  const WALL_BOTTOM = { lw: 'lb', cw: 'cb', ow: 'ob' };
+  const spiritSupport = new WeakMap();
+  function spiritBottomSupported(a) {
+    if (spiritSupport.has(a)) return spiritSupport.get(a);
+    const bot = a.y + a.h, e = extOf(a);
+    let r = !!(e && e.down) || bot > 900;   /* met a ledge already, or runs into the ground below the cave */
+    for (const b of platforms) {
+      if (r) break;
+      if (b === a || !b.smDraw || b.smDraw === 'roof') continue;
+      const [t, btm] = solidKind(b) ? [b.y, b.y + (b.h || 20)] : ledgeArt(b);
+      const over = Math.min(a.x + a.w, b.x + b.w + 6) - Math.max(a.x, b.x - 6);
+      if (over > 0 && t <= bot + 12 && btm >= bot - 4) r = true;
+    }
+    spiritSupport.set(a, r);
+    return r;
+  }
   const wallExt = new WeakMap();
   function extOf(a) {
     if (wallExt.has(a)) return wallExt.get(a);
@@ -455,6 +510,16 @@ js = r"""// ====================================================================
       ctx.restore();
     }
   }
+  /* lava pool body (called by spirit-mountain.js drawLavaPools): the rims sit half outside the hazard span so the
+     molten part covers it; returns false to let the drawn fallback run */
+  window.drawLavaPoolArt = function (l) {
+    if (!spiritOn() || failed.lp || !ready('lp')) return false;
+    try {
+      const P = K.lp, half = P.cap / 2;
+      capped('lp', ['mid'], Math.round(l.x1 - half), Math.round(l.x2 - l.x1 + P.cap), Math.round(l.y - P.contactY));
+      return true;
+    } catch (e) { fail('lp', e); return false; }
+  };
   if (typeof drawSpiritBack === 'function') {
     const prevBack = drawSpiritBack;
     drawSpiritBack = function () {
@@ -475,6 +540,10 @@ js = r"""// ====================================================================
       if (wk && spiritOn() && !failed[wk] && ready(wk)) {
         try {
           drawZoneWall(wk, a, x, y);
+          const bk = WALL_BOTTOM[wk];
+          if (bk && !failed[bk] && ready(bk) && !spiritBottomSupported(a)) {
+            try { bottomCap(bk, x, a.w, y + a.h); } catch (e) { fail(bk, e); }
+          }
           /* a pillar you can stand on gets the cave small-ledge kit as its cap (capless pillars hide under a ledge) */
           if (a.smDraw === 'pillar' && !(typeof SM_CAPLESS !== 'undefined' && SM_CAPLESS.has(a.id)) && wk === 'cw' && ready('ct')) {
             const T = K.ct; capped('ct', ['fill_a', 'fill_b'], x - 4, a.w + 8, Math.round(y - T.contactY));
@@ -525,7 +594,8 @@ js = r"""// ====================================================================
       return thinOk(p, a);
     },
     profile() { return forestProfile(); },
-    wallExt(a) { return ZONE_WALLS[a.id] ? extOf(a) : null; }
+    wallExt(a) { return ZONE_WALLS[a.id] ? extOf(a) : null; },
+    bottomCap(a) { return ZONE_WALLS[a.id] ? !spiritBottomSupported(a) : (forestProfile() && (a.wall || a.ceiling) ? !forestBottomSupported(a) : false); }
   };
 })();
 """
