@@ -1,0 +1,35 @@
+{
+  "forest_story_wall_body": {
+    "sourceWidth": 96,
+    "displayWidths": [
+      54,
+      64,
+      90
+    ],
+    "cropPolicy": "centered x crop",
+    "repeatY": 128
+  },
+  "forest_story_wall_edge_left_right": {
+    "sourceWidth": 8,
+    "repeatY": 128
+  },
+  "spirit_out_wall_tile": {
+    "sourceWidth": 128,
+    "sourceHeight": 192,
+    "repeatX": 128,
+    "repeatY": 192,
+    "displayWallWidth": 138,
+    "displayWallHeight": 1384
+  },
+  "spirit_out_wall_edge_left_right": {
+    "sourceWidth": 10,
+    "repeatY": 192
+  },
+  "forest_cliff_ext": {
+    "sourceWidth": 81,
+    "sourceHeight": 86,
+    "repeatY": 86,
+    "attachAtY": 159,
+    "clipExteriorByAlpha": true
+  }
+}

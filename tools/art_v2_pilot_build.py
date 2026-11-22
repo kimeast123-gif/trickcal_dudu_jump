@@ -1,18 +1,19 @@
-"""Build art-v2-pilot.js: the ART V2 test layer (approved pilot rev1 + batch 1 candidates).
+"""Build art-v2-pilot.js: the ART V2 test layer (approved pilot rev1, batch 1, batch 2 candidates).
 
     python tools/art_v2_pilot_build.py
 
-Everything that needs pixels is computed here, offline, from the delivered PNGs: the place to cut a repeat tile
-when a run of tiles does not fill the width exactly ("two-part splice": keep columns [0,a) and [b,T) so that the
-seam a-1 | b is the closest match and both outer edges stay intact). The browser never reads pixels (file:// safe).
+Everything that needs pixels is computed here, offline, from the delivered PNGs:
+- the place to cut a repeat tile when a run of tiles does not fill the width exactly ("two-part splice": keep
+  columns [0,a) and [b,T) so that the seam a-1 | b is the closest match and both outer edges stay intact);
+- the silhouette of each rounded cliff (and its downward extension), so the ground behind it can be clipped.
+The browser never reads pixels (file:// safe).
 """
 import json, os
 import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-A = os.path.join(ROOT, 'assets', 'art_v2')
-CACHE = 'v2b1r2'
+CACHE = 'v2b2a'
 
 
 def px(path):
@@ -30,46 +31,16 @@ def splice_table(path):
             b = T - (r - a)
             d = float(np.abs(t[:, a - 1] - t[:, b]).mean())
             if d < best[0]: best = (d, a)
-        # plain crop: seam is between column r-1 and the next tile's column 0 (= this tile's column 0)
         d0 = float(np.abs(t[:, r - 1] - t[:, 0]).mean())
         if d0 <= best[0]: best = (d0, r)
         out[r] = best[1]
     return out
 
 
-def rel(p): return p.replace(os.sep, '/')
-
-
-K = {
-    # --- forest World1 (pilot rev1 compact + batch 1 ground / wall / support), candidate A for long ledges
-    'fc': {'parts': {n: f'assets/art_v2/pilot/forest_w1_compact_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
-           'cap': 24, 'tile': 16, 'h': 64, 'contactY': 18, 'cut': 'assets/art_v2/pilot/forest_w1_compact_fill_a.png'},
-    'gt': {'parts': {n: f'assets/art_v2/batch1/forest_w1_ground_top_{n}.png' for n in ('a', 'b', 'c')},
-           'tile': 130, 'h': 95, 'contactY': 25, 'cut': 'assets/art_v2/batch1/forest_w1_ground_top_a.png'},
-    'gb': {'parts': {n: f'assets/art_v2/batch1/forest_w1_ground_body_{n}.png' for n in ('a', 'b')}, 'tile': 151, 'h': 86},
-    'gc': {'parts': {'left': 'assets/art_v2/batch1/forest_w1_ground_cliff_left.png', 'right': 'assets/art_v2/batch1/forest_w1_ground_cliff_right.png'},
-           'w': 81, 'h': 159, 'contactY': 25},
-    'wl': {'parts': {'top': 'assets/art_v2/batch1/forest_w1_wall_top.png', 'body': 'assets/art_v2/batch1/forest_w1_wall_body.png',
-                     'edge_left': 'assets/art_v2/batch1/forest_w1_wall_edge_left.png', 'edge_right': 'assets/art_v2/batch1/forest_w1_wall_edge_right.png'},
-           'w': 96, 'h': 128, 'topH': 24, 'topContactY': 6, 'edge': 8},
-    'us': {'parts': {'mid': 'assets/art_v2/batch1/forest_w1_under_support.png', 'left': 'assets/art_v2/batch1/forest_w1_under_support_end_left.png',
-                     'right': 'assets/art_v2/batch1/forest_w1_under_support_end_right.png'},
-           'cap': 24, 'tile': 128, 'h': 44, 'cut': 'assets/art_v2/batch1/forest_w1_under_support.png'},
-    'fa': {'parts': {'img': 'assets/art_prototype/forest_standard_candidate_A.png'}, 'w': 441, 'h': 80, 'contactY': 21},
-    # --- Spirit lava (pilot rev1 long + batch 1 glow / wall)
-    'll': {'parts': {n: f'assets/art_v2/pilot/spirit_lava_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'right')},
-           'cap': 44, 'tile': 394, 'h': 74, 'contactY': 6, 'overhang': 6, 'cut': 'assets/art_v2/pilot/spirit_lava_long_mid_a.png'},
-    'lg': {'parts': {n: f'assets/art_v2/batch1/spirit_lava_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
-           'cap': 24, 'tile': 24, 'h': 34, 'contactY': 2, 'overhang': 5, 'cut': 'assets/art_v2/batch1/spirit_lava_glow_fill_a.png'},
-    'lw': {'parts': {'tile': 'assets/art_v2/batch1/spirit_lava_wall_tile.png', 'edge_left': 'assets/art_v2/batch1/spirit_lava_wall_edge_left.png',
-                     'edge_right': 'assets/art_v2/batch1/spirit_lava_wall_edge_right.png'},
-           'w': 128, 'h': 192, 'edge': 10},
-}
-def cliff_outline(path, side):
-    """Columns from the outer edge to the first opaque pixel, per row (offline; the ground behind a rounded
-    cliff is clipped to this so no square block shows past the cliff's silhouette)."""
+def outline(path, side):
+    """Columns from the outer edge to the first opaque pixel, per row."""
     a = px(path)[:, :, 3] > 128
-    W = a.shape[1]; out = []
+    out = []
     for r in range(a.shape[0]):
         row = a[r] if side == 'left' else a[r][::-1]
         out.append(int(np.argmax(row)) if row.any() else -1)
@@ -77,14 +48,61 @@ def cliff_outline(path, side):
     return [first if v < 0 else v for v in out]
 
 
-K['gc']['outlineLeft'] = cliff_outline('assets/art_v2/batch1/forest_w1_ground_cliff_left.png', 'left')
-K['gc']['outlineRight'] = cliff_outline('assets/art_v2/batch1/forest_w1_ground_cliff_right.png', 'right')
+B1, B2, PI = 'assets/art_v2/batch1/', 'assets/art_v2/batch2/', 'assets/art_v2/pilot/'
+
+
+def forest_kits(prof, src_compact, src_ground, src_ext):
+    pre = f'forest_{prof}_'
+    k = {
+        f'fc_{prof}': {'parts': {n: f'{src_compact}{pre}compact_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+                       'cap': 24, 'tile': 16, 'h': 64, 'contactY': 18, 'cut': f'{src_compact}{pre}compact_fill_a.png'},
+        f'gt_{prof}': {'parts': {n: f'{src_ground}{pre}ground_top_{n}.png' for n in ('a', 'b', 'c')},
+                       'tile': 130, 'h': 95, 'contactY': 25, 'cut': f'{src_ground}{pre}ground_top_a.png'},
+        f'gb_{prof}': {'parts': {n: f'{src_ground}{pre}ground_body_{n}.png' for n in ('a', 'b')}, 'tile': 151, 'h': 86},
+        f'gc_{prof}': {'parts': {'left': f'{src_ground}{pre}ground_cliff_left.png', 'right': f'{src_ground}{pre}ground_cliff_right.png',
+                                 'ext_left': f'{src_ext}{pre}ground_cliff_left_ext.png', 'ext_right': f'{src_ext}{pre}ground_cliff_right_ext.png'},
+                       'w': 81, 'h': 159, 'extH': 86, 'contactY': 25,
+                       'outlineLeft': outline(f'{src_ground}{pre}ground_cliff_left.png', 'left'),
+                       'outlineRight': outline(f'{src_ground}{pre}ground_cliff_right.png', 'right'),
+                       'extInsetLeft': max(outline(f'{src_ext}{pre}ground_cliff_left_ext.png', 'left')),
+                       'extInsetRight': max(outline(f'{src_ext}{pre}ground_cliff_right_ext.png', 'right'))},
+        f'wl_{prof}': {'parts': {'top': f'{src_ground}{pre}wall_top.png', 'body': f'{src_ground}{pre}wall_body.png',
+                                 'edge_left': f'{src_ground}{pre}wall_edge_left.png', 'edge_right': f'{src_ground}{pre}wall_edge_right.png'},
+                       'w': 96, 'h': 128, 'topH': 24, 'topContactY': 6, 'edge': 8},
+    }
+    return k
+
+
+K = {}
+K.update(forest_kits('w1', PI, B1, B2))
+K.update(forest_kits('story', B2, B2, B2))
+K.update({
+    'us_w1': {'parts': {'mid': B1 + 'forest_w1_under_support.png', 'left': B1 + 'forest_w1_under_support_end_left.png',
+                        'right': B1 + 'forest_w1_under_support_end_right.png'},
+              'cap': 24, 'tile': 128, 'h': 44, 'cut': B1 + 'forest_w1_under_support.png'},
+    # long ledges: World1 = candidate A (one image cut on its module lines), story = batch 2 kit with separate parts
+    'fa_w1': {'parts': {'img': 'assets/art_prototype/forest_standard_candidate_A.png'}, 'w': 441, 'h': 80, 'contactY': 21},
+    'fl_story': {'parts': {n: f'{B2}forest_story_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'mid_c', 'right')},
+                 'lw': 70, 'rw': 71, 'mw': 100, 'h': 80, 'contactY': 21},
+    # Spirit lava (pilot rev1 long + batch 1 glow / wall)
+    'll': {'parts': {n: f'{PI}spirit_lava_long_{n}.png' for n in ('left', 'mid_a', 'mid_b', 'right')},
+           'cap': 44, 'tile': 394, 'h': 74, 'contactY': 6, 'overhang': 6, 'cut': PI + 'spirit_lava_long_mid_a.png'},
+    'lg': {'parts': {n: f'{B1}spirit_lava_glow_{n}.png' for n in ('left', 'fill_a', 'fill_b', 'right')},
+           'cap': 24, 'tile': 24, 'h': 34, 'contactY': 2, 'overhang': 5, 'cut': B1 + 'spirit_lava_glow_fill_a.png'},
+    'lw': {'parts': {'tile': B1 + 'spirit_lava_wall_tile.png', 'edge_left': B1 + 'spirit_lava_wall_edge_left.png',
+                     'edge_right': B1 + 'spirit_lava_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
+    # Spirit lakeside (batch 2)
+    'ol': {'parts': {n: f'{B2}spirit_out_long_{n}.png' for n in ('left', 'mid_a', 'right')},
+           'cap': 44, 'tile': 394, 'h': 72, 'contactY': 6, 'overhang': 6, 'cut': B2 + 'spirit_out_long_mid_a.png'},
+    'ow': {'parts': {'tile': B2 + 'spirit_out_wall_tile.png', 'edge_left': B2 + 'spirit_out_wall_edge_left.png',
+                     'edge_right': B2 + 'spirit_out_wall_edge_right.png'}, 'w': 128, 'h': 192, 'edge': 10},
+})
 for k, v in K.items():
     if 'cut' in v:
         v['cutTable'] = splice_table(v['cut']); del v['cut']
     for n, p in v['parts'].items():
         im = Image.open(os.path.join(ROOT, p)); assert im.mode == 'RGBA', p
-    v['parts'] = {n: rel(p) + '?v=' + CACHE for n, p in v['parts'].items()}
+    v['parts'] = {n: p + '?v=' + CACHE for n, p in v['parts'].items()}
 
 js = r"""// ============================================================================
 // ART V2 TEST LAYER (branch art-unification-phase2 only; never merge as is)
@@ -92,20 +110,24 @@ js = r"""// ====================================================================
 //
 // Draws the ART V2 parts at 1:1 with each part's contact row on the platform top. Only drawing changes:
 // platform objects, coordinates, collision and physics are untouched. Repeat tiles that do not fill a width
-// exactly are cut at an offline "two-part splice" table (no pixel reading in the browser, file:// safe).
+// exactly are cut at an offline "two-part splice" table; cliff silhouettes are offline outlines (no pixel
+// reading in the browser, file:// safe).
 //
-// World1 수인숲 1-1..1-4 (whole family, gate B option A):
-//   ledges < 141px            pilot rev1 compact kit (24 | 16 x n | 24, contactY 18)
-//   ledges >= 141px           candidate A long kit (left 70 | middle 100 x n | right 71, contactY 21), incl. the
-//                             old single_small / single_medium widths
-//   ground                    batch 1 ground top a/b/c (contactY 25) over ground body a/b, cliffs at open ends
-//   walls                     batch 1 wall body + edges; wall top cap only on walls you can stand on
-//   under-ledge slabs, ceiling batch 1 under support (24 | 128 x n | 24)
-// Spirit Mountain lava:
-//   ledges >= 120px           pilot rev1 long kit (44 | 394 x n | 44, contactY 6, 6px overhang)
-//   blinking ledges           batch 1 glow kit (24 | 24 x n | 24, contactY 2, 5px overhang); blink alpha/shake are
-//                             applied by drawSpiritLedge as before
-//   MW3, MW4, B6              batch 1 basalt wall tile + edges (the open drop above the hall stays undrawn)
+// Forest, two colour profiles with the same shapes (gate B option A):
+//   World1 수인숲 1-1..1-4 ('w1')   story 수인숲 ('story')
+//   ledges < 141px      compact kit (24 | 16 x n | 24, contactY 18)
+//   ledges >= 141px     long kit (left 70 | middle 100 x n | right 71, contactY 21); World1 = candidate A
+//   ground              top a/b/c (contactY 25) over body a/b; at open ends a rounded cliff and, below it,
+//                       a repeated cliff extension; the ground behind is clipped to their silhouette
+//   walls               body + edges; the grass cap only on walls you can stand on ('wood' walls of 1-2 too)
+//   World1 only         under-ledge slabs and the 1-3 ceiling: under support kit
+//   story only          the old junction decorations (bush / flower collars) are not drawn
+// Spirit Mountain:
+//   lava ledges >= 120px     long kit (44 | 394 x n | 44, contactY 6, 6px overhang)
+//   lava blinking ledges     glow kit (24 | 24 x n | 24, contactY 2, 5px overhang)
+//   MW3, MW4, B6             basalt wall tile + edges (the open drop above the hall stays undrawn)
+//   lakeside ledges (E1-E3)  lakeside long kit (44 | 394 x n | 44, contactY 6, 6px overhang)
+//   MW1                      lakeside rock wall tile + edges
 // Toggles: ?artv2=0 turns this layer off (v1.1 prototype only); ?arttest=0 turns off every test layer.
 // ============================================================================
 (function () {
@@ -125,9 +147,7 @@ js = r"""// ====================================================================
   const failed = {};
   function fail(k, e) { failed[k] = true; console.warn('[art v2] ' + k + ' off:', e); }
   const ready = (...ks) => ks.every(k => Object.keys(K[k].parts).every(n => K[k].img[n]));
-  // 1:1 slice: source rect drawn at the same size
   function piece(im, sx, sy, w, h, dx, dy) { if (w > 0 && h > 0) ctx.drawImage(im, sx, sy, w, h, dx, dy, w, h); }
-  // a horizontal run of `total` px from repeat tiles (variants alternate), leftover cut by the splice table
   function runX(k, names, x, total, top, h) {
     const T = K[k].tile, tab = K[k].cutTable;
     let i = 0;
@@ -144,47 +164,65 @@ js = r"""// ====================================================================
     runX(k, mids, x0 + C, total - 2 * C, top, h);
     piece(K[k].img.right, 0, 0, C, h, x0 + total - C, top);
   }
-  // vertical fill of a rect with a tile (columns cropped from the tile's centre when the rect is narrower)
   function fillRect(im, tw, th, x, y, w, h, y1, y2) {
     const sx = Math.max(0, Math.floor((tw - w) / 2)), cw = Math.min(w, tw);
     for (let cx = 0; cx < w; cx += cw) {
       const ww = Math.min(cw, w - cx);
       let ty = y + Math.floor((Math.max(y1, y) - y) / th) * th;
-      for (; ty < Math.min(y + h, y2); ty += th) {
-        const hh = Math.min(th, y + h - ty);
-        piece(im, sx, 0, ww, hh, x + cx, ty);
-      }
+      for (; ty < Math.min(y + h, y2); ty += th) piece(im, sx, 0, ww, Math.min(th, y + h - ty), x + cx, ty);
     }
   }
   const view = () => (typeof smView === 'function') ? smView() : { x1: rCam, x2: rCam + W, y1: rCamY, y2: rCamY + H };
 
-  // ---------------------------------------------------------------- World1 forest
-  function inW1() {
-    if (!window.__DUDU_ART_V2_PILOT || typeof gameMode === 'undefined' || gameMode !== 'world') return false;
-    const st = typeof world1Stages !== 'undefined' ? world1Stages[activeWorldStageIndex] : null;
-    return !!st && !st.worldId && ['1-1', '1-2', '1-3', '1-4'].includes(st.stageCode);
+  // ---------------------------------------------------------------- forest (World1 + story)
+  function forestProfile() {
+    if (!window.__DUDU_ART_V2_PILOT || typeof gameMode === 'undefined') return null;
+    if (gameMode === 'world') {
+      const st = typeof world1Stages !== 'undefined' ? world1Stages[activeWorldStageIndex] : null;
+      return (st && !st.worldId && ['1-1', '1-2', '1-3', '1-4'].includes(st.stageCode)) ? 'w1' : null;
+    }
+    if (gameMode === 'story') {
+      const l = typeof getActiveLevel === 'function' ? getActiveLevel() : levels[levelIndex];
+      return (l && l.id === 'forest') ? 'story' : null;
+    }
+    return null;
   }
   const grass = (a) => (a.visual?.material || a.skin || 'grass') === 'grass';
-  /* the tree-interior walls of 1-2 use the 'wood' skin; the release draws them with the same forest soil, so they take the V2 forest wall too */
+  /* the tree-interior walls of 1-2 use the 'wood' skin; the release draws them with the same forest soil */
   const forestWall = (a) => grass(a) || (a.visual?.material || a.skin) === 'wood';
-  function drawLongA(a, drawX, drawY) {
-    const F = K.fa, im = F.img.img, top = Math.round(drawY - F.contactY), lw = 70, rw = 71, mids = [70, 170, 270];
+  const pk = (k, p) => k + '_' + p;
+  function drawLong(p, a, drawX, drawY) {
+    const lw = 70, rw = 71, mw = 100, seed = a.visual?.seed || 202;
+    let im, h, top, srcL, srcR, srcMid;
+    if (p === 'w1') {
+      const F = K.fa_w1; im = F.img.img; h = F.h; top = Math.round(drawY - F.contactY);
+      srcL = (sx, w, dx) => piece(im, sx, 0, w, h, dx, top);
+      srcR = (sx, w, dx) => piece(im, 370 + sx, 0, w, h, dx, top);
+      srcMid = (i, sx, w, dx) => piece(im, [70, 170, 270][i] + sx, 0, w, h, dx, top);
+    } else {
+      const F = K.fl_story; h = F.h; top = Math.round(drawY - F.contactY);
+      srcL = (sx, w, dx) => piece(F.img.left, sx, 0, w, h, dx, top);
+      srcR = (sx, w, dx) => piece(F.img.right, sx, 0, w, h, dx, top);
+      srcMid = (i, sx, w, dx) => piece(F.img[['mid_a', 'mid_b', 'mid_c'][i]], sx, 0, w, h, dx, top);
+    }
     if (a.w <= lw + rw) {
       const halfW = Math.round(a.w * 0.5), rightHalfW = a.w - halfW;
-      piece(im, 0, 0, halfW, F.h, drawX, top);
-      piece(im, 370 + rw - rightHalfW, 0, rightHalfW, F.h, drawX + halfW, top);
+      srcL(0, halfW, drawX); srcR(rw - rightHalfW, rightHalfW, drawX + halfW);
       return;
     }
-    const plan = makePlatformModulePlan(a.w, lw, rw, 100, 0), seed = a.visual?.seed || 202;
-    piece(im, 0, 0, lw, F.h, drawX, top);
+    const plan = makePlatformModulePlan(a.w, lw, rw, mw, 0);
+    srcL(0, lw, drawX);
     let x = drawX + lw;
-    const neutral = (w) => { piece(im, 70 + Math.round((100 - w) * 0.5), 0, w, F.h, x, top); x += w; };
+    const neutral = (w) => { srcMid(0, Math.round((mw - w) * 0.5), w, x); x += w; };
     if (plan.neutralLeft > 0) neutral(plan.neutralLeft);
-    for (let i = 0; i < plan.count; i++) { piece(im, mids[Math.floor(seededUnit(seed, i + 7) * 3) % 3], 0, 100, F.h, x, top); x += 100; }
+    for (let i = 0; i < plan.count; i++) { srcMid(Math.floor(seededUnit(seed, i + 7) * 3) % 3, 0, mw, x); x += mw; }
     if (plan.neutralRight > 0) neutral(plan.neutralRight);
-    piece(im, 370, 0, rw, F.h, drawX + a.w - rw, top);
+    srcR(0, rw, drawX + a.w - rw);
   }
-  function w1Thin(a) { return inW1() && !failed.w1 && ready('fc', 'fa') && !a.wall && !a.ceiling && !a.groundTile && !a.smDraw && !a.nonCollidable && grass(a); }
+  function thinOk(p, a) {
+    return p && !failed['thin_' + p] && ready(pk('fc', p), p === 'w1' ? 'fa_w1' : 'fl_story') &&
+      !a.wall && !a.ceiling && !a.groundTile && !a.smDraw && !a.nonCollidable && grass(a);
+  }
   function groundNeighbour(a, side) {
     for (const b of platforms) {
       if (b === a || !b.groundTile || Math.abs(b.y - a.y) > 4) continue;
@@ -193,22 +231,22 @@ js = r"""// ====================================================================
     }
     return false;
   }
-  function drawGroundW1(a, x, y) {
-    const gt = K.gt, gb = K.gb, gc = K.gc, top = Math.round(y - gt.contactY);
+  function drawGround(p, a, x, y) {
+    const gt = K[pk('gt', p)], gb = K[pk('gb', p)], gc = K[pk('gc', p)], top = Math.round(y - gt.contactY);
     /* like the release, the ground body runs down past the bottom of the view, whatever the object height */
     const v = view(), bottom = Math.max(y + (a.h || 260), v.y2 + 40);
     const openL = !groundNeighbour(a, -1), openR = !groundNeighbour(a, 1);
-    ctx.save();
-    // clip the whole ground to the cliff silhouettes at open ends (no square block behind a rounded cliff)
-    ctx.beginPath();
     const OL = gc.outlineLeft, OR = gc.outlineRight, n = OL.length;
+    ctx.save();
+    // clip the ground to the cliff silhouettes at open ends; below the cliff, to the extension's inner line
+    ctx.beginPath();
     ctx.moveTo(openL ? x + OL[0] : x, top - 10);
-    if (openL) { for (let r = 0; r < n; r += 3) ctx.lineTo(x + OL[r], top + r); ctx.lineTo(x + OL[n - 1], bottom); }
+    if (openL) { for (let r = 0; r < n; r += 3) ctx.lineTo(x + OL[r], top + r); ctx.lineTo(x + gc.extInsetLeft, top + n); ctx.lineTo(x + gc.extInsetLeft, bottom); }
     else ctx.lineTo(x, bottom);
-    if (openR) { ctx.lineTo(x + a.w - OR[n - 1], bottom); for (let r = n - 1; r >= 0; r -= 3) ctx.lineTo(x + a.w - OR[r], top + r); ctx.lineTo(x + a.w - OR[0], top - 10); }
+    if (openR) { ctx.lineTo(x + a.w - gc.extInsetRight, bottom); ctx.lineTo(x + a.w - gc.extInsetRight, top + n); for (let r = n - 1; r >= 0; r -= 3) ctx.lineTo(x + a.w - OR[r], top + r); ctx.lineTo(x + a.w - OR[0], top - 10); }
     else { ctx.lineTo(x + a.w, bottom); ctx.lineTo(x + a.w, top - 10); }
     ctx.closePath(); ctx.clip();
-    // body starts exactly under the top strip: its first row continues the strip's last row (closest match)
+    // body starts exactly under the top strip
     const bodyTop = top + gt.h;
     for (let by = bodyTop, row = 0; by < Math.min(bottom, v.y2 + 20); by += gb.h, row++) {
       if (by + gb.h < v.y1 - 20) continue;
@@ -217,13 +255,21 @@ js = r"""// ====================================================================
     }
     const seed = a.visual?.seed || 202, names = ['a', 'b', 'c'];
     const order = [0, 1, 2].map(i => names[Math.floor(seededUnit(seed, i + 3) * 3) % 3]);
-    runX('gt', order, x, a.w, top, gt.h);
-    if (openL) piece(gc.img.left, 0, 0, gc.w, gc.h, x, top);
-    if (openR) piece(gc.img.right, 0, 0, gc.w, gc.h, x + a.w - gc.w, top);
+    runX(pk('gt', p), order, x, a.w, top, gt.h);
     ctx.restore();
+    // cliffs and their downward extensions keep their own silhouettes (drawn outside the clip)
+    const extTop = top + gc.h, extEnd = Math.min(bottom, v.y2 + 20);
+    if (openL) {
+      piece(gc.img.left, 0, 0, gc.w, gc.h, x, top);
+      for (let ey = extTop; ey < extEnd; ey += gc.extH) if (ey + gc.extH > v.y1 - 20) piece(gc.img.ext_left, 0, 0, gc.w, gc.extH, x, ey);
+    }
+    if (openR) {
+      piece(gc.img.right, 0, 0, gc.w, gc.h, x + a.w - gc.w, top);
+      for (let ey = extTop; ey < extEnd; ey += gc.extH) if (ey + gc.extH > v.y1 - 20) piece(gc.img.ext_right, 0, 0, gc.w, gc.extH, x + a.w - gc.w, ey);
+    }
   }
-  function drawWallW1(a, x, y) {
-    const wl = K.wl, v = view();
+  function drawWall(p, a, x, y) {
+    const wl = K[pk('wl', p)], v = view();
     ctx.save();
     ctx.beginPath(); ctx.rect(x, y, a.w, a.h); ctx.clip();
     fillRect(wl.img.body, wl.w, wl.h, x, y, a.w, a.h, v.y1 - 20, v.y2 + 20);
@@ -235,17 +281,17 @@ js = r"""// ====================================================================
       piece(wl.img.top, sx, 0, Math.min(a.w, wl.w), wl.topH, x, Math.round(y - wl.topContactY));
     }
   }
-  function drawUnderW1(a, x, y) { capped('us', ['mid'], x, a.w, Math.round(y)); }
 
   if (typeof drawThinPlatformVisual === 'function') {
     const prevThin = drawThinPlatformVisual;
     drawThinPlatformVisual = function (a, drawX, drawY) {
-      if (w1Thin(a)) {
+      const p = forestProfile();
+      if (thinOk(p, a)) {
         try {
-          if (a.w < 141) capped('fc', ['fill_a', 'fill_b'], drawX, a.w, Math.round(drawY - K.fc.contactY));
-          else drawLongA(a, drawX, drawY);
+          if (a.w < 141) capped(pk('fc', p), ['fill_a', 'fill_b'], drawX, a.w, Math.round(drawY - K[pk('fc', p)].contactY));
+          else drawLong(p, a, drawX, drawY);
           return;
-        } catch (e) { fail('w1', e); }
+        } catch (e) { fail('thin_' + p, e); }
       }
       return prevThin(a, drawX, drawY);
     };
@@ -253,8 +299,9 @@ js = r"""// ====================================================================
   if (typeof drawGroundVisual === 'function') {
     const prevGround = drawGroundVisual;
     drawGroundVisual = function (a, drawX, drawY) {
-      if (inW1() && !failed.w1g && ready('gt', 'gb', 'gc') && a.groundTile && grass(a)) {
-        try { drawGroundW1(a, drawX, drawY); return; } catch (e) { fail('w1g', e); }
+      const p = forestProfile();
+      if (p && !failed['ground_' + p] && ready(pk('gt', p), pk('gb', p), pk('gc', p)) && a.groundTile && grass(a)) {
+        try { drawGround(p, a, drawX, drawY); return; } catch (e) { fail('ground_' + p, e); }
       }
       return prevGround(a, drawX, drawY);
     };
@@ -262,43 +309,60 @@ js = r"""// ====================================================================
   if (typeof drawStructuralWall === 'function') {
     const prevWall = drawStructuralWall;
     drawStructuralWall = function (a, drawX, drawY) {
-      if (inW1() && !failed.w1w && ready('wl', 'us') && forestWall(a) && (a.wall || a.ceiling)) {
-        try {
-          if (a.ceiling || /UNDER/.test(a.id || '')) drawUnderW1(a, drawX, drawY); else drawWallW1(a, drawX, drawY);
-          return;
-        } catch (e) { fail('w1w', e); }
+      const p = forestProfile();
+      if (p && !failed['wall_' + p] && forestWall(a) && (a.wall || a.ceiling)) {
+        const under = a.ceiling || /UNDER/.test(a.id || '');
+        if (under && p === 'w1' && ready('us_w1')) {
+          try { capped('us_w1', ['mid'], drawX, a.w, Math.round(drawY)); return; } catch (e) { fail('wall_' + p, e); }
+        } else if (!under && ready(pk('wl', p))) {
+          try { drawWall(p, a, drawX, drawY); return; } catch (e) { fail('wall_' + p, e); }
+        }
       }
       return prevWall(a, drawX, drawY);
     };
   }
-
-  // ---------------------------------------------------------------- Spirit lava
-  const LAVA_WALLS = new Set(['SM-MW3', 'SM-MW4', 'SM-B6']);
-  function lavaOn() { return window.__DUDU_ART_V2_PILOT && typeof smZoneOf === 'function'; }
-  function lavaLong(a) {
-    if (!lavaOn() || failed.lava || !ready('ll') || !a.smDraw || a.blink) return false;
-    if (['rock', 'pillar', 'floor', 'roof', 'blink'].includes(a.smDraw)) return false;
-    return smZoneOf(a) === 'lava' && a.w >= 120;
+  if (typeof drawTerrainJunctionOverlays === 'function') {
+    const prevJunction = drawTerrainJunctionOverlays;
+    drawTerrainJunctionOverlays = function () {
+      /* story forest: the release bush / flower / grass collars at wall feet are old art; the V2 walls and
+         ground meet cleanly on their own */
+      if (forestProfile() === 'story' && ready('wl_story', 'gt_story')) return;
+      return prevJunction();
+    };
   }
-  function drawLavaWall(a, x, y) {
-    const lw = K.lw, v = view();
+
+  // ---------------------------------------------------------------- Spirit Mountain (lava + lakeside)
+  const ZONE_WALLS = { 'SM-MW3': 'lw', 'SM-MW4': 'lw', 'SM-B6': 'lw', 'SM-MW1': 'ow' };
+  function spiritOn() { return window.__DUDU_ART_V2_PILOT && typeof smZoneOf === 'function'; }
+  function spiritLongKit(a) {
+    if (!spiritOn() || !a.smDraw || a.blink) return null;
+    if (['rock', 'pillar', 'floor', 'roof', 'blink'].includes(a.smDraw) || a.w < 120) return null;
+    const z = smZoneOf(a);
+    if (z === 'lava' && !failed.ll && ready('ll')) return ['ll', ['mid_a', 'mid_b']];
+    if (z === 'out' && !failed.ol && ready('ol')) return ['ol', ['mid_a']];
+    return null;
+  }
+  function drawZoneWall(k, a, x, y) {
+    const w = K[k], v = view();
     if (y + a.h < v.y1 - 20 || y > v.y2 + 20) return;
     ctx.save();
     ctx.beginPath(); ctx.rect(x, y, a.w, a.h); ctx.clip();
-    fillRect(lw.img.tile, lw.w, lw.h, x, y, a.w, a.h, v.y1 - 20, v.y2 + 20);
-    fillRect(lw.img.edge_left, lw.edge, lw.h, x, y, lw.edge, a.h, v.y1 - 20, v.y2 + 20);
-    fillRect(lw.img.edge_right, lw.edge, lw.h, x + a.w - lw.edge, y, lw.edge, a.h, v.y1 - 20, v.y2 + 20);
+    fillRect(w.img.tile, w.w, w.h, x, y, a.w, a.h, v.y1 - 20, v.y2 + 20);
+    fillRect(w.img.edge_left, w.edge, w.h, x, y, w.edge, a.h, v.y1 - 20, v.y2 + 20);
+    fillRect(w.img.edge_right, w.edge, w.h, x + a.w - w.edge, y, w.edge, a.h, v.y1 - 20, v.y2 + 20);
     ctx.restore();
   }
   if (typeof drawSpiritPlatform === 'function') {
     const prevSpirit = drawSpiritPlatform;
     drawSpiritPlatform = function (a, x, y) {
-      try {
-        if (lavaOn() && !failed.lavaw && ready('lw') && LAVA_WALLS.has(a.id)) { drawLavaWall(a, x, y); return; }
-      } catch (e) { fail('lavaw', e); }
-      if (lavaLong(a)) {
-        try { const L = K.ll; capped('ll', ['mid_a', 'mid_b'], x - L.overhang, a.w + 2 * L.overhang, Math.round(y - L.contactY)); return; }
-        catch (e) { fail('lava', e); }
+      const wk = ZONE_WALLS[a.id];
+      if (wk && spiritOn() && !failed[wk] && ready(wk)) {
+        try { drawZoneWall(wk, a, x, y); return; } catch (e) { fail(wk, e); }
+      }
+      const lk = spiritLongKit(a);
+      if (lk) {
+        try { const L = K[lk[0]]; capped(lk[0], lk[1], x - L.overhang, a.w + 2 * L.overhang, Math.round(y - L.contactY)); return; }
+        catch (e) { fail(lk[0], e); }
       }
       return prevSpirit(a, x, y);
     };
@@ -307,9 +371,9 @@ js = r"""// ====================================================================
   if (typeof drawSpiritGlow === 'function') {
     const prevGlow = drawSpiritGlow;
     drawSpiritGlow = function (a, x, y) {
-      if (lavaOn() && !failed.glow && ready('lg') && smZoneOf(a) === 'lava') {
+      if (spiritOn() && !failed.lg && ready('lg') && smZoneOf(a) === 'lava') {
         try { const G = K.lg; capped('lg', ['fill_a', 'fill_b'], x - G.overhang, a.w + 2 * G.overhang, Math.round(y - G.contactY)); return; }
-        catch (e) { fail('glow', e); }
+        catch (e) { fail('lg', e); }
       }
       return prevGlow(a, x, y);
     };
@@ -318,17 +382,23 @@ js = r"""// ====================================================================
   // QA hook: does the V2 layer draw this object?
   window.__artV2Pilot = {
     applies(a) {
-      if (a.smDraw) return LAVA_WALLS.has(a.id) ? lavaOn() : (a.blink ? lavaOn() && smZoneOf(a) === 'lava' : lavaLong(a));
-      if (!inW1()) return false;
-      if ((a.wall || a.ceiling) && forestWall(a)) return true;
+      if (a.smDraw) {
+        if (ZONE_WALLS[a.id]) return spiritOn();
+        if (a.blink) return spiritOn() && smZoneOf(a) === 'lava';
+        return !!spiritLongKit(a);
+      }
+      const p = forestProfile();
+      if (!p) return false;
+      if (a.wall || a.ceiling) return forestWall(a) && (p === 'w1' || !(a.ceiling || /UNDER/.test(a.id || '')));
       if (!grass(a)) return false;
       if (a.groundTile) return true;
-      return w1Thin(a);
+      return thinOk(p, a);
     },
-    kind(a) { return a.smDraw ? 'lava' : 'forest'; }
+    profile() { return forestProfile(); }
   };
 })();
 """
 js = js.replace('__KITS__', json.dumps(K, separators=(',', ':')))
 open(os.path.join(ROOT, 'art-v2-pilot.js'), 'w', encoding='utf-8', newline='\n').write(js)
-print('written', len(js), 'bytes;', ', '.join(f"{k}:{len(v.get('cutTable', []))}" for k, v in K.items()))
+print('written', len(js), 'bytes; kits', ', '.join(f"{k}{'(cut %d)' % len(v['cutTable']) if 'cutTable' in v else ''}" for k, v in K.items()))
+print('ext insets', {p: (K['gc_' + p]['extInsetLeft'], K['gc_' + p]['extInsetRight'], K['gc_' + p]['outlineLeft'][-1], K['gc_' + p]['outlineRight'][-1]) for p in ('w1', 'story')})

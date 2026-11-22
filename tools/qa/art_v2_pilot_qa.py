@@ -17,7 +17,14 @@ OUT = os.path.join(os.path.dirname(__file__), 'out', 'art_v2_pilot'); os.makedir
 ENTER = {
     'w1': "(i)=>{loadWorld1Stage(i,{section:0,entryRoute:'default'});state='paused';document.getElementById('overlay').hidden=true;}",
     'spirit': "()=>{devPracticeSpirit(2000,-1301);state='paused';}",
+    'story': "()=>{gameMode='story';loadLevel(0);levelIndex=0;state='paused';document.getElementById('overlay').hidden=true;}",
 }
+
+
+async def enter(g, kind, st):
+    if kind == 'w1': await g.evaluate(ENTER['w1'], st)
+    else: await g.evaluate(ENTER[kind])
+
 LIST = """()=>platforms.map((a,i)=>({i,id:a.id||'',x:a.x,y:a.y,w:a.w,blink:!!a.blink,sm:a.smDraw||'',
    zone:(a.smDraw&&typeof smZoneOf==='function')?smZoneOf(a):'',wall:!!a.wall,ceiling:!!a.ceiling,ground:!!a.groundTile,noTop:!!a.noTopLand,
    skin:(a.visual&&a.visual.material)||a.skin||'', pilot: !!(window.__artV2Pilot && window.__artV2Pilot.applies(a))}))"""
@@ -73,29 +80,39 @@ async def main():
         res['areas']['spirit_lava'] = {'target': len(fam), 'v2': sum(a['pilot'] for a in fam),
                                        'missing': [(a['id'], a['w']) for a in fam if not a['pilot']]}
         targets += [('spirit', None, a) for a in fam if a['pilot'] and a['id'] not in lw]
+        fam = [a for a in L if (a['zone'] == 'out' and a['sm'] not in ('rock', 'pillar', 'floor', 'roof')) or a['id'] == 'SM-MW1']
+        res['areas']['spirit_out'] = {'target': len(fam), 'v2': sum(a['pilot'] for a in fam),
+                                      'missing': [(a['id'], a['w']) for a in fam if not a['pilot']]}
+        targets += [('spirit', None, a) for a in fam if a['pilot'] and a['id'] != 'SM-MW1']
+        await enter(pg, 'story', None); await pg.wait_for_timeout(600)
+        L = await pg.evaluate(LIST)
+        fam = [a for a in L if not a['sm'] and a['skin'] == 'grass']
+        res['areas']['story_forest'] = {'target': len(fam), 'v2': sum(a['pilot'] for a in fam),
+                                        'missing': [(a['id'], a['w']) for a in fam if not a['pilot']]}
+        targets += [('story', None, a) for a in fam if a['pilot'] and not a['ceiling'] and (not a['wall'] or not a['noTop'])]
 
         # contact for every pilot platform (v2 page)
         cur = None
         for kind, st, P in targets:
             key = (kind, st)
             if key != cur:
-                await (pg.evaluate(ENTER['w1'], st) if kind == 'w1' else pg.evaluate(ENTER['spirit']))
+                await enter(pg, kind, st)
                 await pg.wait_for_timeout(500); cur = key
             c = await contact(pg, P)
-            res['contact'].append({'area': kind if kind == 'spirit' else f'world1_{st + 1}', 'id': P['id'], 'w': P['w'], 'blink': P['blink'], 'top_minus_feet': c})
+            res['contact'].append({'area': kind if kind != 'w1' else f'world1_{st + 1}', 'id': P['id'], 'w': P['w'], 'blink': P['blink'], 'top_minus_feet': c})
 
         # same-camera before/after with Dudu on the platform: a few per area, three modes side by side
         picks = {}
         for kind, st, P in targets:
-            k = kind if kind == 'spirit' else f'world1_{st + 1}'
+            k = kind if kind != 'w1' else f'world1_{st + 1}'
             picks.setdefault(k, [])
-            if len(picks[k]) < (5 if kind == 'spirit' else 2): picks[k].append((kind, st, P))
+            if len(picks[k]) < {'spirit': 6, 'story': 5}.get(kind, 2): picks[k].append((kind, st, P))
         for k, lst in picks.items():
             for kind, st, P in lst:
                 row = []
                 for mode in ('release', 'v11', 'v2'):
                     g = pages[mode][1]
-                    await (g.evaluate(ENTER['w1'], st) if kind == 'w1' else g.evaluate(ENTER['spirit']))
+                    await enter(g, kind, st)
                     await g.wait_for_timeout(450)
                     im = await frame(g, P['i'], dudu=True)
                     d = ImageDraw.Draw(im); d.rectangle((0, 0, 330, 24), fill=(0, 0, 0)); d.text((6, 6), f"{P['id']} w{int(P['w'])} {mode}", fill=(255, 255, 0))

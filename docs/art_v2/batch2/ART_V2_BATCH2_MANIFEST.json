@@ -1,0 +1,578 @@
+[
+  {
+    "name": "forest_story_compact_fill_a",
+    "width": 16,
+    "height": 64,
+    "contactY": 18,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved forest_w1_compact_fill_a daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      2308,
+      64,
+      64,
+      256
+    ],
+    "sha256": "ee02eba99415ec43a3b2a6589a2f13d486f9efc96eef7fa855e2039553c5df74"
+  },
+  {
+    "name": "forest_story_compact_fill_b",
+    "width": 16,
+    "height": 64,
+    "contactY": 18,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved forest_w1_compact_fill_b daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      2436,
+      64,
+      64,
+      256
+    ],
+    "sha256": "4bc8a242e3e7159f26e24837e64c4e3951a15c4f5f36d32bc53beadc39eb14cf"
+  },
+  {
+    "name": "forest_story_compact_left",
+    "width": 24,
+    "height": 64,
+    "contactY": 18,
+    "repeatMode": "cap_left",
+    "family": "forest_story",
+    "source": "approved forest_w1_compact_left daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 0.9167,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      2148,
+      64,
+      96,
+      256
+    ],
+    "sha256": "9d805c910bc30a0bce16195c943b8e49d094ff85d119230fe3f13b65cdfa790a"
+  },
+  {
+    "name": "forest_story_compact_right",
+    "width": 24,
+    "height": 64,
+    "contactY": 18,
+    "repeatMode": "cap_right",
+    "family": "forest_story",
+    "source": "approved forest_w1_compact_right daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 0.9167,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      2564,
+      64,
+      96,
+      256
+    ],
+    "sha256": "682fe4a313d0362cb59e055402a3daa1305a43eeb7a736968ca538f1d8bea878"
+  },
+  {
+    "name": "forest_story_ground_body_a",
+    "width": 151,
+    "height": 86,
+    "contactY": null,
+    "repeatMode": "repeat_xy",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_ground_body_a daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      1232,
+      508,
+      604,
+      344
+    ],
+    "sha256": "bae24f09b608d9dfb7c7ed5a59faab2c07651c96f563fc50ad5d6253ddfd743d"
+  },
+  {
+    "name": "forest_story_ground_body_b",
+    "width": 151,
+    "height": 86,
+    "contactY": null,
+    "repeatMode": "repeat_xy",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_ground_body_b daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      1900,
+      508,
+      604,
+      344
+    ],
+    "sha256": "59f7eab976a5da785fc444a34854716e8f1219ec45dd32e1efc5d2a974b59321"
+  },
+  {
+    "name": "forest_story_ground_cliff_left",
+    "width": 81,
+    "height": 159,
+    "contactY": 25,
+    "repeatMode": "end_left",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_ground_cliff_left daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 0.9753,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      2568,
+      508,
+      324,
+      636
+    ],
+    "sha256": "4992bdabb80a0b05db33ac1f9bcf39f44d1bbf39a1f71ad425b41e7421804abd"
+  },
+  {
+    "name": "forest_story_ground_cliff_left_ext",
+    "width": 81,
+    "height": 86,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "forest_story_extension",
+    "source": "matching approved forest_story cliff bottom row + approved forest_story ground soil",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_cliff_extensions_sheet_4x.png",
+    "atlasRect4x": [
+      840,
+      64,
+      324,
+      344
+    ],
+    "sha256": "eb22d7835e6de107fc932154c28913ae9fdee742d277c940a8e49d4e26f865f0"
+  },
+  {
+    "name": "forest_story_ground_cliff_right",
+    "width": 81,
+    "height": 159,
+    "contactY": 25,
+    "repeatMode": "end_right",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_ground_cliff_right daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 0.9753,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      2956,
+      508,
+      324,
+      636
+    ],
+    "sha256": "c5fa5f1c929303e5a834c9d7fb305808f856bacc2da2514a29d0c72db6dd2d4a"
+  },
+  {
+    "name": "forest_story_ground_cliff_right_ext",
+    "width": 81,
+    "height": 86,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "forest_story_extension",
+    "source": "matching approved forest_story cliff bottom row + approved forest_story ground soil",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_cliff_extensions_sheet_4x.png",
+    "atlasRect4x": [
+      1228,
+      64,
+      324,
+      344
+    ],
+    "sha256": "35785745bd3c5fb1ec114f636bb14d3e948e516688bc02148dcb319d40760be8"
+  },
+  {
+    "name": "forest_story_ground_top_a",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_ground_top_a daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      2724,
+      64,
+      520,
+      380
+    ],
+    "sha256": "42f6a72f0f6b42c4dd7cab1aa2fb9da7925ed5bd7063657e2fa2262a61c6bcc7"
+  },
+  {
+    "name": "forest_story_ground_top_b",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_ground_top_b daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      64,
+      508,
+      520,
+      380
+    ],
+    "sha256": "bb8b55392d078e2dcf4093312d09b4c0cb249c07b23c68c350948d6af15e5147"
+  },
+  {
+    "name": "forest_story_ground_top_c",
+    "width": 130,
+    "height": 95,
+    "contactY": 25,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_ground_top_c daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      648,
+      508,
+      520,
+      380
+    ],
+    "sha256": "00aec1640445b14e78e538ba1913e949576db2d0f87b61ee4b67d898721a7498"
+  },
+  {
+    "name": "forest_story_long_left",
+    "width": 70,
+    "height": 80,
+    "contactY": 21,
+    "repeatMode": "cap_left",
+    "family": "forest_story",
+    "source": "approved forest_standard_candidate_A daytime grade; repeated edge calibrated",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 0.9857,
+    "opaqueAboveContactFraction": 0.3,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      64,
+      64,
+      280,
+      320
+    ],
+    "sha256": "f8231e3a732eec1bf8b2e7269620c657bc20626486436aa3475ea8a64815b6d4"
+  },
+  {
+    "name": "forest_story_long_mid_a",
+    "width": 100,
+    "height": 80,
+    "contactY": 21,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved forest_standard_candidate_A daytime grade; repeated edge calibrated",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0252,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      408,
+      64,
+      400,
+      320
+    ],
+    "sha256": "34910ef3b513d5a781bb2342cc39d7ef137d4071d65e417a1955d9acf0b27f79"
+  },
+  {
+    "name": "forest_story_long_mid_b",
+    "width": 100,
+    "height": 80,
+    "contactY": 21,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved forest_standard_candidate_A daytime grade; repeated edge calibrated",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0052,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      872,
+      64,
+      400,
+      320
+    ],
+    "sha256": "21329b18ecd2e0546ee17103e51d83198ce06838de3de0094f7d1f719999953c"
+  },
+  {
+    "name": "forest_story_long_mid_c",
+    "width": 100,
+    "height": 80,
+    "contactY": 21,
+    "repeatMode": "repeat_x",
+    "family": "forest_story",
+    "source": "approved forest_standard_candidate_A daytime grade; repeated edge calibrated",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0052,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      1336,
+      64,
+      400,
+      320
+    ],
+    "sha256": "491f974a0c1565eb564f0f4e8ce59e95f5c846cbb040bfa8f71c146ba5bb719a"
+  },
+  {
+    "name": "forest_story_long_right",
+    "width": 71,
+    "height": 80,
+    "contactY": 21,
+    "repeatMode": "cap_right",
+    "family": "forest_story",
+    "source": "approved forest_standard_candidate_A daytime grade; repeated edge calibrated",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 0.9859,
+    "opaqueAboveContactFraction": 0.3179,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      1800,
+      64,
+      284,
+      320
+    ],
+    "sha256": "d5a65d5192be06e07afbbe5b8b36c362f02fc5d9a2b09fef27a133172ca896b6"
+  },
+  {
+    "name": "forest_story_wall_body",
+    "width": 96,
+    "height": 128,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_wall_body daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      512,
+      1208,
+      384,
+      512
+    ],
+    "sha256": "b1b023e8f9d5f9b53859cc227a5f51e8e4a9426e40e206466f3b25432c1f9511"
+  },
+  {
+    "name": "forest_story_wall_edge_left",
+    "width": 8,
+    "height": 128,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_wall_edge_left daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      960,
+      1208,
+      32,
+      512
+    ],
+    "sha256": "4067d9098e090c7274a24e40070dc6ae8e276facd06e2e681d77c9d4c542b5ff"
+  },
+  {
+    "name": "forest_story_wall_edge_right",
+    "width": 8,
+    "height": 128,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_wall_edge_right daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      1056,
+      1208,
+      32,
+      512
+    ],
+    "sha256": "08c503105d55550781261c5aa9dea927ef3c7e874f79591330fc0b594bccbd64"
+  },
+  {
+    "name": "forest_story_wall_top",
+    "width": 96,
+    "height": 24,
+    "contactY": 6,
+    "repeatMode": "cap_crop",
+    "family": "forest_story",
+    "source": "approved BATCH1 forest rev2 forest_w1_wall_top daylight grade",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 0.9792,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "forest_story_sheet_4x.png",
+    "atlasRect4x": [
+      64,
+      1208,
+      384,
+      96
+    ],
+    "sha256": "91286ae4cb4d8261b4149290cffaa7ee906a57d00b1033fcf27d7faf949fffd2"
+  },
+  {
+    "name": "forest_w1_ground_cliff_left_ext",
+    "width": 81,
+    "height": 86,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "forest_w1_extension",
+    "source": "matching approved forest_w1 cliff bottom row + approved forest_w1 ground soil",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_cliff_extensions_sheet_4x.png",
+    "atlasRect4x": [
+      64,
+      64,
+      324,
+      344
+    ],
+    "sha256": "c25aa41ce1523512f0eed65ad08cc3b075f93df828dee0c6930f8088b83d15e6"
+  },
+  {
+    "name": "forest_w1_ground_cliff_right_ext",
+    "width": 81,
+    "height": 86,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "forest_w1_extension",
+    "source": "matching approved forest_w1 cliff bottom row + approved forest_w1 ground soil",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "forest_cliff_extensions_sheet_4x.png",
+    "atlasRect4x": [
+      452,
+      64,
+      324,
+      344
+    ],
+    "sha256": "06ef9941dfa7999c945130f45e2d88a00e547f0f70b787ec552206599be633db"
+  },
+  {
+    "name": "spirit_out_long_left",
+    "width": 44,
+    "height": 72,
+    "contactY": 6,
+    "repeatMode": "cap_left",
+    "family": "spirit_out",
+    "source": "image-generated lakeside handpainted mossy stone artwork; edited to exact game geometry",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "spirit_out_sheet_4x.png",
+    "atlasRect4x": [
+      64,
+      64,
+      176,
+      288
+    ],
+    "sha256": "f48b0322efa6e583a8b4ac0a501dce72007af07b1dcd979be7f04f9302f16892"
+  },
+  {
+    "name": "spirit_out_long_mid_a",
+    "width": 394,
+    "height": 72,
+    "contactY": 6,
+    "repeatMode": "repeat_x",
+    "family": "spirit_out",
+    "source": "image-generated lakeside handpainted mossy stone artwork; edited to exact game geometry",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "spirit_out_sheet_4x.png",
+    "atlasRect4x": [
+      304,
+      64,
+      1576,
+      288
+    ],
+    "sha256": "7013b7b232b3721cae574ccae10167ac8fa3ac70eeb0266e3b9cfeb873fce1f8"
+  },
+  {
+    "name": "spirit_out_long_right",
+    "width": 44,
+    "height": 72,
+    "contactY": 6,
+    "repeatMode": "cap_right",
+    "family": "spirit_out",
+    "source": "image-generated lakeside handpainted mossy stone artwork; edited to exact game geometry",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "contactCoverage": 1.0,
+    "opaqueAboveContactFraction": 0.0,
+    "atlas4x": "spirit_out_sheet_4x.png",
+    "atlasRect4x": [
+      1944,
+      64,
+      176,
+      288
+    ],
+    "sha256": "cc982a1fc75d9467474db23dd11f219d80dcaaaeb05a6e8aae81eb80fd9cc020"
+  },
+  {
+    "name": "spirit_out_wall_edge_left",
+    "width": 10,
+    "height": 192,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "spirit_out",
+    "source": "lake wall stone edge from same generated stone tile",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "spirit_out_sheet_4x.png",
+    "atlasRect4x": [
+      2760,
+      64,
+      40,
+      768
+    ],
+    "sha256": "f70fca9c6be95585723e26220653178ab4be5fbcc93c9b70325ca0ddb8f17c26"
+  },
+  {
+    "name": "spirit_out_wall_edge_right",
+    "width": 10,
+    "height": 192,
+    "contactY": null,
+    "repeatMode": "repeat_y",
+    "family": "spirit_out",
+    "source": "lake wall stone edge from same generated stone tile",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "spirit_out_sheet_4x.png",
+    "atlasRect4x": [
+      2864,
+      64,
+      40,
+      768
+    ],
+    "sha256": "c91123dc568132b37a8f6004643ce5bc1c0eb0d3b3350d270148b8b7ccb84691"
+  },
+  {
+    "name": "spirit_out_wall_tile",
+    "width": 128,
+    "height": 192,
+    "contactY": null,
+    "repeatMode": "repeat_xy",
+    "family": "spirit_out",
+    "source": "handpainted generated lakeside stone wall, retiled",
+    "status": "BATCH2_NEEDS_CLAUDE_GAME_QA",
+    "atlas4x": "spirit_out_sheet_4x.png",
+    "atlasRect4x": [
+      2184,
+      64,
+      512,
+      768
+    ],
+    "sha256": "7c36fdac28fce98af2dcd9222c8ffb07155aadee601003a49bdc0758df9b2e80"
+  }
+]

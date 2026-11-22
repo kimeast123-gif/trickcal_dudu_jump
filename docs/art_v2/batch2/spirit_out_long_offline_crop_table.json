@@ -1,0 +1,85 @@
+{
+  "family": "spirit_out_long",
+  "generatedOffline": true,
+  "algorithm": "full center repeats plus minimum difference 2-piece source exclusion for remainder; offline, NO browser pixel reads",
+  "partNames": {
+    "left": "spirit_out_long_left",
+    "middle": [
+      "spirit_out_long_mid_a"
+    ],
+    "right": "spirit_out_long_right"
+  },
+  "capWidthPx": [
+    44,
+    44
+  ],
+  "middleTileWidthPx": 394,
+  "widthEntries": {
+    "405": {
+      "totalWidth": 405,
+      "wholeMiddleRepeatCount": 0,
+      "remainderPx": 317,
+      "partialSpliceSegments": [
+        {
+          "file": "spirit_out_long_mid_a",
+          "sourceX": 0,
+          "sourceWidth": 233,
+          "drawWidth": 233
+        },
+        {
+          "file": "spirit_out_long_mid_a",
+          "sourceX": 310,
+          "sourceWidth": 84,
+          "drawWidth": 84
+        }
+      ],
+      "partialSpliceMeanRGBA": 7.892,
+      "leftCap": "spirit_out_long_left",
+      "rightCap": "spirit_out_long_right"
+    },
+    "437": {
+      "totalWidth": 437,
+      "wholeMiddleRepeatCount": 0,
+      "remainderPx": 349,
+      "partialSpliceSegments": [
+        {
+          "file": "spirit_out_long_mid_a",
+          "sourceX": 0,
+          "sourceWidth": 0,
+          "drawWidth": 0
+        },
+        {
+          "file": "spirit_out_long_mid_a",
+          "sourceX": 45,
+          "sourceWidth": 349,
+          "drawWidth": 349
+        }
+      ],
+      "partialSpliceMeanRGBA": 5.177,
+      "leftCap": "spirit_out_long_left",
+      "rightCap": "spirit_out_long_right"
+    },
+    "492": {
+      "totalWidth": 492,
+      "wholeMiddleRepeatCount": 1,
+      "remainderPx": 10,
+      "partialSpliceSegments": [
+        {
+          "file": "spirit_out_long_mid_a",
+          "sourceX": 0,
+          "sourceWidth": 1,
+          "drawWidth": 1
+        },
+        {
+          "file": "spirit_out_long_mid_a",
+          "sourceX": 385,
+          "sourceWidth": 9,
+          "drawWidth": 9
+        }
+      ],
+      "partialSpliceMeanRGBA": 4.205,
+      "leftCap": "spirit_out_long_left",
+      "rightCap": "spirit_out_long_right"
+    }
+  }
+}

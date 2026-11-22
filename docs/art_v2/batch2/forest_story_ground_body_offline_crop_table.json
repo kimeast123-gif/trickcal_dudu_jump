@@ -1,0 +1,82 @@
+{
+  "family": "forest_story_ground_body",
+  "generatedOffline": true,
+  "algorithm": "full center repeats plus minimum difference 2-piece source exclusion for remainder; offline, NO browser pixel reads",
+  "partNames": {
+    "left": "forest_story_ground_body_a",
+    "middle": [
+      "forest_story_ground_body_a",
+      "forest_story_ground_body_b"
+    ],
+    "right": "forest_story_ground_body_b"
+  },
+  "capWidthPx": [
+    0,
+    0
+  ],
+  "middleTileWidthPx": 151,
+  "widthEntries": {
+    "302": {
+      "totalWidth": 302,
+      "wholeMiddleRepeatCount": 2,
+      "remainderPx": 0,
+      "partialSpliceSegments": [],
+      "partialSpliceMeanRGBA": 0,
+      "leftCap": "forest_story_ground_body_a",
+      "rightCap": "forest_story_ground_body_b"
+    },
+    "453": {
+      "totalWidth": 453,
+      "wholeMiddleRepeatCount": 3,
+      "remainderPx": 0,
+      "partialSpliceSegments": [],
+      "partialSpliceMeanRGBA": 0,
+      "leftCap": "forest_story_ground_body_a",
+      "rightCap": "forest_story_ground_body_b"
+    },
+    "900": {
+      "totalWidth": 900,
+      "wholeMiddleRepeatCount": 5,
+      "remainderPx": 145,
+      "partialSpliceSegments": [
+        {
+          "file": "forest_story_ground_body_b",
+          "sourceX": 0,
+          "sourceWidth": 131,
+          "drawWidth": 131
+        },
+        {
+          "file": "forest_story_ground_body_b",
+          "sourceX": 137,
+          "sourceWidth": 14,
+          "drawWidth": 14
+        }
+      ],
+      "partialSpliceMeanRGBA": 3.02,
+      "leftCap": "forest_story_ground_body_a",
+      "rightCap": "forest_story_ground_body_b"
+    },
+    "1550": {
+      "totalWidth": 1550,
+      "wholeMiddleRepeatCount": 10,
+      "remainderPx": 40,
+      "partialSpliceSegments": [
+        {
+          "file": "forest_story_ground_body_a",
+          "sourceX": 0,
+          "sourceWidth": 0,
+          "drawWidth": 0
+        },
+        {
+          "file": "forest_story_ground_body_a",
+          "sourceX": 111,
+          "sourceWidth": 40,
+          "drawWidth": 40
+        }
+      ],
+      "partialSpliceMeanRGBA": 4.823,
+      "leftCap": "forest_story_ground_body_a",
+      "rightCap": "forest_story_ground_body_b"
+    }
+  }
+}

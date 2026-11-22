@@ -1,0 +1,59 @@
+{
+  "family": "spirit_out_wall_tile",
+  "generatedOffline": true,
+  "algorithm": "full center repeats plus minimum difference 2-piece source exclusion for remainder; offline, NO browser pixel reads",
+  "partNames": {
+    "left": "spirit_out_wall_tile",
+    "middle": [
+      "spirit_out_wall_tile"
+    ],
+    "right": "spirit_out_wall_tile"
+  },
+  "capWidthPx": [
+    0,
+    0
+  ],
+  "middleTileWidthPx": 128,
+  "widthEntries": {
+    "128": {
+      "totalWidth": 128,
+      "wholeMiddleRepeatCount": 1,
+      "remainderPx": 0,
+      "partialSpliceSegments": [],
+      "partialSpliceMeanRGBA": 0,
+      "leftCap": "spirit_out_wall_tile",
+      "rightCap": "spirit_out_wall_tile"
+    },
+    "138": {
+      "totalWidth": 138,
+      "wholeMiddleRepeatCount": 1,
+      "remainderPx": 10,
+      "partialSpliceSegments": [
+        {
+          "file": "spirit_out_wall_tile",
+          "sourceX": 0,
+          "sourceWidth": 5,
+          "drawWidth": 5
+        },
+        {
+          "file": "spirit_out_wall_tile",
+          "sourceX": 123,
+          "sourceWidth": 5,
+          "drawWidth": 5
+        }
+      ],
+      "partialSpliceMeanRGBA": 4.914,
+      "leftCap": "spirit_out_wall_tile",
+      "rightCap": "spirit_out_wall_tile"
+    },
+    "256": {
+      "totalWidth": 256,
+      "wholeMiddleRepeatCount": 2,
+      "remainderPx": 0,
+      "partialSpliceSegments": [],
+      "partialSpliceMeanRGBA": 0,
+      "leftCap": "spirit_out_wall_tile",
+      "rightCap": "spirit_out_wall_tile"
+    }
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "batch": "BATCH2",
+  "source": "GPT_BATCH2_BRIEF.md",
+  "results": {
+    "forest_story_long_left": {
+      "contact": "PASS",
+      "coverage": 0.9857142857142858
+    },
+    "forest_story_long_mid_a": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "forest_story_long_mid_b": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "forest_story_long_mid_c": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "forest_story_long_right": {
+      "contact": "PASS",
+      "coverage": 0.9859154929577465
+    },
+    "forest_story_compact_left": {
+      "contact": "PASS",
+      "coverage": 0.9166666666666666
+    },
+    "forest_story_compact_fill_a": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "forest_story_compact_fill_b": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "forest_story_compact_right": {
+      "contact": "PASS",
+      "coverage": 0.9166666666666666
+    },
+    "forest_story_ground_top_a": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "forest_story_ground_top_b": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "forest_story_ground_top_c": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "forest_story_ground_body_a": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0
+    },
+    "forest_story_ground_body_b": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0
+    },
+    "forest_story_ground_cliff_left": {
+      "contact": "PASS",
+      "coverage": 0.9753086419753086
+    },
+    "forest_story_ground_cliff_right": {
+      "contact": "PASS",
+      "coverage": 0.9753086419753086
+    },
+    "forest_story_wall_top": {
+      "contact": "PASS",
+      "coverage": 0.9791666666666666
+    },
+    "forest_story_wall_body": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0
+    },
+    "forest_story_wall_edge_left": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0
+    },
+    "forest_story_wall_edge_right": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0
+    },
+    "forest_w1_ground_cliff_left_ext": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0,
+      "sourceToExtMaxRGBA": 0,
+      "repeatExtMaxRGBA": 0
+    },
+    "forest_w1_ground_cliff_right_ext": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0,
+      "sourceToExtMaxRGBA": 0,
+      "repeatExtMaxRGBA": 0
+    },
+    "forest_story_ground_cliff_left_ext": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0,
+      "sourceToExtMaxRGBA": 0,
+      "repeatExtMaxRGBA": 0
+    },
+    "forest_story_ground_cliff_right_ext": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0,
+      "sourceToExtMaxRGBA": 0,
+      "repeatExtMaxRGBA": 0
+    },
+    "spirit_out_long_left": {
+      "contact": "PASS",
+      "coverage": 1.0
+    },
+    "spirit_out_long_mid_a": {
+      "contact": "PASS",
+      "coverage": 1.0,
+      "repeatEdgeMaxRGBA": 0,
+      "repeatEdgeMeanRGBA": 0.0
+    },
+    "spirit_out_long_right": {
+      "contact": "PASS",
+      "coverage": 1.0
+    },
+    "spirit_out_wall_tile": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0
+    },
+    "spirit_out_wall_edge_left": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0
+    },
+    "spirit_out_wall_edge_right": {
+      "contact": "N/A",
+      "repeatEdgeMaxRGBA": 0
+    }
+  },
+  "thresholds": {
+    "repeat_rgba_edge_max": 0,
+    "contact_coverage_min": 0.9
+  }
+}
