@@ -372,14 +372,17 @@
       ? `<div class="wmStorageWarn" id="wmStorageWarn">브라우저 저장소(localStorage)가 제한되어 현재 세션 동안만 진행 기록이 유지됩니다.</div>`
       : '';
 
+    const ctAll = typeof window.crayonTotals === 'function' ? window.crayonTotals() : null;
     const cardsHtml = WORLDMAP_CARDS.map((card, idx) => {
       const isComingSoon = card.implementationStatus === 'coming_soon';
       const statusText = isComingSoon ? '준비 중' : (card.id === 'world1_beastforest' && w1.regionCleared ? '완주 달성' : '진입 가능');
+      // v1.9: every card with golden crayons shows how many of its own were found
+      const wc = ctAll && ctAll.worlds[card.id];
       const progressText = card.id === 'world1_beastforest'
-        ? `스테이지 ${clearedCount}/5 클리어, 황금 크레파스 ${totalCols}/${world1Stages.filter(st => !st.worldId).reduce((a, st) => a + ((st.collectibleDefs && st.collectibleDefs.length) || 0), 0)}`   /* v1.7.0: was a fixed /2 */
+        ? `스테이지 ${clearedCount}/5 클리어, 황금 크레파스 ${wc ? wc.got : totalCols}/${wc ? wc.total : 0}`
         : (card.id === 'story_replay'
-          ? '본편 6개 지역, 왕사탕 135개, 크레파스 12개'
-          : (isComingSoon ? '추후 업데이트 예정 지역' : ''));   // v1.6.6: open single-map worlds show no note
+          ? `본편 6개 지역, 황금 크레파스 ${ctAll ? ctAll.story.got : 0}/12`
+          : (isComingSoon ? '추후 업데이트 예정 지역' : (wc ? `황금 크레파스 ${wc.got}/${wc.total}` : '')));
       const actionLabel = isComingSoon
         ? '준비 중'
         : (card.id === 'story_replay' ? '본편 다시 시작' : '스테이지 고르기');
@@ -410,13 +413,13 @@
       `;
     }).join('');
 
-    // v1.8.5: every golden crayon found so far, big at the top right of the map
-    const ct = typeof window.crayonTotals === 'function' ? window.crayonTotals() : null;
+    // v1.9: golden crayons, main story and world map counted apart (each world's own count is on its card)
+    const ct = ctAll;
     const crayonPill = ct ? `
-            <div class="wmCrayonTotal" title="스토리 ${ct.story.got}/${ct.story.total}, 수인숲 나들이 ${ct.w1.got}/${ct.w1.total}, 정령산의 아침 ${ct.spirit.got}/${ct.spirit.total}">
+            <div class="wmCrayonTotal">
               <img src="assets/collectibles/golden_crayon.png?v=16" alt="" draggable="false">
-              <span class="wmCrayonLabel">모은 황금 크레파스</span>
-              <b>${ct.got}</b><span class="wmCrayonOf">/ ${ct.total}</span>
+              <span class="wmCrayonPart"><span class="wmCrayonLabel">메인 스토리</span><b>${ct.story.got}</b><span class="wmCrayonOf">/ ${ct.story.total}</span></span>
+              <span class="wmCrayonPart wmCrayonSep"><span class="wmCrayonLabel">월드맵</span><b>${ct.map.got}</b><span class="wmCrayonOf">/ ${ct.map.total}</span></span>
             </div>` : '';
     wrap.innerHTML = `
       <div class="wmPanel wmExpeditionModal" role="dialog" aria-modal="true" aria-labelledby="wmHeaderTitle">

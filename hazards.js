@@ -1853,6 +1853,7 @@ function updateHazards(dt){
   if(typeof updateWorld1Friends==='function')updateWorld1Friends(dt);
   if(typeof updateNightMonatium==='function')updateNightMonatium(dt);
   if(typeof updateSpiritMountain==='function')updateSpiritMountain(dt);
+  if(typeof updateGhostSwamp==='function')updateGhostSwamp(dt);
   return;
  }
  hazardClock+=dt;

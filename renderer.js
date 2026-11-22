@@ -1813,6 +1813,7 @@ function drawPlatform(a) {
   const drawY = Math.round((a.prevY ?? a.y) + (a.y - (a.prevY ?? a.y)) * renderAlpha);
   if (a.nightDraw && typeof drawNightPlatform === 'function') { drawNightPlatform(a, drawX, drawY); return; }
   if (a.smDraw && typeof drawSpiritPlatform === 'function') { drawSpiritPlatform(a, drawX, drawY); return; }
+  if (a.gsDraw && typeof drawGhostPlatform === 'function') { drawGhostPlatform(a, drawX, drawY); return; }
 
   // [A-4 Fix]: Distinct non-collidable turret perch pedestal (`C3-TURRET-P1/P2/P3`, `nonCollidable: true`)
   if (a.nonCollidable) {
@@ -2204,6 +2205,7 @@ function draw() {
   drawErpienAArchitecture();
   if (typeof drawNightMonatiumBack === 'function') drawNightMonatiumBack();
   if (typeof drawSpiritBack === 'function') drawSpiritBack();
+  if (typeof drawGhostBack === 'function') drawGhostBack();
   drawPitShade(viewW, viewH);
 
   if (typeof gameMode !== 'undefined' && gameMode === 'world') {
@@ -2237,6 +2239,7 @@ function draw() {
     if (typeof drawWorld1TentaclesAndSlots === 'function') drawWorld1TentaclesAndSlots();
     if (typeof drawNightMonatiumFront === 'function') drawNightMonatiumFront();
     if (typeof drawSpiritFront === 'function') drawSpiritFront();
+    if (typeof drawGhostFront === 'function') drawGhostFront();
   } else {
     drawActors();
     drawBombs();
@@ -2320,15 +2323,18 @@ function draw() {
   }
   ctx.globalAlpha = 1;
   ctx.save();
-  ctx.globalAlpha = shadow.alpha;
+  ctx.globalAlpha = (window.__gsHideDudu && typeof activeGhostStage === 'function' && activeGhostStage()) ? 0 : shadow.alpha;
   ellipse(Math.round(rPx), shadow.y, shadow.width, 4, '#334b3a');
   ctx.restore();
-  renderCharacter();
+  /* v1.9: hidden while Rim carries Dudu off in World 4-2 */
+  if (!(window.__gsHideDudu && typeof activeGhostStage === 'function' && activeGhostStage())) renderCharacter();
+  if (typeof drawGhostAfterDudu === 'function') drawGhostAfterDudu();   /* v1.9: World 4 mud over Dudu's legs */
   drawStageProps('foreground');
   drawProtection();
   drawDeveloperQaOverlay();
   ctx.restore();
   if (typeof drawSpiritOverlay === 'function') drawSpiritOverlay();
+  if (typeof drawGhostOverlay === 'function') drawGhostOverlay();
   drawMapEdgeMist();
   if (window.__screenFade) {
     const f = window.__screenFade;

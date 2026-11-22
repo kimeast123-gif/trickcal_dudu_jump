@@ -100,13 +100,13 @@ const WORLDMAP_CARDS = [
     title: '무시무시 유령늪',
     subtitle: '안개 낀 늪에서 들리는 이상한 소리',
     kind: 'world',
-    implementationStatus: 'coming_soon',
+    implementationStatus: 'playable',
     unlockCondition: null,
-    action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('무시무시 유령늪', '곧 열려요', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
-    fallbackThumb: makePlaceholderSvgDataUri('무시무시 유령늪', '곧 열려요', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
-    statusBadge: '준비 중',
-    isPlaceholderArt: true
+    action: 'openGhostStageSelect',
+    thumbnail: 'assets/world/ghostswamp/bg1.webp?v=v1_8_6_261122',
+    fallbackThumb: makePlaceholderSvgDataUri('무시무시 유령늪', '안개 낀 늪', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
+    statusBadge: '플레이 가능',
+    isPlaceholderArt: false
   },
   {
     order: 5,
@@ -167,6 +167,17 @@ function makeDefaultWorldMapSave() {
         stages: {
           '3-1': { unlocked: true, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null }
         }
+      },
+      // v1.9: World 4 「무시무시 유령늪」, four stages played in order: 유령늪 1 -> 1-2 -> 2 -> 3 (each opens when the one
+      // before is cleared). Keys are the 4-stage directive's stage IDs.
+      world4_ghostswamp: {
+        regionCleared: false,
+        stages: {
+          ghost_swamp_1:   { unlocked: true,  cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
+          ghost_swamp_1_2: { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
+          ghost_swamp_2:   { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
+          ghost_swamp_3:   { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null }
+        }
       }
     }
   };
@@ -220,6 +231,27 @@ function normalizeWorldMapSave(raw) {
     rec.hits = Math.max(0, parseInt(st3.hits || 0, 10) || 0);
     rec.collectibles = Array.isArray(st3.collectibles) ? Array.from(new Set(st3.collectibles)) : [];
     base.worlds.world3_spiritmountain.regionCleared = rec.cleared;
+  }
+  // v1.9: World 4. A save from before v1.9 has no world4 entry and keeps the defaults above; nothing else is touched.
+  // Test builds saved the first three stages as '4-1' / '4-2' / '4-3'; they carry over to 유령늪 1 / 2 / 3, and 1-2
+  // (added later) counts as open once 유령늪 1 was cleared.
+  const w4 = raw.worlds && raw.worlds.world4_ghostswamp;
+  if (w4 && typeof w4 === 'object' && w4.stages && typeof w4.stages === 'object') {
+    const OLD = { ghost_swamp_1: '4-1', ghost_swamp_2: '4-2', ghost_swamp_3: '4-3' };
+    for (const k of ['ghost_swamp_1', 'ghost_swamp_1_2', 'ghost_swamp_2', 'ghost_swamp_3']) {
+      const st = w4.stages[k] || w4.stages[OLD[k]];
+      if (!st || typeof st !== 'object') continue;
+      const rec = base.worlds.world4_ghostswamp.stages[k];
+      rec.unlocked = k === 'ghost_swamp_1' ? true : Boolean(st.unlocked);
+      rec.cleared = Boolean(st.cleared);
+      rec.bestSeconds = (typeof st.bestSeconds === 'number' && Number.isFinite(st.bestSeconds)) ? st.bestSeconds : null;
+      rec.retries = Math.max(0, parseInt(st.retries || 0, 10) || 0);
+      rec.hits = Math.max(0, parseInt(st.hits || 0, 10) || 0);
+      rec.collectibles = Array.isArray(st.collectibles) ? Array.from(new Set(st.collectibles)) : [];
+    }
+    const S4 = base.worlds.world4_ghostswamp.stages;
+    if (S4.ghost_swamp_1.cleared) S4.ghost_swamp_1_2.unlocked = true;
+    base.worlds.world4_ghostswamp.regionCleared = Boolean(w4.regionCleared) || S4.ghost_swamp_3.cleared;
   }
   return base;
 }
@@ -340,7 +372,7 @@ function updateWorld1Collectibles() {
   if (gameMode !== 'world' || !world1Collectibles.length) return;
   const save = loadWorldMapSave();
   const stg = world1Stages[activeWorldStageIndex];
-  const stgRec = save.worlds.world1_beastforest.stages[stg.stageCode];
+  const stgRec = getWorldStageRecord(save, stg);   /* v1.9: World 4 crayons save under their own world */
   for (const col of world1Collectibles) {
     if (col.state === 'collected') continue;
     if (Math.abs(p.x - col.x) < 32 && Math.abs((p.y - 30) - col.y) < 40) {
@@ -1857,6 +1889,10 @@ function handleWorldMapCardAction(cardId) {
   }
   if (card.action === 'openNightStageSelect' && typeof openNightStageSelect === 'function') {
     openNightStageSelect();
+    return;
+  }
+  if (card.action === 'openGhostStageSelect' && typeof openGhostStageSelect === 'function') {
+    openGhostStageSelect();
     return;
   }
 }

@@ -28,7 +28,7 @@ python tools/qa/regression.py                 # 커밋 전에 반드시. 전부 
 ## 구조
 
 전부 전역 스크립트이고 `index.html`의 로드 순서에 의존한다(ES 모듈 아님).
-`perf.js → release-config.js → mobile-controls.js → download-consent.js → game.js → world.js → npc-data.js → hazards.js → renderer.js → challenge-world.js → challenge-hazards.js → event.js → challenge-mode.js → worldmap-mode.js → night-monatium.js → spirit-mountain.js → terrain-art.js → uiux-redesign.js → title-lobby.js`
+`perf.js → release-config.js → mobile-controls.js → download-consent.js → game.js → world.js → npc-data.js → hazards.js → renderer.js → challenge-world.js → challenge-hazards.js → event.js → challenge-mode.js → worldmap-mode.js → night-monatium.js → spirit-mountain.js → ghost-swamp.js → terrain-art.js → uiux-redesign.js → title-lobby.js`
 
 | 파일 | 내용 |
 | --- | --- |
@@ -42,6 +42,7 @@ python tools/qa/regression.py                 # 커밋 전에 반드시. 전부 
 | `challenge-*.js`, `worldmap-mode.js` | 챌린지 모드, 월드맵과 월드1 스테이지 |
 | `night-monatium.js` | 월드2 「모나티엄의 야경」: 스테이지 데이터, 러너, 드론, 전기장, 진압반, 셔터, 광장 NPC, 야간 배경. `world1Stages` 뒤에 붙어 월드 스테이지 실행기를 같이 쓴다. 설계는 `docs/NIGHT_MONATIUM.md` |
 | `spirit-mountain.js` | 월드3 「정령산의 아침」: 세로 맵, 동굴 시야 마스크, 용암, 위습, 강풍(`SM_WIND`), 정령 NPC, 별. 같은 방식으로 `world1Stages` 뒤에 붙는다. 설계는 `docs/SPIRIT_MOUNTAIN.md` |
+| `ghost-swamp.js` | 월드4 「무시무시 유령늪」 유령늪 1~4(내부 ID `ghost_swamp_1`, `_1_2`, `_2`, `_3`): 침전 발판(두두가 잠김), 이동 발판, 가시, 림 착지 공격, 납치, 추격, 셰이디 구출과 동행, 곡 전환. 같은 방식으로 `world1Stages` 뒤에 붙는다. 발판 그림은 `tools/ghost_swamp_board_parts.py`, 림·셰이디 모션은 `tools/ghost_swamp_assets.py`가 만든다. 설계와 확인 기록은 `docs/world4/` |
 | `terrain-art.js` | 스토리 수인숲, 월드1 1-1~1-4, 정령산의 지형 그림(아트 리뉴얼 2단계, v1.8.0). 그리기 함수만 감싸고 물리는 건드리지 않는다. **`tools/terrain_art_build.py`가 `assets/terrain/`에서 생성하므로 손으로 고치지 않는다.** 그림을 바꾸면 다시 생성하고 `tools/qa/art_v2_physics_identity.py`(그림 켜고 끈 물리 비교)를 통과시킨다. `?oldart=1`로 열면 예전 그림 |
 | `title-lobby.*`, `uiux-redesign.js`, `event.js` | 로비, HUD, 컷신과 결과 화면 |
 | `style.css` | 게임 화면과 모바일 조작 UI |

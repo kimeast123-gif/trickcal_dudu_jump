@@ -621,15 +621,17 @@ body.mobile-game-landscape .encounterNav {
 .wmHeader h2 { margin:2px 0 0; font-size:20px; color:#253829; }
 .wmHeaderActions { display:flex; align-items:center; gap:6px; }
 /* v1.8.5: total golden crayons, top right of the world map */
-.wmCrayonTotal { display:inline-flex; align-items:center; gap:6px; margin-right:8px; padding:5px 14px 5px 8px; border-radius:999px;
+.wmCrayonTotal { display:inline-flex; align-items:center; gap:10px; margin-right:8px; padding:5px 14px 5px 8px; border-radius:14px;
   background:linear-gradient(180deg,#fff6d6 0%,#ffe3a1 100%); border:2px solid #e8b64a; box-shadow:0 3px 0 #b7832a; color:#6a4510;
   font-size:14px; line-height:1; white-space:nowrap; }
 .wmCrayonTotal img { width:26px; height:26px; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(90,60,10,.35)); }
 .wmCrayonTotal b { font-size:21px; color:#a8560b; }
 .wmCrayonTotal .wmCrayonOf { font-size:14px; color:#8a6420; }
+.wmCrayonTotal .wmCrayonPart { display:inline-flex; align-items:baseline; gap:4px; }
+.wmCrayonTotal .wmCrayonSep { padding-left:10px; border-left:1.5px solid rgba(200,150,60,.45); }
 @media (max-height:500px), (max-width:920px) {
-  .wmCrayonTotal { padding:3px 9px 3px 5px; margin-right:4px; gap:4px; }
-  .wmCrayonTotal .wmCrayonLabel { display:none; }
+  .wmCrayonTotal { padding:3px 9px 3px 5px; margin-right:4px; gap:6px; font-size:11px; }
+  .wmCrayonTotal .wmCrayonSep { padding-left:6px; }
   .wmCrayonTotal img { width:20px; height:20px; }
   .wmCrayonTotal b { font-size:16px; }
 }

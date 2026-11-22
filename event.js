@@ -6,20 +6,24 @@ let eventMode=false,eventElapsed=0,eventLast=0,sceneElapsed=0,typed=0,storyLine=
 let storySessionId=0,activeStoryKind=null;
 const LIMIT=1500,EVENT_ROOT='assets/event/';
 const eventImages={};
-const musicNames=['day','afternoon','sunset','opening','ending','monatium']; /* v1.5.1: 5 = World 2 night map */
+const musicNames=['day','afternoon','sunset','opening','ending','monatium','ghost_dragon_cave','ghost_deep_cave','ghost_village']; /* v1.5.1: 5 = World 2 night map; v1.9 World 4 (docs/world4/BGM_STAGE_MAPPING.md): 6 = 20. Dragon Cave (Crystal), 7 = 22. Deep Cave, 8 = 23. Ghost Village */
+window.GHOST_BGM_TRACKS=Object.freeze({DRAGON:6,DEEP:7,VILLAGE:8});
 const BGM_LOOP_BOUNDS={
  day:{start:0.05,end:88.85},
  afternoon:{start:0.05,end:73.75},
  sunset:{start:0.05,end:93.35},
  opening:{start:0.05,end:67.60},
  ending:{start:0.05,end:102.75},
- monatium:{start:0.05,end:94.45}
+ monatium:{start:0.05,end:94.45},
+ ghost_dragon_cave:{start:0.05,end:46.30},
+ ghost_deep_cave:{start:0.05,end:52.19},
+ ghost_village:{start:0.05,end:49.05}
 };
 window.__bgmLoopBounds=BGM_LOOP_BOUNDS;
 
 const tracks=musicNames.map(n=>{
  const a=new Audio(EVENT_ROOT+n+'.mp3');
- a.preload=(n==='opening'||n==='day')?'auto':(n==='monatium'?'none':'metadata'); /* v1.5.4: the night track loads when the night map starts */
+ a.preload=(n==='opening'||n==='day')?'auto':((n==='monatium'||n.startsWith('ghost_'))?'none':'metadata'); /* v1.5.4: the night track loads when the night map starts */
  a.loop=true;
  a.volume=0;
  const bounds=BGM_LOOP_BOUNDS[n];

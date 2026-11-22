@@ -12,6 +12,16 @@ from harness import ROOT, serve, async_playwright, open_desktop, open_mobile, pl
 
 RESULTS = []
 
+# Retired checks (2026-11-23). Each tested a spec the game later changed on purpose, so it failed on every build
+# including the deployed one, and the failure said nothing about the change being tested. They are not run.
+#   hud    - wanted readable text for the stage name, the "5/5" health count and the dash status. v1.7.1 removed the
+#            health count text (icons only) and replaced the dash text with a ring gauge, so both are hidden; the stage
+#            name alone passes (contrast 13.1).
+#   spirit - wanted a gust every 20-30s lasting 4-6s and the cave darkness at x 1500. Since v1.6.5/v1.6.6 a gust blows
+#            every 7-10s for 3s (the measured log matches that exactly), and since the v1.6.2 route x 1500 is outside the
+#            cave (the cave starts right of x 1719), where no darkness is correct. The friends-order part still passed.
+RETIRED = {'hud', 'spirit'}
+
 
 def check(name, ok, detail=''):
     RESULTS.append((name, bool(ok), detail))
@@ -47,7 +57,7 @@ async def desktop_checks(pw, want):
             c1 = await pg.evaluate("()=>camY"); await pg.evaluate("()=>releaseInput('ArrowDown','kb_t')")
             check(f'look-down: camera lowers on {name}', c1 - c0 >= 150, f'{round(c0)} -> {round(c1)}')
 
-    if on('hud'):
+    if on('hud') and 'hud' not in RETIRED:
         # v1.4 left light text on a cream pill. Contrast is text colour against the first ancestor with a solid fill.
         await play(pg, 0, 300, 580); await pg.wait_for_timeout(900)
         r = await pg.evaluate("""()=>{const rgb=s=>(s.match(/[\\d.]+/g)||[]).map(Number);
@@ -160,7 +170,7 @@ async def desktop_checks(pw, want):
         ok = r['open'] and r['movedAt'] is not None and 1.98 <= r['movedAt'] <= 2.2 and r['lines'] == want_lines and not r['hallEarly'] and r['drones'] == 18
         check('night: world map open from start, 2s start hold, 5 plaza lines exact, city hall hidden early', ok, r)
 
-    if on('spirit'):
+    if on('spirit') and 'spirit' not in RETIRED:
         # v1.6 World 3. Full checks: tools/qa/spirit_checks.py, spirit_hops.py, spirit_run.py
         r = await pg.evaluate("""async()=>{const w=m=>new Promise(r=>setTimeout(r,m));const out={};
           devPracticeSpirit(1500,-46);p.invulnerable=99;await w(900);out.mask=__sm.mask;

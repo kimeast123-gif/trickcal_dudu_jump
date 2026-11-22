@@ -248,12 +248,15 @@
       <div class="lobbyDemoStageTag" id="lobbyDemoStageTag">🏞️ ${DEMO_SCENES[0].title}</div>
 
       <!-- 8. 5 Interactive Capsule Menu Buttons (플레이 / 월드맵 / 챌린지 모드 / 키 설명 / 게임 옵션) -->
+      <!-- v1.9: golden crayons found, main story and world map counted apart; sits on the art, away from the menu -->
+      <div class="lobbyCrayonBadge" id="lobbyCrayonBadge" aria-live="polite">
+        <img src="assets/collectibles/golden_crayon.png?v=16" alt="" draggable="false">
+        <span class="lcbTitle">황금 크레파스</span>
+        <span class="lcbPart lcbFirst"><span class="lcbName">메인 스토리</span><b id="lobbyCrayonStory">0</b><span class="lcbOf" id="lobbyCrayonStoryTotal">/ 12</span></span>
+        <span class="lcbPart"><span class="lcbName">월드맵</span><b id="lobbyCrayonMap">0</b><span class="lcbOf" id="lobbyCrayonMapTotal">/ 0</span></span>
+      </div>
+
       <nav class="lobbyMenu" id="lobbyMenu" aria-label="메인 게임 메뉴">
-        <div class="lobbyCrayonBadge" id="lobbyCrayonBadge" aria-live="polite">
-          <img src="assets/collectibles/golden_crayon.png?v=16" alt="" draggable="false">
-          <span class="lobbyCrayonLabel">모은 황금 크레파스</span>
-          <b id="lobbyCrayonGot">0</b><span class="lobbyCrayonTotal" id="lobbyCrayonTotal">/ 0</span>
-        </div>
         <div class="lobbyMenuBtnWrap" style="--btn-idx:0">
           <svg class="lobbyPlayBurstRays" viewBox="0 0 64 46" aria-hidden="true">
             <path d="M12 34 L4 10 M28 36 L28 6 M44 40 L56 16" stroke="#fff380" stroke-width="6" stroke-linecap="round"/>
@@ -623,13 +626,12 @@
   let _lobbyCrayonText = '';
   function syncLobbyCrayonBadge() {
     if (typeof window.crayonTotals !== 'function') return;
-    const t = window.crayonTotals(), text = t.got + '/' + t.total;
+    const t = window.crayonTotals(), text = [t.story.got, t.story.total, t.map.got, t.map.total].join('/');
     if (text === _lobbyCrayonText) return;
     _lobbyCrayonText = text;
-    const got = $id('lobbyCrayonGot'), total = $id('lobbyCrayonTotal'), badge = $id('lobbyCrayonBadge');
-    if (got) got.textContent = String(t.got);
-    if (total) total.textContent = '/ ' + t.total;
-    if (badge) badge.title = `스토리 ${t.story.got}/${t.story.total}, 수인숲 나들이 ${t.w1.got}/${t.w1.total}, 정령산의 아침 ${t.spirit.got}/${t.spirit.total}`;
+    const set = (id, v) => { const el = $id(id); if (el) el.textContent = v; };
+    set('lobbyCrayonStory', String(t.story.got)); set('lobbyCrayonStoryTotal', '/ ' + t.story.total);
+    set('lobbyCrayonMap', String(t.map.got)); set('lobbyCrayonMapTotal', '/ ' + t.map.total);
   }
 
   function setLobbyNightMode(enableNight) {

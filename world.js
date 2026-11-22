@@ -132,20 +132,25 @@ function rememberStoryCrayon(id) {
  found.add(id);
  try { localStorage.setItem(STORY_CRAYON_KEY, JSON.stringify([...found])); } catch (e) { /* private mode: this session only */ }
 }
-// Collected / total golden crayons: story (12) + World1 stages + Spirit Mountain stars.
+// Collected / total golden crayons. v1.9: main story (12) and the world map are counted apart, and the world map
+// also per world (worlds[worldId]): World1 stages' crayons, Spirit Mountain's stars, Ghost Swamp's crayons.
 function crayonTotals() {
  const story = { got: 0, total: TOTAL_SPECIAL_COINS };
  const found = storyCrayonsFound();
  for (const l of levels) for (const d of (l.specialDefs || [])) if (found.has(d.id)) story.got++;
- const w1 = { got: 0, total: 0 }, spirit = { got: 0, total: 0 };
+ const worlds = {}, map = { got: 0, total: 0 };
  const save = typeof loadWorldMapSave === 'function' ? loadWorldMapSave() : null;
  for (const st of (typeof world1Stages !== 'undefined' ? world1Stages : [])) {
+  const total = st.hudStars || (Array.isArray(st.collectibleDefs) ? st.collectibleDefs.length : 0);
+  if (!total) continue;
   const rec = save && typeof getWorldStageRecord === 'function' ? getWorldStageRecord(save, st) : null;
-  const got = rec && Array.isArray(rec.collectibles) ? rec.collectibles.length : 0;
-  if (!st.worldId && Array.isArray(st.collectibleDefs)) { w1.total += st.collectibleDefs.length; w1.got += Math.min(got, st.collectibleDefs.length); }
-  else if (st.hudStars) { spirit.total += st.hudStars; spirit.got += Math.min(got, st.hudStars); }
+  const got = Math.min(total, rec && Array.isArray(rec.collectibles) ? rec.collectibles.length : 0);
+  const w = worlds[st.worldId || 'world1_beastforest'] || (worlds[st.worldId || 'world1_beastforest'] = { got: 0, total: 0 });
+  w.got += got; w.total += total; map.got += got; map.total += total;
  }
- return { got: story.got + w1.got + spirit.got, total: story.total + w1.total + spirit.total, story, w1, spirit };
+ const none = { got: 0, total: 0 };
+ return { got: story.got + map.got, total: story.total + map.total, story, map, worlds,
+  w1: worlds.world1_beastforest || none, spirit: worlds.world3_spiritmountain || none };
 }
 window.crayonTotals = crayonTotals;
 // All 12 golden crayons, including MB-SPEC-01/02 and EA-SPECIAL-01, are official collectibles.

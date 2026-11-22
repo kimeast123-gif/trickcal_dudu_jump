@@ -454,7 +454,7 @@ function platformStep(){
  for(const a of platforms){
   // v1.4: platforms that neither move nor blink keep their values; rewriting the same decimals 120 times a second
   // for ~200 platforms made the engine allocate a fresh number box each time (about 1MB of garbage per second).
-  if(!a.motion&&!a.blink){
+  if(!a.motion&&!a.blink&&!a.sink){
    if(a.prevX!==a.x)a.prevX=a.x;
    if(a.prevY!==a.y)a.prevY=a.y;
    const col=!(a.nonCollidable||a.hidden);
@@ -471,9 +471,13 @@ function platformStep(){
    const wave=Math.sin(levelClock*2*Math.PI/m.period+(m.phase||0))*m.range;
    if(m.axis==='x'){
     a.x=a.baseX+wave;
+    if(a.sink)a.y=a.baseY+(a.sinkY||0);/* v1.9: a sideways mud ledge in World 4 also sinks */
    }else{
-    a.y=a.baseY+wave;
+    a.y=a.baseY+wave+(a.sinkY||0);
    }
+  }else if(a.sink){
+   /* v1.9 World 4 sinking swamp ledge: ghost-swamp.js only moves sinkY; the platform itself moves here so dy carries Dudu */
+   a.y=a.baseY+(a.sinkY||0);
   }
   if(a.blink){
    const b=a.blink;
@@ -732,6 +736,8 @@ window.addEventListener('keyup',e=>{
 window.addEventListener('blur',()=>{if(typeof ensurePaused==='function')ensurePaused('blur');else if(state==='playing')pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(typeof ensurePaused==='function')ensurePaused('visibility');else if(state==='playing')pause();}});canvas.addEventListener('pointerdown',()=>canvas.focus());
 function beginJump(second){
  if(p.guardStun>0)return;
+ /* v1.9: World 4 sinking mud: the first jump out is a weak hop (ghost-swamp.js ghostEscapeJump) */
+ if(!second&&p.on&&p.on.sink&&p.on.sinkY>0.5&&typeof ghostEscapeJump==='function'&&ghostEscapeJump(p.on))return;
  p.touchHoldGrace=0;p.vy=second?-510:-540;p.jumps=second?2:1;p.ground=false;p.on=null;p.coyote=0;p.buffer=0;p.hold=0;p.jumpHeld=keys.has('Space');p.jumpCut=!p.jumpHeld;p.jumpOrigin=p.y;p.jumpHeight=0;
  if(second){
   spin=.36;burst(p.x,p.y-35,'#edc76f',10);
@@ -766,7 +772,7 @@ function update(dt){
 
  const stunned=p.guardStun>0;
  /* v1.5: the night map holds Dudu still for the first 2 seconds while the lead runners set off */
- const introLock=window.__duduIntroLock>0&&typeof isNightActive==='function'&&isNightActive();
+ const introLock=(window.__duduIntroLock>0&&typeof isNightActive==='function'&&isNightActive())||(window.__gsLock===true&&typeof activeGhostStage==='function'&&Boolean(activeGhostStage()));
  if(introLock){p.buffer=0;dashRequest=false;}
  if(stunned){
   p.guardStun=Math.max(0,p.guardStun-dt);
