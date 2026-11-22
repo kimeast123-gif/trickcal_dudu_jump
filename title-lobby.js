@@ -249,6 +249,11 @@
 
       <!-- 8. 5 Interactive Capsule Menu Buttons (플레이 / 월드맵 / 챌린지 모드 / 키 설명 / 게임 옵션) -->
       <nav class="lobbyMenu" id="lobbyMenu" aria-label="메인 게임 메뉴">
+        <div class="lobbyCrayonBadge" id="lobbyCrayonBadge" aria-live="polite">
+          <img src="assets/collectibles/golden_crayon.png?v=16" alt="" draggable="false">
+          <span class="lobbyCrayonLabel">모은 황금 크레파스</span>
+          <b id="lobbyCrayonGot">0</b><span class="lobbyCrayonTotal" id="lobbyCrayonTotal">/ 0</span>
+        </div>
         <div class="lobbyMenuBtnWrap" style="--btn-idx:0">
           <svg class="lobbyPlayBurstRays" viewBox="0 0 64 46" aria-hidden="true">
             <path d="M12 34 L4 10 M28 36 L28 6 M44 40 L56 16" stroke="#fff380" stroke-width="6" stroke-linecap="round"/>
@@ -610,7 +615,21 @@
         badge.textContent = unlocked ? '' : '🔒 엔딩 후';
       }
     }
+    syncLobbyCrayonBadge();
     syncReturnToLobbyOptionBtnVisibility();
+  }
+
+  // v1.8.5: every golden crayon found so far (story runs, World1 stages, Spirit Mountain), above the Play button
+  let _lobbyCrayonText = '';
+  function syncLobbyCrayonBadge() {
+    if (typeof window.crayonTotals !== 'function') return;
+    const t = window.crayonTotals(), text = t.got + '/' + t.total;
+    if (text === _lobbyCrayonText) return;
+    _lobbyCrayonText = text;
+    const got = $id('lobbyCrayonGot'), total = $id('lobbyCrayonTotal'), badge = $id('lobbyCrayonBadge');
+    if (got) got.textContent = String(t.got);
+    if (total) total.textContent = '/ ' + t.total;
+    if (badge) badge.title = `스토리 ${t.story.got}/${t.story.total}, 수인숲 나들이 ${t.w1.got}/${t.w1.total}, 정령산의 아침 ${t.spirit.got}/${t.spirit.total}`;
   }
 
   function setLobbyNightMode(enableNight) {
@@ -997,7 +1016,8 @@
         setTimeout(checkMount, 40);
       }
     };
-    checkMount();
+    /* v1.8.5: the lobby art waits for the first-download answer on phones (download-consent.js) */
+    (window.duduDownloadGate || Promise.resolve()).then(checkMount);
   }
 
   if (document.readyState === 'loading') {

@@ -645,6 +645,31 @@ body[data-game-state="ready"] .practiceHUD {
   pointer-events: auto;
 }
 
+/* v1.8.5: golden crayons found so far, sitting just above the Play button */
+.lobbyCrayonBadge {
+  position: absolute;
+  right: 4px;
+  bottom: calc(100% + 10px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 5px 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff6d6 0%, #ffe3a1 100%);
+  border: 2px solid #e8b64a;
+  box-shadow: 0 3px 0 #b7832a, 0 6px 14px rgba(70, 45, 10, 0.28);
+  color: #6a4510;
+  font-size: 15px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: auto;
+  z-index: 9;
+}
+.lobbyCrayonBadge img { width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(90, 60, 10, 0.35)); }
+.lobbyCrayonBadge b { font-size: 20px; color: #a8560b; }
+.lobbyCrayonBadge .lobbyCrayonTotal { font-size: 15px; color: #8a6420; }
+.titleLobby.is-night .lobbyCrayonBadge { box-shadow: 0 3px 0 #b7832a, 0 0 16px rgba(255, 214, 110, 0.55); }
+
 .lobbyMenuBtnWrap {
   position: relative;
   width: 100%;
@@ -1285,4 +1310,13 @@ body[data-game-state="ready"] .practiceHUD {
     max-height: 44px;
   }
   .lobbyCapsuleBtn { min-height: 30px; }
+}
+
+/* v1.8.5: crayon badge on phones in landscape */
+@media (max-height: 500px), (max-width: 920px) {
+  .lobbyMenu { top: 15%; }   /* room for the crayon badge above Play */
+  .lobbyCrayonBadge { bottom: calc(100% + 4px); padding: 3px 10px 3px 6px; font-size: 12px; gap: 4px; }
+  .lobbyCrayonBadge img { width: 20px; height: 20px; }
+  .lobbyCrayonBadge b { font-size: 15px; }
+  .lobbyCrayonBadge .lobbyCrayonTotal { font-size: 12px; }
 }

@@ -110,6 +110,7 @@ Claude 앱 대화에서 진행한 리뉴얼 작업을 Claude Code로 넘기기 �
 | `python tools/terrain_art_build.py` | `assets/terrain/` 그림으로 `terrain-art.js` 생성. 그림을 바꾸면 이미지 캐시 키 `CACHE`도 바꾼다 |
 | `python tools/qa/art_v2_physics_identity.py` | 새 지형 그림이 그려지는 발판 전부(258곳)에서 그림 켜고 끈 물리가 프레임마다 같은지 |
 | `python tools/qa/art_v2_file_open.py` / `art_v2_load_probe.py` / `art_v2_scenes.py` / `art_v2_pilot_qa.py` | 파일로 열기·휴대폰, 로딩·프레임·메모리, 비율·체크포인트·바람·화면 크기, 지역별 적용률과 접지 |
+| `python tools/qa/first_load_size.py` | 휴대폰 첫 방문 다운로드 용량(확인 전/후). `download-consent.js`의 `FIRST_DOWNLOAD_MB` 갱신용 |
 | `python tools/release.py v1.6.0` | 버전과 캐시 키 일괄 교체, 해시 목록 재생성 |
 
 환경 변수: `GAME_ROOT`(기본 저장소 최상단), `QA_PORT`(기본 8765), `QA_QUERY`(모든 페이지 주소에 붙일 값, 예: `?oldart=1`), `CHROME`(기본 Playwright 내장 Chromium).

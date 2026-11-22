@@ -410,6 +410,14 @@
       `;
     }).join('');
 
+    // v1.8.5: every golden crayon found so far, big at the top right of the map
+    const ct = typeof window.crayonTotals === 'function' ? window.crayonTotals() : null;
+    const crayonPill = ct ? `
+            <div class="wmCrayonTotal" title="스토리 ${ct.story.got}/${ct.story.total}, 수인숲 나들이 ${ct.w1.got}/${ct.w1.total}, 정령산의 아침 ${ct.spirit.got}/${ct.spirit.total}">
+              <img src="assets/collectibles/golden_crayon.png?v=16" alt="" draggable="false">
+              <span class="wmCrayonLabel">모은 황금 크레파스</span>
+              <b>${ct.got}</b><span class="wmCrayonOf">/ ${ct.total}</span>
+            </div>` : '';
     wrap.innerHTML = `
       <div class="wmPanel wmExpeditionModal" role="dialog" aria-modal="true" aria-labelledby="wmHeaderTitle">
         <div class="wmHeader">
@@ -417,7 +425,7 @@
             <span class="wmEyebrow">지역 선택</span>
             <h2 id="wmHeaderTitle">두두의 세계지도</h2>
           </div>
-          <div class="wmHeaderActions">
+          <div class="wmHeaderActions">${crayonPill}
             <button type="button" class="wmCarouselBtn" onclick="scrollWorldMapCards(-1)" aria-label="이전 지역 보기">◀</button>
             <button type="button" class="wmCarouselBtn" onclick="scrollWorldMapCards(1)" aria-label="다음 지역 보기">▶</button>
             <button type="button" class="wmBackBtn" id="wmBackToMainBtn" onclick="backFromWorldMapToMainMenu()">타이틀로 돌아가기</button>

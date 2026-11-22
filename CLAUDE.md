@@ -28,12 +28,13 @@ python tools/qa/regression.py                 # 커밋 전에 반드시. 전부 
 ## 구조
 
 전부 전역 스크립트이고 `index.html`의 로드 순서에 의존한다(ES 모듈 아님).
-`perf.js → release-config.js → mobile-controls.js → game.js → world.js → npc-data.js → hazards.js → renderer.js → challenge-world.js → challenge-hazards.js → event.js → challenge-mode.js → worldmap-mode.js → night-monatium.js → spirit-mountain.js → terrain-art.js → uiux-redesign.js → title-lobby.js`
+`perf.js → release-config.js → mobile-controls.js → download-consent.js → game.js → world.js → npc-data.js → hazards.js → renderer.js → challenge-world.js → challenge-hazards.js → event.js → challenge-mode.js → worldmap-mode.js → night-monatium.js → spirit-mountain.js → terrain-art.js → uiux-redesign.js → title-lobby.js`
 
 | 파일 | 내용 |
 | --- | --- |
 | `perf.js` | 4096px 넘는 이미지 자동 분할(`drawImage` 감쌈), 프레임 모니터, 저사양 모드, `?fps=1` 표시 |
 | `mobile-controls.js` | 모든 입력의 입구 `pressInput/releaseInput`, PC 키 설정, 떠다니는 스틱, 두 번 누르기 대시, 확대 방지 |
+| `download-consent.js` | 휴대폰·태블릿 첫 방문 때 내려받을 용량(약 39MB)을 알리고 확인을 받는다. 확인 전에는 그림을 받지 않는다(`window.duduDownloadGate`를 `game.js` 부팅, 로비, `terrain-art.js`가 기다림). 큰 그림을 바꾸면 `tools/qa/first_load_size.py`로 다시 재서 `FIRST_DOWNLOAD_MB`를 고친다. 자동 QA 브라우저는 묻지 않음(`?dlgate=1`이면 물음) |
 | `game.js` | 물리(`update`, 120Hz 고정 스텝 `STEP=1/120`), 점프/대시, 카메라(`getCameraProfile`, `updateLookDown`), 메인 루프 `frame` |
 | `world.js` | 스토리 6개 레벨 데이터와 배치 함수, 레벨 로드, 지역 전환, 수집물 |
 | `hazards.js` | NPC와 적(경비, 마요 추격, 마리 보스), 연습 진입 |

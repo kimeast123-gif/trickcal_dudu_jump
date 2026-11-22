@@ -175,13 +175,14 @@ js = r"""// ====================================================================
   const K = __KITS__;
   window.__DUDU_TERRAIN_KITS = K;
   for (const k of Object.keys(K)) K[k].img = {};
-  if (window.__DUDU_TERRAIN_ART) for (const k of Object.keys(K)) {
-    for (const n of Object.keys(K[k].parts)) {
+  /* waits for the first-download answer on phones (download-consent.js) */
+  if (window.__DUDU_TERRAIN_ART) (window.duduDownloadGate || Promise.resolve()).then(() => {
+    for (const k of Object.keys(K)) for (const n of Object.keys(K[k].parts)) {
       const im = new Image();
       im.onload = () => { K[k].img[n] = im; };
       im.src = K[k].parts[n];
     }
-  }
+  });
   const failed = {};
   function fail(k, e) { failed[k] = true; console.warn('[terrain-art] ' + k + ' off, release art instead:', e); }
   const ready = (...ks) => ks.every(k => Object.keys(K[k].parts).every(n => K[k].img[n]));

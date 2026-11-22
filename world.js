@@ -116,6 +116,38 @@ const transitionFrames = []; const TRANSITION_FRAME_COUNT = 20; let transitionSe
 let TOTAL_SPECIAL_COINS = 0; // Computed from all six scenes after level construction (TEST28).
 const securedSpecialEvent = new Set();
 const securedSpecialPractice = new Set();
+// v1.8.5: golden crayons picked up in a regular story run are remembered for good (the practice run keeps no
+// records), so the lobby and the world map can show everything the player has found so far.
+const STORY_CRAYON_KEY = 'dudu_story_crayons_v1';
+let _storyCrayonsFound = null;
+function storyCrayonsFound() {
+ if (_storyCrayonsFound) return _storyCrayonsFound;
+ try { _storyCrayonsFound = new Set(JSON.parse(localStorage.getItem(STORY_CRAYON_KEY) || '[]')); }
+ catch (e) { _storyCrayonsFound = new Set(); }
+ return _storyCrayonsFound;
+}
+function rememberStoryCrayon(id) {
+ const found = storyCrayonsFound();
+ if (found.has(id)) return;
+ found.add(id);
+ try { localStorage.setItem(STORY_CRAYON_KEY, JSON.stringify([...found])); } catch (e) { /* private mode: this session only */ }
+}
+// Collected / total golden crayons: story (12) + World1 stages + Spirit Mountain stars.
+function crayonTotals() {
+ const story = { got: 0, total: TOTAL_SPECIAL_COINS };
+ const found = storyCrayonsFound();
+ for (const l of levels) for (const d of (l.specialDefs || [])) if (found.has(d.id)) story.got++;
+ const w1 = { got: 0, total: 0 }, spirit = { got: 0, total: 0 };
+ const save = typeof loadWorldMapSave === 'function' ? loadWorldMapSave() : null;
+ for (const st of (typeof world1Stages !== 'undefined' ? world1Stages : [])) {
+  const rec = save && typeof getWorldStageRecord === 'function' ? getWorldStageRecord(save, st) : null;
+  const got = rec && Array.isArray(rec.collectibles) ? rec.collectibles.length : 0;
+  if (!st.worldId && Array.isArray(st.collectibleDefs)) { w1.total += st.collectibleDefs.length; w1.got += Math.min(got, st.collectibleDefs.length); }
+  else if (st.hudStars) { spirit.total += st.hudStars; spirit.got += Math.min(got, st.hudStars); }
+ }
+ return { got: story.got + w1.got + spirit.got, total: story.total + w1.total + spirit.total, story, w1, spirit };
+}
+window.crayonTotals = crayonTotals;
 // All 12 golden crayons, including MB-SPEC-01/02 and EA-SPECIAL-01, are official collectibles.
 let specialCoins = [];
 
@@ -1530,6 +1562,7 @@ function updateSpecialCoins(dt){
     if(isSpecialCoinReturnSafe(sc)){
      sc.state='secured';
      setForCoin(sc).add(sc.id);
+     if (eventMode && gameMode === 'story') rememberStoryCrayon(sc.id);
      specialCoinTransitionLog.push({id:sc.id,from:'pending',to:'secured',platformId:p.on?.id||'ground',px:Math.round(p.x),py:Math.round(p.y),t:Number((typeof time==='number'?time:0).toFixed(2))});
      burst(p.x,p.y-45,'#ffae2b',16);
      tone(980,.14,'sine',.05);
