@@ -2309,3 +2309,90 @@ body[data-game-state="paused"] .pauseOnlyBtn { display: inline-flex; align-items
 #vbtn-dash[data-dash-state="charge"] { --dash-col: #f4ce83; }
 #vbtn-dash[data-dash-state="busy"], #vbtn-dash[data-dash-state="air"] { --dash-col: #adb5bd; opacity: 0.75; }
 #vbtn-dash[data-dash-state="stun"] { --dash-col: #ff6b6b; }
+
+/* ===== v1.9.3 options panel tidy (user: boxes scattered in size and position) =====
+   One layout for the whole panel, last in the file so it wins over the older blocks above:
+   - every section (사운드, PC 키보드, 모바일 컨트롤러) has the same title style;
+   - PC key rows: two aligned columns, fixed row height, every key box and the double-tap switch in the same slot,
+     even divider lines;
+   - phone choices: fixed label column, equal-height buttons;
+   - footer: two equal buttons, pinned to the bottom of the card. */
+#mobileSettingsModal .mobileSettingsCard {
+  display: flex; flex-direction: column; gap: 0;
+  padding: 0 22px; max-height: min(92vh, 640px); overflow-y: auto; overscroll-behavior: contain;
+}
+body:not(.is-mobile-device) #mobileSettingsModal .mobileSettingsCard { width: min(560px, 95%); }
+#mobileSettingsModal .mobileSettingsHeader {
+  position: sticky; top: 0; z-index: 2; background: var(--ds-surface-card);
+  padding: 16px 0 10px; margin: 0; border-bottom: 1px solid var(--ds-border-subtle, rgba(60, 70, 55, 0.14));
+}
+#mobileSettingsModal .soundSettingDivider { display: none; }
+
+/* section titles */
+#mobileSettingsModal .soundVolumeGroup > .mobileSettingLabel,
+#mobileSettingsModal .pcKeybindSectionTitle,
+#mobileSettingsModal .mobileControlSectionTitle {
+  display: flex; align-items: center; gap: 8px; margin: 0; padding: 0 !important;
+  justify-content: flex-start; background: none; border-radius: 0; font-size: 14px; font-weight: 800; color: #3f5f3b;
+}
+#mobileSettingsModal .soundVolumeGroup > .mobileSettingLabel::before,
+#mobileSettingsModal .pcKeybindSectionTitle::before,
+#mobileSettingsModal .mobileControlSectionTitle::before {
+  content: ''; width: 4px; height: 14px; border-radius: 2px; background: var(--ds-accent-primary); flex: 0 0 auto;
+}
+#mobileSettingsModal .mobileControlSectionTitle { margin: 16px 0 6px; }
+body:not(.is-mobile-device) #mobileSettingsModal .mobileControlSectionTitle::after { content: none; }
+
+/* sound */
+#mobileSettingsModal .soundVolumeGroup { display: flex; flex-direction: column; gap: 10px; padding: 14px 0 4px; margin: 0; }
+#mobileSettingsModal .soundVolumeGroup > .mobileSettingLabel strong { margin-left: auto; font-size: 14px; color: var(--ds-accent-primary); }
+#mobileSettingsModal .soundVolumeGroup .soundVolumeHint { display: none; }
+
+/* PC keys */
+#mobileSettingsModal .pcKeybindSection { margin: 0; padding: 0; }
+#mobileSettingsModal .pcKeybindHeaderRow { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 4px; }
+#mobileSettingsModal .pcKeybindResetBtn { height: 30px; padding: 0 12px; border-radius: 8px; font-size: 12px; }
+#mobileSettingsModal .pcKeybindGrid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; row-gap: 0; margin: 0; }
+#mobileSettingsModal .pcKeybindRow {
+  display: grid; grid-template-columns: 1fr 112px; align-items: center; min-height: 48px; margin: 0; padding: 0;
+  border: 0; border-bottom: 1px solid var(--ds-border-subtle, rgba(60, 70, 55, 0.12)); background: none; border-radius: 0;
+}
+#mobileSettingsModal .pcKeybindGrid > .pcKeybindRow:nth-last-child(-n+2) { border-bottom: 0; }
+#mobileSettingsModal .pcKeybindActionName { font-size: 13px; font-weight: 600; }
+#mobileSettingsModal .pcKeybindCaptureBtn { width: 112px; height: 34px; min-width: 0; padding: 0 8px; font-size: 12.5px; border-radius: 8px; }
+#mobileSettingsModal .pcKeybindCheck { justify-self: center; width: 22px; height: 22px; margin: 0; accent-color: var(--ds-accent-primary); cursor: pointer; }
+#mobileSettingsModal .pcKeybindHintRow { margin: 0; min-height: 18px; }
+
+/* phone choices */
+#mobileSettingsModal .mobileSettingGroup:not(.soundVolumeGroup) {
+  display: grid; grid-template-columns: 9.5em 1fr; align-items: center; column-gap: 12px; row-gap: 4px;
+  margin: 0; padding: 5px 0;
+}
+#mobileSettingsModal .mobileSettingGroup:not(.soundVolumeGroup) > .mobileSettingLabel { font-size: 13px; font-weight: 600; color: var(--ds-ink-primary); }
+#mobileSettingsModal .mobileSettingGroup:not(.soundVolumeGroup) > .soundVolumeHint { grid-column: 2; font-size: 11px; }
+#mobileSettingsModal .mobileSettingBtns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+#mobileSettingsModal .optChoiceBtn { height: 38px; min-width: 0; padding: 0 4px; font-size: 13px; line-height: 1.1; white-space: normal; word-break: keep-all; letter-spacing: -0.02em; }
+
+/* footer */
+#mobileSettingsModal .mobileSettingsFooter {
+  position: sticky; bottom: 0; z-index: 2; background: var(--ds-surface-card);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 0; padding: 12px 0 16px;
+  border-top: 1px solid var(--ds-border-subtle, rgba(60, 70, 55, 0.14));
+}
+#mobileSettingsModal .optFullscreenBtn, #mobileSettingsModal .optConfirmBtn { width: 100%; height: 44px; min-width: 0; margin: 0; font-size: 14px; font-weight: 700; }
+
+/* phones in landscape: tighter so the whole panel fits without scrolling */
+@media (max-height: 520px) {
+  #mobileSettingsModal .mobileSettingsCard { padding: 0 16px; max-height: 96vh; }
+  #mobileSettingsModal .mobileSettingsHeader { padding: 9px 0 7px; }
+  #mobileSettingsModal .soundVolumeGroup { flex-direction: row; align-items: center; gap: 12px; padding: 8px 0 2px; }
+  #mobileSettingsModal .soundVolumeGroup > .mobileSettingLabel { flex: 0 0 9.5em; }
+  #mobileSettingsModal .soundVolumeGroup > .mobileSettingLabel strong { order: 2; }
+  #mobileSettingsModal .soundVolumeGroup > .soundVolumeSlider { flex: 1 1 auto; }
+  #mobileSettingsModal .mobileControlSectionTitle { margin: 8px 0 2px; }
+  #mobileSettingsModal .mobileSettingGroup:not(.soundVolumeGroup) { padding: 3px 0; }
+  #mobileSettingsModal .optChoiceBtn { height: 34px; font-size: 12px; }
+  #mobileSettingsModal .mobileSettingGroup:not(.soundVolumeGroup) > .soundVolumeHint { display: none; }
+  #mobileSettingsModal .mobileSettingsFooter { margin-top: 6px; padding: 8px 0 10px; }
+  #mobileSettingsModal .optFullscreenBtn, #mobileSettingsModal .optConfirmBtn { height: 38px; }
+}
