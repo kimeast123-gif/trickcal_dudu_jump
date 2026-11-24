@@ -1,0 +1,13 @@
+from,to,from_y,to_y,rise_px,horizontal_gap_px,result,why,action
+DC51-B2,DC51-D1,290,-20,310,550,NO_DIRECT,rise above the double-jump top (about 279px),skips the whole left loop if it worked: rise kept above 300
+DC51-B2,DC51-C4,290,-100,390,0 (below it),NO_DIRECT,rise far above the double-jump top,
+DC51-B1,DC51-D1,384,-20,404,250,NO_DIRECT,rise far above the double-jump top,
+DC51-B1,DC51-D2,384,60,324,1050,NO_DIRECT,rise above the double-jump top and far,
+DC51-A3,DC51-D2,479,60,419,1380,NO_DIRECT,,
+DC51-B3,DC51-C3,210,-180,390,0 (below it),NO_DIRECT,,
+DC51-B4,DC51-C3,140,-180,320,190,NO_DIRECT,rise above the double-jump top,skips C1 and C2 if it worked: C3 raised to -180 for this
+DC51-C1,DC51-C3,40,-180,220,510,RETEST,double jump plus dash may just reach (estimate 460-500px),skips only C2 (one small step); check by playing
+DC51-A3,DC51-B2,479,290,189,0 (below it),POSSIBLE,"B2 hangs over A3; a double jump goes up onto it",skips only B1 (one small step); harmless
+DC51-D3 or lower,DC51-CP2,,,,,INTENDED,CP2 is reached from D3 (down 120); the low row is 2300px+ away,the CP2 change also needs book zone D reached
+any T-row block,DC51-GOAL,,,,,INTENDED,the goal pad is 173px past the last top block; the CP2 pad is 3500px away,
+floor,any ledge,,,,,NO_DIRECT,the floor is not ground: touching it restarts at the checkpoint,

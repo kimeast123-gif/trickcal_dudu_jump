@@ -13,7 +13,7 @@
 // ============================================================================
 
 const GS_WORLD_ID = 'world4_ghostswamp';
-const GS_ASSET_Q = '?v=v1_9_3_261125'; // rewritten by tools/release.py on every deploy
+const GS_ASSET_Q = '?v=v1_10_0_261125'; // rewritten by tools/release.py on every deploy
 
 // Sinking swamp ledge (MECHANICS_EVENTS_SPEC A, v1.9 as the user described it): the ledge stays where it is; after
 // 1.0s of standing on it Dudu's body slowly sinks into its mud. Jumping out puts her footing back on top.

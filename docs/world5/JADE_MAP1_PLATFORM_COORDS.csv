@@ -1,0 +1,37 @@
+﻿id,x,y,w,h,type,landable,moving,zone,original_sketch_id,next_on_route
+DC51-START,60,580,380,20,pad,yes,no,A,flag 1,A1
+DC51-A1,620,491,460,20,long,yes,no,A,a,A2
+DC51-A2,1270,556,460,20,long,yes,no,A,b,A3
+DC51-A3,1900,479,160,20,small,yes,no,A,c,B1
+DC51-B1,2230,384,160,20,small,yes,no,B,d,B2
+DC51-B2,1660,290,430,20,long,yes,no,B,e,B3
+DC51-B3,1040,210,420,20,long,yes,no,B,f,B4
+DC51-B4,700,140,150,20,small,yes,no,B,g,C1
+DC51-C1,380,40,150,20,small,yes,no,C,h,C2
+DC51-C2,710,-70,150,20,small,yes,no,C,i,C3
+DC51-C3,1040,-180,600,20,long,yes,no,C,j,C4
+DC51-C4,1840,-100,600,20,long,yes,no,C,k,D1
+DC51-D1,2640,-20,600,20,long,yes,no,D,l,D2
+DC51-D2,3440,60,600,20,long,yes,no,D,m,D3
+DC51-D3,4240,-30,560,20,long,yes,no,D,n,CP2
+DC51-CP2,5000,90,420,20,pad,yes,no,CP2,flag 2,L1
+DC51-L1,5555,200,170,20,small,yes,no,T,low 1,next block in the 3-row field
+DC51-M1,5858,95,170,20,small,yes,no,T,mid 1,next block in the 3-row field
+DC51-U1,6195,-10,170,20,small,yes,no,T,top 1,next block in the 3-row field
+DC51-L2,6186,200,170,20,small,yes,no,T,low 2,next block in the 3-row field
+DC51-M2,6547,95,170,20,small,yes,no,T,mid 2,next block in the 3-row field
+DC51-U2,6924,-10,170,20,small,yes,no,T,top 2,next block in the 3-row field
+DC51-L3,7006,200,170,20,small,yes,no,T,low 3,next block in the 3-row field
+DC51-M3,7367,95,170,20,small,yes,no,T,mid 3,next block in the 3-row field
+DC51-U3,7769,-10,170,20,small,yes,no,T,top 3,next block in the 3-row field
+DC51-L4,7810,200,170,20,small,yes,no,T,low 4,next block in the 3-row field
+DC51-M4,8253,95,170,20,small,yes,no,T,mid 4,next block in the 3-row field
+DC51-U4,8597,-10,170,20,small,yes,no,T,top 4,next block in the 3-row field
+DC51-L5,8614,200,170,20,small,yes,no,T,low 5,next block in the 3-row field
+DC51-GOAL,8940,40,520,20,pad,yes,no,GOAL,flag 3,
+FLOOR,-200..9900,700 (x<3000) / 600 (3300-3900) / 420 (x>4150),,,fall zone (render only),no,no,,brown floor,falling in restarts at the checkpoint (killYAt = floor + 30)
+CHECKPOINT-1,200,580,,,flag,,,,flag 1 (start),
+CHECKPOINT-2,5210,90,,,flag,,,,flag 2,
+GOAL,9200,40,,,goal,,,,flag 3,
+BLUE-LINE,5240,,,,trigger,,,,blue dotted line,crossing it after checkpoint 2 sends Jade and Opal to the crying spot
+CRY-SPOTS,6300 / 7450 / 8550,420,,,npc anchor,,,T1/T2/T3,,Opal cries here (Jade 120px to her left)

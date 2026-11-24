@@ -1861,6 +1861,7 @@ function updateHazards(dt){
   if(typeof updateNightMonatium==='function')updateNightMonatium(dt);
   if(typeof updateSpiritMountain==='function')updateSpiritMountain(dt);
   if(typeof updateGhostSwamp==='function')updateGhostSwamp(dt);
+  if(typeof updateDragonCave==='function')updateDragonCave(dt);
   return;
  }
  hazardClock+=dt;

@@ -103,7 +103,7 @@ const WORLDMAP_CARDS = [
     implementationStatus: 'playable',
     unlockCondition: null,
     action: 'openGhostStageSelect',
-    thumbnail: 'assets/world/ghostswamp/bg1.webp?v=v1_9_3_261125',
+    thumbnail: 'assets/world/ghostswamp/bg1.webp?v=v1_10_0_261125',
     fallbackThumb: makePlaceholderSvgDataUri('무시무시 유령늪', '안개 낀 늪', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
     statusBadge: '플레이 가능',
     isPlaceholderArt: false
@@ -112,15 +112,15 @@ const WORLDMAP_CARDS = [
     order: 5,
     id: 'world5_dragoncave',
     title: '땅속 여행 1: 용족동굴',
-    subtitle: '깊은 땅속, 반짝이는 광맥 사이로',
+    subtitle: '다섯 용족의 방에서 벌어지는 소동',
     kind: 'world',
-    implementationStatus: 'coming_soon',
+    implementationStatus: 'playable',
     unlockCondition: null,
-    action: 'showComingSoon',
-    thumbnail: makePlaceholderSvgDataUri('용족동굴', '곧 열려요', '#4a2c2a', '#1f1211', '#ff922b', '💎'),
-    fallbackThumb: makePlaceholderSvgDataUri('용족동굴', '곧 열려요', '#4a2c2a', '#1f1211', '#ff922b', '💎'),
-    statusBadge: '준비 중',
-    isPlaceholderArt: true
+    action: 'openDragonStageSelect',
+    thumbnail: 'assets/world/dragoncave/bg1.webp?v=v1_10_0_261125',
+    fallbackThumb: makePlaceholderSvgDataUri('용족동굴', '다섯 용족의 방', '#1f5f5b', '#0d2624', '#96f2d7', '💎'),
+    statusBadge: '5-1 플레이 가능',
+    isPlaceholderArt: false
   },
   {
     order: 6,
@@ -177,6 +177,18 @@ function makeDefaultWorldMapSave() {
           ghost_swamp_1_2: { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
           ghost_swamp_2:   { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
           ghost_swamp_3:   { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null }
+        }
+      },
+      // v1.10: World 5 「용족동굴」, five rooms in order (5-1 to 5-5); each opens when the one before is cleared and the
+      // world is cleared by 5-5. Only 5-1 is built so far.
+      world5_dragoncave: {
+        regionCleared: false,
+        stages: {
+          dragon_cave_1: { unlocked: true,  cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
+          dragon_cave_2: { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
+          dragon_cave_3: { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
+          dragon_cave_4: { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null },
+          dragon_cave_5: { unlocked: false, cleared: false, bestSeconds: null, retries: 0, hits: 0, collectibles: [], lastEntryRoute: 'default', lastExitRoute: null }
         }
       }
     }
@@ -252,6 +264,22 @@ function normalizeWorldMapSave(raw) {
     const S4 = base.worlds.world4_ghostswamp.stages;
     if (S4.ghost_swamp_1.cleared) S4.ghost_swamp_1_2.unlocked = true;
     base.worlds.world4_ghostswamp.regionCleared = Boolean(w4.regionCleared) || S4.ghost_swamp_3.cleared;
+  }
+  // v1.10: World 5. Saves from before have no entry and keep the defaults above.
+  const w5 = raw.worlds && raw.worlds.world5_dragoncave;
+  if (w5 && typeof w5 === 'object' && w5.stages && typeof w5.stages === 'object') {
+    for (const k of Object.keys(base.worlds.world5_dragoncave.stages)) {
+      const st = w5.stages[k];
+      if (!st || typeof st !== 'object') continue;
+      const rec = base.worlds.world5_dragoncave.stages[k];
+      rec.unlocked = k === 'dragon_cave_1' ? true : Boolean(st.unlocked);
+      rec.cleared = Boolean(st.cleared);
+      rec.bestSeconds = (typeof st.bestSeconds === 'number' && Number.isFinite(st.bestSeconds)) ? st.bestSeconds : null;
+      rec.retries = Math.max(0, parseInt(st.retries || 0, 10) || 0);
+      rec.hits = Math.max(0, parseInt(st.hits || 0, 10) || 0);
+      rec.collectibles = Array.isArray(st.collectibles) ? Array.from(new Set(st.collectibles)) : [];
+    }
+    base.worlds.world5_dragoncave.regionCleared = Boolean(w5.regionCleared) || base.worlds.world5_dragoncave.stages.dragon_cave_5.cleared;
   }
   return base;
 }
@@ -1901,6 +1929,10 @@ function handleWorldMapCardAction(cardId) {
   }
   if (card.action === 'openGhostStageSelect' && typeof openGhostStageSelect === 'function') {
     openGhostStageSelect();
+    return;
+  }
+  if (card.action === 'openDragonStageSelect' && typeof openDragonStageSelect === 'function') {
+    openDragonStageSelect();
     return;
   }
 }

@@ -1,0 +1,29 @@
+{
+  "note": "First tuning values (not user-confirmed) from dragon-cave-pinball.js. Board units are pixels of 01_RUDE_PINBALL_SKETCH.png; the board is drawn at about 0.86x.",
+  "goalKg": 500,
+  "sandbagKg": { "value": 5, "status": "temporary, user has not set it" },
+  "board": { "x0": 322, "y0": 14, "x1": 833, "y1": 778, "corner": 95, "laneX": 420, "laneTop": 100, "drainY": 745 },
+  "ball": { "radius": 17, "gravity": 1100, "maxSpeed": 1500, "substepsPer120HzStep": 4, "stuckSpeed": 25, "stuckSeconds": 1.5 },
+  "launcher": { "x": 375, "y": 712, "fullChargeSeconds": 1.2, "minSpeed": 620, "maxSpeed": 1520 },
+  "flippers": { "hinges": [[503, 640], [754, 640]], "length": 108, "radius": 9, "restAngleRad": 0.52, "upAngleRad": -0.44, "upSpeedRadPerS": 18, "downSpeedRadPerS": 12, "restTipGap": 50, "restTipGapOverBallDiameter": 1.47 },
+  "restitution": { "wall": 0.5, "plate": 0.85, "sandbag": 0.7, "flipper": 0.3 },
+  "kicks": { "plate": 260, "sandbag": 140 },
+  "targets": {
+    "plates": [
+      { "id": "P20", "x": 626, "y": 92, "r": 50, "kg": 20 },
+      { "id": "P10L", "x": 525, "y": 237, "r": 30, "kg": 10 },
+      { "id": "P10R", "x": 712, "y": 240, "r": 30, "kg": 10 },
+      { "id": "P10C", "x": 620, "y": 327, "r": 31, "kg": 10 },
+      { "id": "P3L", "x": 503, "y": 446, "r": 19, "kg": 3 },
+      { "id": "P3R", "x": 742, "y": 452, "r": 19, "kg": 3 }
+    ],
+    "sandbags": [
+      { "id": "BAGL", "x": 459, "y": 143, "length": 56, "thickness": 20, "angleRad": -0.66 },
+      { "id": "BAGR", "x": 798, "y": 143, "length": 56, "thickness": 20, "angleRad": 0.66 }
+    ],
+    "rescoreCooldownSeconds": 0.15
+  },
+  "scorePanel": { "x": 567, "y": 460, "w": 120, "h": 34, "collides": false },
+  "gym": { "rudeX": 470, "talkReach": 120, "entryX": 905, "entryReach": 46, "returnX": 360 },
+  "music": { "5-1": "9 07. No Way Out", "5-2 gym and talks": "10 33. This Is Awkward", "5-2 pinball": "11 35. Trick Or Treat" }
+}

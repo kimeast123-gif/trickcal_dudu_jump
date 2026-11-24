@@ -1818,6 +1818,7 @@ function drawPlatform(a) {
   if (a.nightDraw && typeof drawNightPlatform === 'function') { drawNightPlatform(a, drawX, drawY); return; }
   if (a.smDraw && typeof drawSpiritPlatform === 'function') { drawSpiritPlatform(a, drawX, drawY); return; }
   if (a.gsDraw && typeof drawGhostPlatform === 'function') { drawGhostPlatform(a, drawX, drawY); return; }
+  if (a.dcDraw && typeof drawDragonPlatform === 'function') { drawDragonPlatform(a, drawX, drawY); return; }
 
   // [A-4 Fix]: Distinct non-collidable turret perch pedestal (`C3-TURRET-P1/P2/P3`, `nonCollidable: true`)
   if (a.nonCollidable) {
@@ -2210,6 +2211,7 @@ function draw() {
   if (typeof drawNightMonatiumBack === 'function') drawNightMonatiumBack();
   if (typeof drawSpiritBack === 'function') drawSpiritBack();
   if (typeof drawGhostBack === 'function') drawGhostBack();
+  if (typeof drawDragonBack === 'function') drawDragonBack();
   drawPitShade(viewW, viewH);
 
   if (typeof gameMode !== 'undefined' && gameMode === 'world') {
@@ -2244,6 +2246,7 @@ function draw() {
     if (typeof drawNightMonatiumFront === 'function') drawNightMonatiumFront();
     if (typeof drawSpiritFront === 'function') drawSpiritFront();
     if (typeof drawGhostFront === 'function') drawGhostFront();
+    if (typeof drawDragonFront === 'function') drawDragonFront();
   } else {
     drawActors();
     drawBombs();
@@ -2333,12 +2336,14 @@ function draw() {
   /* v1.9: hidden while Rim carries Dudu off in World 4-2 */
   if (!(window.__gsHideDudu && typeof activeGhostStage === 'function' && activeGhostStage())) renderCharacter();
   if (typeof drawGhostAfterDudu === 'function') drawGhostAfterDudu();   /* v1.9: World 4 mud over Dudu's legs */
+  if (typeof drawDragonAfterDudu === 'function') drawDragonAfterDudu();   /* v1.10: World 5 books and tears */
   drawStageProps('foreground');
   drawProtection();
   drawDeveloperQaOverlay();
   ctx.restore();
   if (typeof drawSpiritOverlay === 'function') drawSpiritOverlay();
   if (typeof drawGhostOverlay === 'function') drawGhostOverlay();
+  if (typeof drawDragonOverlay === 'function') drawDragonOverlay();
   drawMapEdgeMist();
   if (window.__screenFade) {
     const f = window.__screenFade;
