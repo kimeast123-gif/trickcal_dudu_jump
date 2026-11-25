@@ -2,9 +2,10 @@
 5-1 Jade and Opal (DUDU_WORLD5_STAGE51_JADE_OPAL_MOTION_REV3_*, folder 03_NPC_MOTIONS) and
 5-2 Rude (DUDU_WORLD5_STAGE52_RUDE_PINBALL_MOTION_REV2_*, folder assets/npc/rude) and
 5-3 Kidian (DUDU_WORLD5_STAGE53_KIDIAN_CLAUDE_MASTER_REV2_*, folder 02_NPC_GIF) and
-5-4 Ritz (DUDU_WORLD5_STAGE54_RITZ_TRAINING_CLAUDE_*, folder 02_RITZ_ANIMATIONS, files Leets_*).
+5-4 Ritz (DUDU_WORLD5_STAGE54_RITZ_TRAINING_CLAUDE_*, folder 02_RITZ_ANIMATIONS, files Leets_*) and
+5-5 Daya and Amelia (DUDU_WORLD5_STAGE55_DAYA_AMELIA_CLAUDE_* inner folder, 02_DAYA_ANIMATIONS, 03_AMELIA_ANIMATIONS).
 
-    python tools/dragon_cave_motions.py <5-1 package> <5-2 package> <5-3 package> <5-4 package>
+    python tools/dragon_cave_motions.py <5-1 package> <5-2 package> <5-3 package> <5-4 package> <5-5 package>
 
 Reads the GIFs (1024x1024 each) and writes
   assets/npc/dragoncave/<key>.webp   one packed sheet per motion (every frame cropped to its own bounds)
@@ -51,7 +52,13 @@ KIDIAN_SCALE = {'move': 0.120, 'dance': 0.107, 'fly': 0.160, 'land': 0.270}
 # Ritz: Idle is framed much closer than the two attacks (her body is about 715 GIF px tall there, about 500 in
 # Attack2_1 and about 420 in Attack1_1), so each gets its own scale for about 125px; checked side by side.
 RITZ_SCALE = {'idle': 0.175, 'attack1': 0.30, 'attack2': 0.25}
+# Daya (DayaPureShineSkin2) with crown and wings: about 730 GIF px tall in Angry_4, Idle_2 and Panic_2 and about 778 in
+# Angry_3 (framed a little closer); one scale each for about 125px. Amelia (AmeliaR41): about 917 standing in
+# Camera_Polished (she kneels in part of it) and about 1000 in Happy_1; about 135px.
+DAYA_SCALE = {'angry3': 0.161, 'other': 0.171}
+AMELIA_SCALE = {'camera': 0.147, 'happy': 0.135}
 S51, S52, S53, S54 = '03_NPC_MOTIONS', os.path.join('assets', 'npc', 'rude'), '02_NPC_GIF', '02_RITZ_ANIMATIONS'
+S55D, S55A = '02_DAYA_ANIMATIONS', '03_AMELIA_ANIMATIONS'
 # key: (package index, folder, gif, game px per GIF px)
 MOTIONS = {
     'jade_move':   (0, S51, 'Jade_Move', JADE),
@@ -71,6 +78,11 @@ MOTIONS = {
     'ritz_idle':     (3, S54, 'Leets_Idle', RITZ_SCALE['idle']),
     'ritz_attack1':  (3, S54, 'Leets_Attack1_1', RITZ_SCALE['attack1']),
     'ritz_attack2':  (3, S54, 'Leets_Attack2_1', RITZ_SCALE['attack2']),
+    'daya_angry3':   (4, S55D, 'DayaPureShineSkin2_Angry_3', DAYA_SCALE['angry3']),
+    'daya_angry4':   (4, S55D, 'DayaPureShineSkin2_Angry_4', DAYA_SCALE['other']),
+    'daya_panic':    (4, S55D, 'DayaPureShineSkin2_Panic_2', DAYA_SCALE['other']),
+    'amelia_camera': (4, S55A, 'AmeliaR41_Camera_Polished', AMELIA_SCALE['camera']),
+    'amelia_happy':  (4, S55A, 'AmeliaR41_Happy_1', AMELIA_SCALE['happy']),
 }
 # key: (repo file, frames used, scale, pin: 'centre' or 'bottom')
 SINGLE = {
@@ -107,6 +119,10 @@ def feet_of(frs):
     fy = max(lows)
     a = np.array(frs[0][0])[:, :, 3] > 60
     ys, xs = np.nonzero(a[fy - 25:fy + 1])
+    if not len(xs):
+        # the first frame does not reach the lowest row (Amelia's Camera_Polished): use the frame that does
+        a = np.array(frs[lows.index(fy)][0])[:, :, 3] > 60
+        ys, xs = np.nonzero(a[fy - 25:fy + 1])
     return ((int(xs.min()) + int(xs.max())) / 2, fy)
 
 
@@ -183,6 +199,6 @@ def main(pkgs):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 6:
         sys.exit(__doc__)
-    main(sys.argv[1:5])
+    main(sys.argv[1:6])

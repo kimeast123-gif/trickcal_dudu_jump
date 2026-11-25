@@ -15,7 +15,7 @@
 // ============================================================================
 
 const DC_WORLD_ID = 'world5_dragoncave';
-const DC_ASSET_Q = '?v=v1_10_7_261125'; // rewritten by tools/release.py on every deploy
+const DC_ASSET_Q = '?v=v1_12_3_261126'; // rewritten by tools/release.py on every deploy
 const DC_STAGE_ORDER = ['dragon_cave_1', 'dragon_cave_2', 'dragon_cave_3', 'dragon_cave_4', 'dragon_cave_5'];
 const DC_STAGE_INFO = {
   dragon_cave_1: { code: '5-1', name: '제이드의 금고', desc: '오팔이 던지는 책을 피하고, 울음이 터지면 눈물을 피해 금고 끝까지 가요.' },
@@ -39,10 +39,47 @@ function dcLoad(key, src) {
   im.onerror = () => console.warn('[dragon cave] failed to load', src);
   im.src = src;
 }
+// v1.12.0 (user): the talk boxes of World 5 use the user's box art, one per speaker (Rude, Ritz, Daya: the user's
+// attachments; Dudu and Amelia: the story cutscene boxes already in the game, same art family). Name tag drawn in.
+const DC_DIALOG_ART = {
+  rude: 'assets/world/dragoncave/dialog/rude.webp',
+  ritz: 'assets/world/dragoncave/dialog/ritz.webp',
+  daya: 'assets/world/dragoncave/dialog/daya.webp',
+  dudu: 'assets/cinematics/dudu-dialogue.png',
+  amelia: 'assets/cinematics/amelia-dialogue.png'
+};
+// one talk line in the speaker's box, across the top of the screen (clear of the touch controls at the bottom).
+// The text sits where the story cutscenes put it (left 21%, 59% wide); t blinks the next-line hint.
+function drawDragonDialog(speaker, text, t) {
+  const im = dcImages['dlg_' + speaker];
+  const bw = W, bh = im ? bw * im.height / im.width : 224, by = 26;
+  ctx.save();
+  if (im) ctx.drawImage(im, 0, by, bw, bh);
+  else { ctx.fillStyle = 'rgba(250, 250, 250, 0.96)'; ctx.beginPath(); ctx.roundRect(bw * 0.185, by + bh * 0.22, bw * 0.635, bh * 0.7, 40); ctx.fill(); }
+  ctx.font = `24px 'ONE Mobile POP', 'Malgun Gothic', sans-serif`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#333333';
+  const maxW = bw * 0.57, rows = [];
+  let cur = '';
+  for (const word of String(text).split(' ')) {
+    const tryLine = cur ? cur + ' ' + word : word;
+    if (ctx.measureText(tryLine).width > maxW && cur) { rows.push(cur); cur = word; } else cur = tryLine;
+  }
+  if (cur) rows.push(cur);
+  const lh = 34, cy = by + bh * 0.585;
+  rows.forEach((r, i) => ctx.fillText(r, bw * 0.215, cy + (i - (rows.length - 1) / 2) * lh));
+  const hint = typeof duduKeyText === 'function' ? duduKeyText('{JUMP} 다음') : '다음';
+  ctx.font = `15px 'ONE Mobile POP', 'Malgun Gothic', sans-serif`;
+  ctx.textAlign = 'right'; ctx.fillStyle = '#8a8a8a';
+  ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t * 6);
+  ctx.fillText(hint, bw * 0.775, by + bh * 0.79);
+  ctx.restore();
+}
+window.drawDragonDialog = drawDragonDialog;
 function loadDragonAssets() {
   if (_dcRequested) return;
   _dcRequested = true;
   dcLoad('bg1', `assets/world/dragoncave/bg1.webp${DC_ASSET_Q}`);
+  for (const [k, src] of Object.entries(DC_DIALOG_ART)) dcLoad('dlg_' + k, src + DC_ASSET_Q);
   const done = () => {
     dcParts = window.DC_PARTS || null;
     if (!dcParts) return;
@@ -184,14 +221,17 @@ window.activeDragonStage = activeDragonStage;
 const DC_BOOK = {
   zones: ['A', 'B', 'C', 'D'],
   count: { A: 4, B: 6, C: 6, D: 8 },   // v1.10.1 (user): twice as many
+  // v1.12.1 (user): plus books thrown where Dudu will be when they land, from her recent speed (as Ritz's waves in
+  // 5-4), so running straight on runs under them: one in A and B, two in C and D. The second lands a little further on.
+  ahead: { A: 1, B: 1, C: 2, D: 2 }, aheadStep: 110, vTau: 0.35, vMax: 700,
   flight: [1.35, 1.6],          // seconds in the air (random in between)
   landRadius: 40, bodyRadius: 14
 };
 const DC_TEAR = {
   every: { T1: 2.1, T2: 1.8, T3: 1.55 },   // seconds between volleys while Opal cries
-  count: { T1: 6, T2: 8, T3: 10 },   // v1.10.1 (user): twice as many, and more than the books
-  rain: { T1: 4, T2: 5, T3: 6 },     // plus tears pouring straight down at random spots around and below Dudu
-  rainSpread: 420, rainSpeed: 620,
+  // v1.10.1 (user): twice as many, and more than the books. v1.12.1 (user): 20% fewer (6, 8, 10 -> 5, 6, 8), and the
+  // tears that poured down from above the screen are gone
+  count: { T1: 5, T2: 6, T3: 8 },
   flight: [1.0, 1.25],
   landRadius: 30, bodyRadius: 11
 };
@@ -285,25 +325,23 @@ function dcFire(kind, count) {
       arcH: 150 + Math.min(220, rise * 0.18) + dcRand() * 40, bx: ox, by: oy, prevBx: ox, prevBy: oy,
       spin: (dcRand() - 0.5) * 9, hue: Math.floor(dcRand() * 4), done: false, sounded: false });
   }
-  // tears also pour down from above the screen onto random spots around Dudu, landing on whatever ledge is below
-  // there (her own, a lower one, or none: then they fall on into the mist)
-  const rain = isTear ? DC_TEAR.rain[DC51_TEAR_ZONES[dc.zone].id] || 0 : 0;
-  const top = (typeof rCamY === 'number' ? rCamY : p.y - 400) - 50;
-  for (let i = 0; i < rain; i++) {
-    const tx = Math.round(Math.max(40, Math.min(DC51_WIDTH - 40, p.x + (dcRand() * 2 - 1) * DC_TEAR.rainSpread)));
-    let ty = null;
-    for (const a of platforms) if (a.dcDraw && tx >= a.x + 6 && tx <= a.x + a.w - 6 && a.y > top + 60 && (ty === null || a.y < ty)) ty = a.y;
-    const overPit = ty === null;
-    if (overPit) ty = dcFloorY(tx);
-    const flight = Math.max(0.6, (ty - top) / DC_TEAR.rainSpeed);
-    dc.shots.push({ kind, x0: tx, y0: top, tx, ty, overPit, flight, age: -0.2 - dcRand() * 0.9, arcH: 0,
-      bx: tx, by: top, prevBx: tx, prevBy: top, spin: 0, hue: 0, done: false, sounded: false });
+  // v1.12.1 (user): books aimed at where Dudu will be when they come down
+  const ahead = isTear ? 0 : (DC_BOOK.ahead[DC_BOOK.zones[dc.zone]] || 0);
+  const v = Math.max(-DC_BOOK.vMax, Math.min(DC_BOOK.vMax, dc.vAvg || 0)), dir = Math.abs(v) > 60 ? Math.sign(v) : (p.face || 1);
+  for (let i = 0; i < ahead; i++) {
+    const flight = C.flight[0] + (C.flight[1] - C.flight[0]) * dcRand(), delay = (count + i) * 0.16;
+    const tx = Math.round(Math.max(40, Math.min(DC51_WIDTH - 40, p.x + v * (flight + delay) + dir * i * DC_BOOK.aheadStep)));
+    const tgt = dcResolveTarget(tx, refY), rise = Math.max(0, oy - tgt.ty);
+    dc.shots.push({ kind, x0: ox, y0: oy, tx, ty: tgt.ty, overPit: tgt.overPit, flight, age: -delay,
+      arcH: 150 + Math.min(220, rise * 0.18) + dcRand() * 40, bx: ox, by: oy, prevBx: ox, prevBy: oy,
+      spin: (dcRand() - 0.5) * 9, hue: Math.floor(dcRand() * 4), done: false, sounded: false, ahead: true });
   }
   if (typeof tone === 'function') tone(isTear ? 620 : 360, 0.07, 'triangle', 0.025);
-  dcLog(isTear ? 'tear_volley' : 'book_volley', { count, rain, motion: o.key, zoneName: isTear ? DC51_TEAR_ZONES[dc.zone].id : DC_BOOK.zones[dc.zone] });
+  dcLog(isTear ? 'tear_volley' : 'book_volley', { count, ahead, motion: o.key, zoneName: isTear ? DC51_TEAR_ZONES[dc.zone].id : DC_BOOK.zones[dc.zone] });
 }
 function dcCanHurt() { return dc.stunT <= 0 && dc.safeT <= 0 && dc.holdT <= 0; }
 function updateDragonShots(dt) {
+  dc.vAvg = (dc.vAvg || 0) + (p.vx - (dc.vAvg || 0)) * (1 - Math.exp(-dt / DC_BOOK.vTau));
   const pcx = p.x, pcy = p.y - 30;
   for (const b of dc.shots) {
     b.age += dt;
@@ -637,6 +675,7 @@ function drawDragonBack() {
 // flag pads = one piece scaled evenly to the ledge width. Fallback while loading: a plain teal slab.
 const DC_LONG_SCALE = 0.45;
 function drawDragonPlatform(a, x, y) {
+  if (a.dcDraw === 'none') return;   /* 5-5: the background painting's floor is the floor */
   if (a.dcDraw === 'gym' && typeof drawGymLedge === 'function') { drawGymLedge(a, x, y); return; }
   if (a.dcDraw.startsWith('kd_') && typeof drawKidianPiece === 'function') { drawKidianPiece(a, x, y); return; }
   if (a.dcDraw === 'long') {

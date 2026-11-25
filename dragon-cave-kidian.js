@@ -4,7 +4,7 @@
 // (package DUDU_WORLD5_STAGE53_KIDIAN_CLAUDE_MASTER_REV2_261125; CLAUDE_WORLD5_STAGE53_KIDIAN_MASTER_REV2.md)
 //
 // A left-to-right maze in the dark: small ledges, brown rock walls that make Dudu go round above or below, obsidian
-// on the ledges marked red on the sketch. Only the start and goal flags of the sketch: no checkpoint in between.
+// on the ledges marked red on the sketch. Start, a middle checkpoint and the goal (v1.12.2 sketch).
 // - Sight: the Gabia darkness of Spirit Mountain (drawSightMask, spirit-mountain.js), a little wider here, and every
 //   15 seconds (at 15s, 30s, 45s ...) it closes in for 3 seconds. The clock is the stage's own and stops with the
 //   game (paused, menus); it starts again at 0 on every restart.
@@ -19,38 +19,58 @@
 // ============================================================================
 
 const DC53_CODE = 'dragon_cave_3';
-const DC53_WIDTH = 3700;
-// v1.10.9 (user: the walls were low enough to double-jump over and the lower way did not work; "follow the sketch"):
-// the whole map is the sketch at ONE scale, x = 60 + sketch x * 3.2 and y = 580 + (sketch y - 252) * 3.2, so the
-// walls keep their height against the ledges (the ㄱ upright 458px, the bottom right pillar 291px: no double jump,
-// about 279px, gets over them) and the lower way runs as drawn: S, B1, down to G1, a hop under B1 to G2, under
-// the ㄱ upright, up B4, B3, B2, on to C2. No hand moves are left.
-// ledges: [id, x, y, w, art]  art: sand (the sketch's brown-bottomed ledges) | plain (black ones) | start | goal
+const DC53_WIDTH = 6500;   // v1.12.2: the user's new sketch (2000 px wide) at the same scale
+// v1.12.2 (user: a new sketch of the whole room, 2000 x 391, "make it like this", and the ledges drawn with a brown
+// underside cannot be dropped through). One scale for everything as before (the user's rule from v1.10.9):
+// x = 60 + sketch x * 3.2, y = 580 + (sketch y - 222) * 3.2 (the start ledge's top). docs/world5/KIDIAN_MAP3_COORDS.csv
+// - Brown underside (art 'sand'): solid from above, the down key does not drop through (dropThroughDisabled).
+//   Black only ('plain'): the usual thin ledge.
+// - The middle flag is a checkpoint; the goal flag stands on the ground block at the bottom right.
+// - The three posts with a small ledge on them (drawn halfway, at the bottom and at the top) are lifts riding up and
+//   down their rails, out of step as drawn (DC53_LIFTS). The small squares are small ledges.
+// - Brown walls: the upright and beam of the left corner (W1, W2 with obsidian on top), two walls down from above the
+//   screen (W3, W5) with a ledge ending at each, one on the middle ground block (W4), one on the right end of H9 (W6).
+// ledges: [id, x, y, w, art]
 const DC53_LEDGES = [
-  ['S', 60, 580, 336, 'start'],
-  ['A1', 412, 359, 272, 'sand'], ['A2', 172, 161, 182, 'sand'], ['A3', 460, 23, 182, 'sand'],
-  ['A4', 818, 20, 186, 'sand'], ['A5', 1180, 23, 182, 'sand'],
-  ['B1', 380, 766, 304, 'sand'],
-  ['B2', 866, 551, 180, 'plain'], ['B3', 860, 718, 186, 'plain'], ['B4', 860, 871, 198, 'plain'],
-  ['C1', 1286, 350, 172, 'sand'], ['C2', 1270, 612, 198, 'plain'], ['C3', 1468, 151, 198, 'sand'],
-  ['C4', 1618, 471, 170, 'sand'], ['C5', 1590, 740, 214, 'plain'], ['C6', 1778, 286, 228, 'sand'],
-  ['C7', 1938, 884, 224, 'plain'], ['C8', 2050, 84, 180, 'sand'], ['C9', 2166, 452, 224, 'sand'],
-  ['C10', 2210, 660, 228, 'plain'], ['D1', 2348, 7, 272, 'sand'], ['D2', 2620, 519, 320, 'plain'],
-  ['GOAL', 3270, 519, 316, 'goal']
+  ['S', 60, 580, 320, 'sand'],
+  ['A1', 153, 193, 189, 'sand'], ['A2', 418, 74, 186, 'sand'], ['A3', 748, 74, 189, 'sand'], ['A4', 1081, 71, 189, 'sand'],
+  ['A5', 1343, 193, 211, 'sand'], ['A6', 1881, 119, 186, 'sand'], ['A7', 2153, 55, 281, 'sand'],
+  ['B1', 374, 382, 262, 'sand'], ['B2', 338, 740, 298, 'sand'],
+  ['C1', 793, 551, 186, 'plain'], ['C2', 783, 705, 195, 'plain'], ['C3', 786, 846, 205, 'plain'],
+  ['D1', 1177, 369, 182, 'sand'], ['D2', 1158, 612, 214, 'plain'], ['D3', 1481, 471, 182, 'sand'], ['D4', 1628, 311, 237, 'sand'],
+  ['D5', 1452, 737, 227, 'plain'], ['D6', 1769, 865, 243, 'plain'],
+  ['E1', 1983, 465, 240, 'sand'], ['E2', 2025, 657, 240, 'plain'], ['E3', 2399, 526, 323, 'plain'],
+  ['CP', 3010, 532, 298, 'plain'],
+  ['F1', 3414, 356, 243, 'sand'], ['F2', 3433, 654, 246, 'plain'],
+  ['K1', 3839, 778, 67, 'plain'], ['K2', 4044, 692, 70, 'plain'], ['K3', 4242, 762, 77, 'plain'], ['K4', 4438, 679, 74, 'plain'],
+  ['K5', 4620, 759, 77, 'plain'], ['K6', 4786, 676, 64, 'plain'],
+  ['H1', 4546, 186, 266, 'sand'], ['H2', 4876, 356, 218, 'plain'], ['H3', 4934, 628, 256, 'plain'], ['H4', 5193, 449, 205, 'plain'],
+  ['H5', 5138, 772, 234, 'plain'],
+  ['J1', 5206, 199, 58, 'plain'], ['J2', 5353, 298, 54, 'plain'], ['J3', 5346, 52, 51, 'plain'], ['J4', 5535, 55, 67, 'plain'],
+  ['J5', 5737, 52, 58, 'plain'],
+  ['H6', 5615, 446, 218, 'sand'], ['H7', 5577, 833, 237, 'plain'], ['H8', 5878, 113, 233, 'sand'], ['H9', 6050, 439, 186, 'sand']
 ];
+// lifts on the posts: [id, x, w, surface top, surface bottom, start ('mid' | 'bottom' | 'top')]; one up-and-down in
+// DC53_LIFT_PERIOD seconds. The rails are drawn from the sketch's post ends (y 39 to 398)
+const DC53_LIFTS = [['LA', 3762, 144, 30, 330, 'mid'], ['LB', 4022, 134, 30, 330, 'bottom'], ['LC', 4287, 134, 30, 330, 'top']];
+const DC53_LIFT_PERIOD = 3.4, DC53_RAIL = { top: 39, bottom: 398 };
 // ground blocks along the bottom of the sketch (solid rock; between them is the drop): [id, x, y, w]
-const DC53_GROUND = [['G1', 60, 1012, 352], ['G2', 684, 1012, 384], ['G3', 2348, 983, 464]];
+const DC53_GROUND = [['G1', 60, 1002, 339], ['G2', 626, 993, 378], ['G3', 2156, 974, 451], ['G4', 6146, 919, 354]];
 // brown rock walls: [id, x, y, w, h]
 const DC53_WALLS = [
-  ['W1', 690, 324, 58, 458],     // the ㄱ: the upright, from the beam down to B1's end (pass under it on G2)
-  ['W2', 700, 324, 448, 32],     // the ㄱ: the beam along the top, obsidian along it (v1.10.7, user)
-  ['W3', 2620, -1200, 80, 1223], // top right: from far above the screen down to the end of D1
-  ['W4', 2690, 692, 96, 291]     // bottom right: on G3
+  ['W1', 636, 369, 48, 429],     // the corner's upright, from the beam down past B2
+  ['W2', 646, 369, 429, 32],     // the corner's beam, obsidian along its top
+  ['W3', 2434, -1410, 64, 1523], // down from above the screen to the end of A7
+  ['W4', 2476, 708, 96, 266],    // on the middle ground block G3
+  ['W5', 6111, -1410, 67, 1584], // down from above the screen to the end of H8
+  ['W6', 6236, 231, 70, 256]     // standing on the right end of H9
 ];
-// obsidian (the sketch's red marks): [id, ledge id, offset from the ledge's left end]
-const DC53_OBSIDIAN = [['O1', 'A4', 93], ['O2', 'C1', 26], ['O3', 'C1', 146], ['O4', 'C4', 26], ['O5', 'C4', 144], ['O6', 'C6', 114],
-  // along the top of the ㄱ beam: walking over it from A1 is closed (v1.10.7, user)
+// obsidian (the sketch's red marks): [id, ledge id, centre offset from the ledge's left end]
+const DC53_OBSIDIAN = [['O1', 'A3', 101], ['O2', 'D1', 38], ['O3', 'D1', 149], ['O4', 'D3', 40], ['O5', 'D3', 158],
+  ['O6', 'D4', 115], ['O7', 'D5', 118], ['O8', 'D6', 130],
   ['OB1', 'W2', 32], ['OB2', 'W2', 96], ['OB3', 'W2', 160], ['OB4', 'W2', 224], ['OB5', 'W2', 288], ['OB6', 'W2', 352], ['OB7', 'W2', 416]];
+const DC53_CP = { x: 3158, y: 532 };
+const DC53_GOAL = { x: 6326, y: 919 };
 const KD_OBS = { w: 66, hitHalfW: 22, hitH: 46 };
 const KD_SIGHT = { normal: 250, narrow: 150, every: 15, hold: 3, ease: 0.3 };   // Gabia's sight is 210
 const KD_FOLLOW = { behind: 110, moveSpeed: 26, standAfter: 0.15, maxTrail: 900 };
@@ -69,7 +89,7 @@ function buildDragonStage53() {
     entrySpawns: { default: { route: 'default', platformId: 'DC53-S', x: 200, feetY: 580 } },
     segments: [{ start: 0, end: DC53_WIDTH, bg: 'dragoncave' }],
     backgroundRanges: {},
-    goal: { id: 'dc53-goal', exitRoute: 'default', x: 3428, y: 519, w: 60, h: 120, hidden: true }
+    goal: { id: 'dc53-goal', exitRoute: 'default', x: DC53_GOAL.x, y: DC53_GOAL.y, w: 60, h: 120, hidden: true }
   });
   s.worldId = DC_WORLD_ID;
   s.dragonCave = true;
@@ -82,12 +102,20 @@ function buildDragonStage53() {
   s.onReset = () => resetKidianStage();
   s.onComplete = () => completeDragonStage(DC53_CODE);
   s.dcHooks = { update: updateKidianStage, back: drawKidianBack, front: drawKidianFront, overlay: drawKidianOverlay };
-  for (const [id, x, y, w, art] of DC53_LEDGES) wSurface(s, x, y, w, 'stone', { id: 'DC53-' + id, dcDraw: 'kd_' + art });
+  for (const [id, x, y, w, art] of DC53_LEDGES) {
+    wSurface(s, x, y, w, 'stone', { id: 'DC53-' + id, dcDraw: 'kd_' + art, ...(art === 'sand' ? { dropThroughDisabled: true } : {}) });
+  }
+  for (const [id, x, w, top, bottom, start] of DC53_LIFTS) {
+    const phase = start === 'bottom' ? Math.PI / 2 : start === 'top' ? -Math.PI / 2 : 0;
+    wSurface(s, x, (top + bottom) / 2, w, 'stone', { id: 'DC53-' + id, dcDraw: 'kd_plain', behavior: 'moving',
+      motion: { axis: 'y', range: (bottom - top) / 2, period: DC53_LIFT_PERIOD, phase } });
+  }
   for (const [id, x, y, w] of DC53_GROUND) wFloor(s, x, w, 'stone', y, { id: 'DC53-' + id, dcDraw: 'kd_ground' });
   for (const [id, x, y, w, h] of DC53_WALLS) wWall(s, x, y, w, h, 'stone', { id: 'DC53-' + id, dcDraw: w > h ? 'kd_beam' : 'kd_wall' });
   wCheckpoint(s, '어두운 미로 입구', 200, 580);
-  const goalSec = { title: '미로 출구', x: 3428, y: 519, hint: '', flagX: 3428, hiddenFlag: true };   // the goal pad carries its own flag
-  s.sections.push(goalSec);
+  // v1.12.1 (user): the usual goal flag (as in 5-1), not the Kidian goal pad
+  wCheckpoint(s, '미로 한가운데', DC53_CP.x, DC53_CP.y);   // v1.12.2: the sketch's middle flag
+  s.sections.push({ title: '미로 출구', x: DC53_GOAL.x, y: DC53_GOAL.y, hint: '', flagX: DC53_GOAL.x });
   s.hudStars = 0;
   return s;
 }
@@ -263,6 +291,16 @@ function drawKidianBackground() {
 // the drop between the ground blocks: dark mist from just under their tops down (world coordinates, behind them)
 function drawKidianBack() {
   if (!activeKidianStage()) return;
+  // the lifts' rails (the sketch's posts): no collision, drawn behind the ledges
+  ctx.save(); ctx.lineCap = 'round';
+  for (const [, x, w] of DC53_LIFTS) {
+    const cx = x + w / 2;
+    ctx.strokeStyle = 'rgba(20, 16, 22, 0.9)'; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.moveTo(cx, DC53_RAIL.top); ctx.lineTo(cx, DC53_RAIL.bottom); ctx.stroke();
+    ctx.strokeStyle = 'rgba(120, 104, 96, 0.8)'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(cx, DC53_RAIL.top); ctx.lineTo(cx, DC53_RAIL.bottom); ctx.stroke();
+  }
+  ctx.restore();
   const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
   const x1 = Math.floor(rCam) - 40, x2 = Math.ceil(rCam + W / zoom) + 40, top = 960, bot = rCamY + H / zoom + 40;
   if (bot <= top) return;
@@ -330,7 +368,19 @@ function drawKidianFront() {
   ctx.beginPath(); ctx.ellipse(x, y + 1, 26, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   if (!dcSprite(k.key, k.t, x, y, k.face, true)) { ctx.fillStyle = '#4a4058'; ctx.beginPath(); ctx.ellipse(x, y - 50, 22, 50, 0, 0, Math.PI * 2); ctx.fill(); }
 }
+// v1.12.3 (user): Kidian walks 110px behind Dudu, where the darkness already starts, and her art is dark: she is
+// drawn once more over the darkness at KD_KID_LIFT strength, so only she is brighter (the sight itself is unchanged)
+const KD_KID_LIFT = 0.6;
 function drawKidianOverlay() {
   if (!activeKidianStage() || typeof drawSightMask !== 'function') return;
   drawSightMask(kd.mask, [[rPx, rPy - 32]], kd.sight, 1);
+  const k = kd.kid;
+  if (!k) return;
+  const ra = typeof renderAlpha === 'number' ? renderAlpha : 1, zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+  const x = k.prevX + (k.x - k.prevX) * ra, y = k.prevY + (k.y - k.prevY) * ra;
+  ctx.save();
+  ctx.scale(zoom, zoom); ctx.translate(-Math.round(rCam), -Math.round(rCamY));
+  ctx.globalAlpha = KD_KID_LIFT;
+  dcSprite(k.key, k.t, x, y, k.face, true);
+  ctx.restore();
 }

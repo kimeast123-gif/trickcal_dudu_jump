@@ -1,46 +1,74 @@
-﻿id,x,y,width,height,type,hazardId,notes
-DC53-S,60,580,336,20,ledge (start),,
-DC53-A1,412,359,272,20,ledge (sand),,
-DC53-A2,172,161,182,20,ledge (sand),,
-DC53-A3,460,23,182,20,ledge (sand),,
-DC53-A4,818,20,186,20,ledge (sand),O1,
-DC53-A5,1180,23,182,20,ledge (sand),,
-DC53-B1,380,766,304,20,ledge (sand),,
-DC53-B2,866,551,180,20,ledge (plain),,
-DC53-B3,860,718,186,20,ledge (plain),,
-DC53-B4,860,871,198,20,ledge (plain),,
-DC53-C1,1286,350,172,20,ledge (sand),O2;O3,
-DC53-C2,1270,612,198,20,ledge (plain),,
-DC53-C3,1468,151,198,20,ledge (sand),,
-DC53-C4,1618,471,170,20,ledge (sand),O4;O5,
-DC53-C5,1590,740,214,20,ledge (plain),,
-DC53-C6,1778,286,228,20,ledge (sand),O6,
-DC53-C7,1938,884,224,20,ledge (plain),,
-DC53-C8,2050,84,180,20,ledge (sand),,
-DC53-C9,2166,452,224,20,ledge (sand),,
-DC53-C10,2210,660,228,20,ledge (plain),,
-DC53-D1,2348,7,272,20,ledge (sand),,
-DC53-D2,2620,519,320,20,ledge (plain),,
-DC53-GOAL,3270,519,316,20,ledge (goal),,
-DC53-G1,60,1012,352,260,ground block,,solid rock at the bottom; between blocks is the drop (fall line 1250)
-DC53-G2,684,1012,384,260,ground block,,solid rock at the bottom; between blocks is the drop (fall line 1250)
-DC53-G3,2348,983,464,260,ground block,,solid rock at the bottom; between blocks is the drop (fall line 1250)
-DC53-W1,690,324,58,458,brown rock wall,,upright of the ㄱ, 458 tall; B1 ends at it, G2 passes under it
-DC53-W2,700,324,448,32,brown rock wall,OB1;OB2;OB3;OB4;OB5;OB6;OB7,beam of the ㄱ; obsidian along its top
-DC53-W3,2620,-1200,80,1223,brown rock wall,,from far above the screen down to D1
-DC53-W4,2690,692,96,291,brown rock wall,,on G3, 291 tall (a double jump reaches about 279)
-O1,911,20,66,46,obsidian,O1,on DC53-A4
-O2,1312,350,66,46,obsidian,O2,on DC53-C1
-O3,1432,350,66,46,obsidian,O3,on DC53-C1
-O4,1644,471,66,46,obsidian,O4,on DC53-C4
-O5,1762,471,66,46,obsidian,O5,on DC53-C4
-O6,1892,286,66,46,obsidian,O6,on DC53-C6
-OB1,732,324,66,46,obsidian,OB1,on DC53-W2
-OB2,796,324,66,46,obsidian,OB2,on DC53-W2
-OB3,860,324,66,46,obsidian,OB3,on DC53-W2
-OB4,924,324,66,46,obsidian,OB4,on DC53-W2
-OB5,988,324,66,46,obsidian,OB5,on DC53-W2
-OB6,1052,324,66,46,obsidian,OB6,on DC53-W2
-OB7,1116,324,66,46,obsidian,OB7,on DC53-W2
-START,200,580,,,start flag (pad art),,
-GOAL,3428,519,,,goal flag (pad art),,
+﻿id,x,y,width,height,type,no_drop_through,sketch_x,sketch_y,notes
+DC53-S,60,580,320,20,ledge (sand),yes,0,222,
+DC53-A1,153,193,189,20,ledge (sand),yes,29,101,
+DC53-A2,418,74,186,20,ledge (sand),yes,112,64,
+DC53-A3,748,74,189,20,ledge (sand),yes,215,64,
+DC53-A4,1081,71,189,20,ledge (sand),yes,319,63,
+DC53-A5,1343,193,211,20,ledge (sand),yes,401,101,
+DC53-A6,1881,119,186,20,ledge (sand),yes,569,78,
+DC53-A7,2153,55,281,20,ledge (sand),yes,654,58,
+DC53-B1,374,382,262,20,ledge (sand),yes,98,160,
+DC53-B2,338,740,298,20,ledge (sand),yes,87,272,
+DC53-C1,793,551,186,20,ledge (plain),,229,213,
+DC53-C2,783,705,195,20,ledge (plain),,226,261,
+DC53-C3,786,846,205,20,ledge (plain),,227,305,
+DC53-D1,1177,369,182,20,ledge (sand),yes,349,156,
+DC53-D2,1158,612,214,20,ledge (plain),,343,232,
+DC53-D3,1481,471,182,20,ledge (sand),yes,444,188,
+DC53-D4,1628,311,237,20,ledge (sand),yes,490,138,
+DC53-D5,1452,737,227,20,ledge (plain),,435,271,
+DC53-D6,1769,865,243,20,ledge (plain),,534,311,
+DC53-E1,1983,465,240,20,ledge (sand),yes,601,186,
+DC53-E2,2025,657,240,20,ledge (plain),,614,246,
+DC53-E3,2399,526,323,20,ledge (plain),,731,205,
+DC53-CP,3010,532,298,20,ledge (plain),,922,207,checkpoint
+DC53-F1,3414,356,243,20,ledge (sand),yes,1048,152,
+DC53-F2,3433,654,246,20,ledge (plain),,1054,245,
+DC53-K1,3839,778,67,20,ledge (plain),,1181,284,
+DC53-K2,4044,692,70,20,ledge (plain),,1245,257,
+DC53-K3,4242,762,77,20,ledge (plain),,1307,279,
+DC53-K4,4438,679,74,20,ledge (plain),,1368,253,
+DC53-K5,4620,759,77,20,ledge (plain),,1425,278,
+DC53-K6,4786,676,64,20,ledge (plain),,1477,252,
+DC53-H1,4546,186,266,20,ledge (sand),yes,1402,99,
+DC53-H2,4876,356,218,20,ledge (plain),,1505,152,
+DC53-H3,4934,628,256,20,ledge (plain),,1523,237,
+DC53-H4,5193,449,205,20,ledge (plain),,1604,181,
+DC53-H5,5138,772,234,20,ledge (plain),,1587,282,
+DC53-J1,5206,199,58,20,ledge (plain),,1608,103,
+DC53-J2,5353,298,54,20,ledge (plain),,1654,134,
+DC53-J3,5346,52,51,20,ledge (plain),,1652,57,
+DC53-J4,5535,55,67,20,ledge (plain),,1711,58,
+DC53-J5,5737,52,58,20,ledge (plain),,1774,57,
+DC53-H6,5615,446,218,20,ledge (sand),yes,1736,180,
+DC53-H7,5577,833,237,20,ledge (plain),,1724,301,
+DC53-H8,5878,113,233,20,ledge (sand),yes,1818,76,
+DC53-H9,6050,439,186,20,ledge (sand),yes,1872,178,
+DC53-LA,3762,30..330,144,20,lift,,1157,,start mid, period 3.4s
+DC53-LB,4022,30..330,134,20,lift,,1238,,start bottom, period 3.4s
+DC53-LC,4287,30..330,134,20,lift,,1321,,start top, period 3.4s
+DC53-G1,60,1002,339,,ground,,0,354,
+DC53-G2,626,993,378,,ground,,177,351,
+DC53-G3,2156,974,451,,ground,,655,345,
+DC53-G4,6146,919,354,,ground,,1902,328,goal flag x 6326
+DC53-W1,636,369,48,429,wall,,180,156,
+DC53-W2,646,369,429,32,wall,,183,156,
+DC53-W3,2434,-1410,64,1523,wall,,742,-400,
+DC53-W4,2476,708,96,266,wall,,755,262,
+DC53-W5,6111,-1410,67,1584,wall,,1891,-400,
+DC53-W6,6236,231,70,256,wall,,1930,113,
+DC53-O1,,,,,obsidian,,,,on A3 at 101
+DC53-O2,,,,,obsidian,,,,on D1 at 38
+DC53-O3,,,,,obsidian,,,,on D1 at 149
+DC53-O4,,,,,obsidian,,,,on D3 at 40
+DC53-O5,,,,,obsidian,,,,on D3 at 158
+DC53-O6,,,,,obsidian,,,,on D4 at 115
+DC53-O7,,,,,obsidian,,,,on D5 at 118
+DC53-O8,,,,,obsidian,,,,on D6 at 130
+DC53-OB1,,,,,obsidian,,,,on W2 at 32
+DC53-OB2,,,,,obsidian,,,,on W2 at 96
+DC53-OB3,,,,,obsidian,,,,on W2 at 160
+DC53-OB4,,,,,obsidian,,,,on W2 at 224
+DC53-OB5,,,,,obsidian,,,,on W2 at 288
+DC53-OB6,,,,,obsidian,,,,on W2 at 352
+DC53-OB7,,,,,obsidian,,,,on W2 at 416

@@ -761,22 +761,8 @@ function wrapLines(txt, maxW) {
 function drawTalkBox() {
   const tk = pb.talk;
   if (!tk) return;
-  const lines = RUDE_LINES[tk.kind], line = lines[Math.min(tk.line, lines.length - 1)];
-  const bw = 820, bx = (W - bw) / 2, by = 96;
-  ctx.save();
-  ctx.font = `22px 'ONE Mobile POP', 'Malgun Gothic', sans-serif`;
-  const rows = wrapLines(line, bw - 64);
-  const bh = 66 + rows.length * 34;
-  ctx.fillStyle = 'rgba(255, 250, 240, 0.96)'; ctx.strokeStyle = '#7a2b25'; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 22); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#b8332b';
-  ctx.beginPath(); ctx.roundRect(bx + 24, by - 18, 86, 34, 17); ctx.fill();
-  pbText('루드', bx + 67, by - 1, 19, '#ffffff', 'center');
-  rows.forEach((r, i) => pbText(r, bx + 32, by + 44 + i * 34, 22, '#3b2a26', 'left'));
-  const kt = (t) => (typeof duduKeyText === 'function' ? duduKeyText(t) : t);
-  ctx.globalAlpha = 0.6 + 0.4 * Math.sin(tk.t * 6);
-  pbText(kt('{JUMP} 다음'), bx + bw - 28, by + bh - 20, 15, '#8a5a50', 'right');
-  ctx.restore();
+  const lines = RUDE_LINES[tk.kind];
+  drawDragonDialog('rude', lines[Math.min(tk.line, lines.length - 1)], tk.t);   // v1.12.0: the user's box art
 }
 function drawPinballOverlay() {
   if (!activeDragonStage() || activeDragonStage().stageCode !== DC52_CODE) return;
