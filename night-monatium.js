@@ -37,7 +37,7 @@ const NIGHT_SPRITES = {
   drone_die:    { frames: 25, fps: 12.5, anchor: 128, foot: 96,  display: 150 }
 };
 const NIGHT_BACKDROPS = { street: 'night-street', towers: 'night-towers', hall: 'night-cityhall' };
-const NIGHT_ASSET_Q = '?v=v1_10_0_261125';
+const NIGHT_ASSET_Q = '?v=v1_10_6_261125';
 const nightImages = {};
 let _nightAssetsRequested = false;
 

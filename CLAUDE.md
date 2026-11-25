@@ -44,7 +44,7 @@ python tools/qa/regression.py                 # 커밋 전에 반드시. 전부 
 | `spirit-mountain.js` | 월드3 「정령산의 아침」: 세로 맵, 동굴 시야 마스크, 용암, 위습, 강풍(`SM_WIND`), 정령 NPC, 별. 같은 방식으로 `world1Stages` 뒤에 붙는다. 설계는 `docs/SPIRIT_MOUNTAIN.md` |
 | `ghost-swamp.js` | 월드4 「무시무시 유령늪」 유령늪 1~4(내부 ID `ghost_swamp_1`, `_1_2`, `_2`, `_3`): 침전 발판(두두가 잠김), 이동 발판, 가시, 림 착지 공격, 납치, 추격, 셰이디 구출과 동행, 곡 전환. 같은 방식으로 `world1Stages` 뒤에 붙는다. 발판 그림은 `tools/ghost_swamp_board_parts.py`, 림·셰이디 모션은 `tools/ghost_swamp_assets.py`가 만든다. 설계와 확인 기록은 `docs/world4/` |
 | `dragon-cave.js` | 월드5 「용족동굴」 다섯 방(5-1~5-5, 내부 ID `dragon_cave_1`~`_5`). 지금은 5-1 「제이드의 금고」만: 오팔이 달리고 멈춰 책을 던지는 4구간, CP2, 파란 점선 뒤 오열 자리로 이동, 눈물 3구간과 울음 경직, 제이드 동행, 갈색 바닥 낙사(`killYAt`). 같은 방식으로 `world1Stages` 뒤에 붙는다. 배경·발판은 `tools/dragon_cave_assets.py`, 제이드·오팔 모션은 `tools/dragon_cave_motions.py`, 방별 상태와 필요한 자료는 `docs/world5/WORLD5_STAGE_STATUS.md` |
-| `dragon-cave-pinball.js` | 월드5 5-2 「루드의 헬스짐」: 루드 대화(Idle_1, Happy_3, Happy_5와 사용자 대사), 파란 입장, 500kg 핀볼(발사대 충전, 좌우 핀, 20/10/3kg 원판, 샌드백, 무충돌 점수창, 두두 회전 프레임 공). 핀볼은 보드 좌표의 독립 물리. 상태와 수치는 `docs/world5/` |
+| `dragon-cave-pinball.js` | 월드5 5-2 「루드의 헬스짐」: 루드 대화(Idle_1, Happy_3, Happy_5와 사용자 대사), 파란 입장, 500kg 핀볼(발사대 충전, 좌우 핀, 20/10/3kg 원판, 샌드백, 무충돌 점수창, 두두 회전 프레임 공). 핀볼은 보드 좌표의 독립 물리. 핀볼 그림은 `tools/dragon_cave_pinball_parts.py`가 사용자 에셋 보드에서 자른다. 상태와 수치는 `docs/world5/` |
 | `terrain-art.js` | 스토리 수인숲, 월드1 1-1~1-4, 정령산의 지형 그림(아트 리뉴얼 2단계, v1.8.0). 그리기 함수만 감싸고 물리는 건드리지 않는다. **`tools/terrain_art_build.py`가 `assets/terrain/`에서 생성하므로 손으로 고치지 않는다.** 그림을 바꾸면 다시 생성하고 `tools/qa/art_v2_physics_identity.py`(그림 켜고 끈 물리 비교)를 통과시킨다. `?oldart=1`로 열면 예전 그림 |
 | `title-lobby.*`, `uiux-redesign.js`, `event.js` | 로비, HUD, 컷신과 결과 화면 |
 | `style.css` | 게임 화면과 모바일 조작 UI |

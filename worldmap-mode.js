@@ -103,7 +103,7 @@ const WORLDMAP_CARDS = [
     implementationStatus: 'playable',
     unlockCondition: null,
     action: 'openGhostStageSelect',
-    thumbnail: 'assets/world/ghostswamp/bg1.webp?v=v1_10_0_261125',
+    thumbnail: 'assets/world/ghostswamp/bg1.webp?v=v1_10_6_261125',
     fallbackThumb: makePlaceholderSvgDataUri('무시무시 유령늪', '안개 낀 늪', '#3b2d4a', '#1b1424', '#d0bfff', '👻'),
     statusBadge: '플레이 가능',
     isPlaceholderArt: false
@@ -117,7 +117,7 @@ const WORLDMAP_CARDS = [
     implementationStatus: 'playable',
     unlockCondition: null,
     action: 'openDragonStageSelect',
-    thumbnail: 'assets/world/dragoncave/bg1.webp?v=v1_10_0_261125',
+    thumbnail: 'assets/world/dragoncave/bg1.webp?v=v1_10_6_261125',
     fallbackThumb: makePlaceholderSvgDataUri('용족동굴', '다섯 용족의 방', '#1f5f5b', '#0d2624', '#96f2d7', '💎'),
     statusBadge: '5-1 플레이 가능',
     isPlaceholderArt: false

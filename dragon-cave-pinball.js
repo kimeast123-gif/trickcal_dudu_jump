@@ -43,8 +43,9 @@ const PB = {
   hitCool: 0.15,            // seconds before the same target can score again (and it must be left first)
   drainY: 745,
   stuckSpeed: 25, stuckTime: 1.5,
-  flipper: { len: 108, rad: 9, rest: 0.52, up: -0.44, upSpeed: 18, downSpeed: 12 },   // angles in radians
-  plunger: { x: 375, y: 712 }
+  // v1.10.2: the flipper art is thick at its pivot and thin at its tip, so the flipper collides as a tapered capsule
+  flipper: { len: 108, radHinge: 24, radTip: 10, rest: 0.52, up: -0.44, upSpeed: 18, downSpeed: 12 },   // angles in radians
+  plunger: { x: 365, y: 712 }
 };
 const PB_BOARD = { x0: 322, y0: 14, x1: 833, y1: 778, corner: 95, laneX: 420, laneTop: 100 };
 // targets from the sketch: plates (circles) and sandbags (tilted boxes)
@@ -55,16 +56,18 @@ const PB_PLATES = [
   { id: 'P3L', x: 503, y: 446, r: 19, kg: 3 }, { id: 'P3R', x: 742, y: 452, r: 19, kg: 3 }
 ];
 const PB_BAGS = [
-  { id: 'BAGL', x: 459, y: 143, len: 56, thick: 20, ang: -0.66 },
-  { id: 'BAGR', x: 798, y: 143, len: 56, thick: 20, ang: 0.66 }
+  { id: 'BAGL', x: 462, y: 148, len: 62, thick: 34, ang: -0.66 },
+  { id: 'BAGR', x: 795, y: 148, len: 62, thick: 34, ang: 0.66 }
 ];
 const PB_FLIPPERS = [
   { side: -1, hx: 503, hy: 640, key: 'ArrowLeft' },
   { side: 1, hx: 754, hy: 640, key: 'ArrowRight' }
 ];
-const PB_SCORE_PANEL = { x: 567, y: 460, w: 120, h: 34 };   // UI only
+const PB_SCORE_PANEL = { x: 552, y: 434, w: 150, h: 86 };   // UI only (the panel art, 414 x 238, at 0.362)
 
-// walls: the rounded outer frame, the launch lane wall, the two inlane guides down to the flipper hinges
+// walls: the rounded outer frame, the launch lane wall, the two inlane guides down to the flipper hinges.
+// [x1, y1, x2, y2, kind, half thickness]: the frame line is its inner edge (the rail is drawn outside it); the lane
+// wall and the guides are rails drawn on their centre line, so they collide with half their drawn thickness.
 function pbBuildWalls() {
   const B = PB_BOARD, segs = [];
   const pts = [];
@@ -73,19 +76,18 @@ function pbBuildWalls() {
   arc(B.x1 - B.corner, B.y0 + B.corner, Math.PI * 1.5, Math.PI * 2);
   arc(B.x1 - B.corner, B.y1 - B.corner, 0, Math.PI * 0.5);
   arc(B.x0 + B.corner, B.y1 - B.corner, Math.PI * 0.5, Math.PI);
-  for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; segs.push([a[0], a[1], b[0], b[1], 'frame']); }
-  segs.push([B.laneX, B.laneTop, B.laneX, 722, 'lane']);
-  segs.push([B.laneX, B.laneTop, B.laneX + 26, B.laneTop - 12, 'lane']);
-  segs.push([332, PB.plunger.y, B.laneX, PB.plunger.y, 'plunger']);
-  segs.push([B.laneX, 575, 503, 632, 'guide']);
-  segs.push([B.x1 - 4, 575, 754, 632, 'guide']);
+  for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; segs.push([a[0], a[1], b[0], b[1], 'frame', 2]); }
+  segs.push([B.laneX, B.laneTop, B.laneX, 722, 'lane', 11]);
+  segs.push([326, PB.plunger.y, B.laneX - 11, PB.plunger.y, 'plunger', 2]);
+  segs.push([B.laneX, 575, 503, 632, 'guide', 9]);
+  segs.push([B.x1, 575, 754, 632, 'guide', 9]);
   return segs;
 }
 const PB_WALLS = pbBuildWalls();
 
 const pb = { phase: 'gym', introDone: false, clearDone: false, fresh: true, talk: null, score: 0, ball: null,
   flips: [], hits: {}, spacePrev: false, spaceArmed: false, charge: 0, t: 0, fade: null, rude: { key: 'rude_idle', t: 0 },
-  stuckT: 0, launches: 0, drains: 0 };
+  stuckT: 0, launches: 0, drains: 0, pops: [] };
 window.__pb = pb;
 window.__pbLog = [];
 function pbLog(ev, extra = {}) {
@@ -102,6 +104,15 @@ function loadPinballAssets() {
   _pbBgRequested = true;
   dcLoad('gym', `assets/world/dragoncave/gym.webp${DC_ASSET_Q}`);
   dcLoad('pinball', `assets/world/dragoncave/pinball.webp${DC_ASSET_Q}`);
+  loadPinballSfx();
+  // the user's pinball parts board, cut by tools/dragon_cave_pinball_parts.py
+  dcScript(window.PB_PARTS, `assets/world/dragoncave/pinball/parts.js${DC_ASSET_Q}`, () => {
+    if (window.PB_PARTS) for (const k of Object.keys(window.PB_PARTS)) dcLoad('pb_' + k, `assets/world/dragoncave/pinball/${k}.webp${DC_ASSET_Q}`);
+  });
+}
+function pbPart(k) {
+  const m = window.PB_PARTS && window.PB_PARTS[k], im = dcImages['pb_' + k];
+  return m && im ? { im, w: m[0], h: m[1] } : null;
 }
 function buildDragonStage52() {
   const s = makeWorldStage({
@@ -142,6 +153,7 @@ if (typeof world1Stages !== 'undefined' && !world1Stages.some(st => st.worldId =
 function pbNewBall() { return { x: PB.plunger.x, y: PB.plunger.y - PB.r, vx: 0, vy: 0, roll: 0, face: 1 }; }
 function pbResetFlippers() {
   pb.flips = PB_FLIPPERS.map(f => ({ ...f, a: PB.flipper.rest, w: 0 }));
+  pb.pops = [];
 }
 // A fresh entry clears the run; a fall into the gap keeps the talk done and the kg already earned.
 function resetPinballStage() {
@@ -208,13 +220,126 @@ function pbReady(reason) {
   pb.phase = 'ready';
   pb.ball = pbNewBall();
   pb.charge = 0;
-  pb.stuckT = 0;
+  pb.stuckT = 0; pb.laneStillT = 0;
   // a jump key already held from before does not count: charging starts from a new press
   pb.spaceArmed = !keys.has('Space');
   if (reason) pbLog(reason);
 }
+// ----------------------------------------------------------------------------
+// Flipper sounds (user's packages DUDU_RUDE_PINBALL_FLIPPER_SFX_ORIGINAL_261125 and, overriding its mapping,
+// DUDU_RUDE_PINBALL_CONTACT_SFX_FIX_REV1_261125; original synthesized effects):
+//   flipper pressed (released -> pressed; held keys and key auto-repeat do not count): swing_miss only, quiet.
+//   the ball really meets a flipper (pbStep's ball-flipper collision): hit_01-03, never the same one twice in a row;
+//   a hard meeting: hit_strong instead (never both). One sound per contact: a contact counts when the ball comes
+//   onto the flipper, or when the swinging flipper drives into a ball already on it; each flipper keeps its own
+//   65ms cooldown, and touches slower than 40 units/s (a ball resting on the flipper) make no sound.
+//   Strength = the speed at which ball and flipper surface close along the contact normal, just before the bounce.
+// Played through the game's own AudioContext (`audio`, game.js tone) at the master volume and mute, through a
+// compressor so the loud hits never clip; the hits carry a short low thump for weight (v1.10.4, user). The WAV
+// files are used (iPhone Safari may not decode OGG). Opened as a file (fetch refused) they fall back to <audio>.
+// ----------------------------------------------------------------------------
+const PB_SFX = { hits: ['rude_flipper_hit_01', 'rude_flipper_hit_02', 'rude_flipper_hit_03'], strong: 'rude_flipper_hit_strong',
+  swing: 'rude_flipper_swing_miss',
+  gain: 1.4, strongGain: 1.3, swingGain: 0.45, thump: 0.5,
+  minSpeed: 40, strongSpeed: 520, cooldown: 0.065 };
+const pbSfx = { buf: {}, el: {}, requested: false, last: -1, clock: 0, bus: null };
+function pbSfxBus() {
+  if (pbSfx.bus && pbSfx.bus.context === audio) return pbSfx.bus;
+  const c = audio.createDynamicsCompressor();
+  c.threshold.value = -14; c.knee.value = 6; c.ratio.value = 5; c.attack.value = 0.002; c.release.value = 0.12;
+  c.connect(audio.destination);
+  pbSfx.bus = c;
+  return c;
+}
+// a quick falling low tone under a hit: the weight of the strike
+function pbThump(gain) {
+  const vol = typeof getEffectiveSoundVolume === 'function' ? getEffectiveSoundVolume() : 1;
+  if (vol <= 0 || !audio) return;
+  try {
+    const t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.09);
+    g.gain.setValueAtTime(gain * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+    o.connect(g); g.connect(pbSfxBus()); o.start(t); o.stop(t + 0.12);
+  } catch (e) {}
+}
+// Target sounds (user's package DUDU_RUDE_PINBALL_TARGET_SCORE_SFX_REV1_261125, original synthesized effects): one
+// sound each time a target really scores (pbScore, the same place the kg go up), picked by the kg the target gives
+// (3, 10, 20, and 30 should a 30kg target ever exist), the sandbag sound for the sandbags, and the 500kg jingle once
+// at success, just after the last hit. Never the same variant twice in a row per group. OGG where the browser
+// plays it, else WAV (iPhone Safari).
+const PB_TARGET_SFX = {
+  3: ['rude_target_3kg_hit_01', 'rude_target_3kg_hit_02'], 10: ['rude_target_10kg_hit_01', 'rude_target_10kg_hit_02'],
+  20: ['rude_target_20kg_hit_01', 'rude_target_20kg_hit_02'], 30: ['rude_target_30kg_hit_01', 'rude_target_30kg_hit_02'],
+  sandbag: ['rude_target_sandbag_hit_01', 'rude_target_sandbag_hit_02'],
+  clear: 'rude_target_500kg_clear', gain: 1.1, lastHitAtClear: 0.75, clearDelay: 0.12
+};
+const pbTargetLast = {};
+function pbPlayTarget(group, gain) {
+  const list = PB_TARGET_SFX[group];
+  if (!list) return null;
+  let i = Math.floor(Math.random() * list.length);
+  if (i === pbTargetLast[group]) i = (i + 1) % list.length;
+  pbTargetLast[group] = i;
+  pbPlay(list[i], gain);
+  return list[i];
+}
+function loadPinballSfx() {
+  if (pbSfx.requested) return;
+  pbSfx.requested = true;
+  let ogg = '';
+  try { ogg = new Audio().canPlayType('audio/ogg; codecs="vorbis"'); } catch (e) {}
+  const T = PB_TARGET_SFX, targets = [...T[3], ...T[10], ...T[20], ...T[30], ...T.sandbag, T.clear];
+  for (const n of [...PB_SFX.hits, PB_SFX.strong, PB_SFX.swing, ...targets]) {
+    const ext = targets.includes(n) && ogg ? 'ogg' : 'wav';
+    const src = `assets/sfx/dragoncave/${n}.${ext}${DC_ASSET_Q}`;
+    const fallback = () => { const a = new Audio(src); a.preload = 'auto'; pbSfx.el[n] = a; };
+    try {
+      fetch(src).then(r => r.arrayBuffer()).then(ab => {
+        audio ??= new (window.AudioContext || window.webkitAudioContext)();
+        return audio.decodeAudioData(ab);
+      }).then(b => { pbSfx.buf[n] = b; }).catch(fallback);
+    } catch (e) { fallback(); }
+  }
+}
+function pbPlay(name, gain, delay = 0) {
+  const vol = typeof getEffectiveSoundVolume === 'function' ? getEffectiveSoundVolume() : 1;
+  if (vol <= 0) return;
+  try {
+    const b = pbSfx.buf[name];
+    if (b && audio) {
+      audio.resume();
+      const s = audio.createBufferSource(), g = audio.createGain();
+      s.buffer = b; g.gain.value = gain * vol;
+      s.connect(g); g.connect(pbSfxBus()); s.start(audio.currentTime + delay);
+      return;
+    }
+    const el = pbSfx.el[name];
+    if (el) {
+      const go = () => { const a = el.cloneNode(); a.volume = Math.min(1, gain * vol); a.play().catch(() => {}); };
+      if (delay > 0) setTimeout(go, delay * 1000); else go();
+    }
+  } catch (e) {}
+}
+// one ball-flipper contact: hit_01-03, or hit_strong for a hard one
+function pbPlayContact(f, speed) {
+  const strong = speed >= PB_SFX.strongSpeed;
+  let name;
+  if (strong) name = PB_SFX.strong;
+  else {
+    let i = Math.floor(Math.random() * PB_SFX.hits.length);
+    if (i === pbSfx.last) i = (i + 1) % PB_SFX.hits.length;
+    pbSfx.last = i;
+    name = PB_SFX.hits[i];
+  }
+  pbPlay(name, strong ? PB_SFX.strongGain : PB_SFX.gain);
+  pbThump(PB_SFX.thump);
+  pbLog('ball_flipper_contact', { side: f.side < 0 ? 'left' : 'right', speed: Math.round(speed), sound: name });
+}
 function updateFlippers(dt) {
   const F = PB.flipper;
+  pbSfx.clock += dt;
+  let pressed = false;
   for (const f of pb.flips) {
     const held = keys.has(f.key);
     const target = held ? F.up : F.rest;
@@ -222,9 +347,12 @@ function updateFlippers(dt) {
     if (f.a > target) f.a = Math.max(target, f.a - F.upSpeed * dt);
     else if (f.a < target) f.a = Math.min(target, f.a + F.downSpeed * dt);
     f.w = (f.a - prev) / Math.max(1e-6, dt);   // + is down, - is up (left flipper; mirrored on the right)
-    if (held && !f.wasHeld && typeof tone === 'function') tone(520, 0.03, 'square', 0.012);
+    if (held && !f.wasHeld) pressed = true;
     f.wasHeld = held;
+    if (f.sfxCool > 0) f.sfxCool -= dt;
   }
+  // pressing only moves the flipper: the light swing sound (both pressed in the same step: one sound)
+  if (pressed) { pbPlay(PB_SFX.swing, PB_SFX.swingGain); pbLog('flipper_press'); }
 }
 function pbFlipperEnds(f) {
   const ang = f.side < 0 ? f.a : Math.PI - f.a;
@@ -233,7 +361,7 @@ function pbFlipperEnds(f) {
 function closestOnSeg(px, py, x1, y1, x2, y2) {
   const dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy || 1;
   const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l2));
-  return [x1 + dx * t, y1 + dy * t];
+  return [x1 + dx * t, y1 + dy * t, t];
 }
 // push the ball out of a contact at (cx, cy) with clearance `rad`; reflect its velocity relative to (svx, svy)
 function pbCollide(b, cx, cy, rad, e, svx = 0, svy = 0) {
@@ -247,14 +375,16 @@ function pbCollide(b, cx, cy, rad, e, svx = 0, svy = 0) {
   b.lastN = [nx, ny];
   return true;
 }
-function pbScore(id, kg) {
+function pbScore(id, kg, group = kg) {
   const h = pb.hits[id] || (pb.hits[id] = { cool: 0, touching: false, flash: 0, count: 0 });
   h.flash = 0.28;
   if (h.touching || h.cool > 0) { h.touching = true; return; }
   h.touching = true; h.cool = PB.hitCool; h.count++;
   pb.score += kg;
-  if (typeof tone === 'function') tone(kg >= 20 ? 990 : kg >= 10 ? 780 : 620, 0.06, 'triangle', 0.03);
-  pbLog('hit', { id, kg, count: h.count });
+  pb.pops.push({ x: pb.ball ? pb.ball.x : 0, y: pb.ball ? pb.ball.y - 30 : 0, kg, t: 0 });
+  // one target sound per kg gained (the hit that reaches 500kg a little softer, the jingle follows it)
+  const sound = pbPlayTarget(group, PB_TARGET_SFX.gain * (pb.score >= DC52_GOAL_KG ? PB_TARGET_SFX.lastHitAtClear : 1));
+  pbLog('hit', { id, kg, count: h.count, sound });
 }
 function pbStep(dt) {
   const b = pb.ball, touched = {};
@@ -262,7 +392,7 @@ function pbStep(dt) {
   b.x += b.vx * dt; b.y += b.vy * dt;
   for (const w of PB_WALLS) {
     const [cx, cy] = closestOnSeg(b.x, b.y, w[0], w[1], w[2], w[3]);
-    pbCollide(b, cx, cy, 2, PB.wallE);
+    pbCollide(b, cx, cy, w[5], PB.wallE);
   }
   // the lane's one-way gate: once out on the table the ball cannot drop back into the lane at the top
   if (b.x > PB_BOARD.laneX + PB.r * 0.5 && b.y < PB_BOARD.laneTop) {
@@ -280,15 +410,25 @@ function pbStep(dt) {
     const [cx, cy] = closestOnSeg(b.x, b.y, s.x - hx, s.y - hy, s.x + hx, s.y + hy);
     if (pbCollide(b, cx, cy, s.thick / 2, PB.bagE)) {
       b.vx += b.lastN[0] * PB.bagKick; b.vy += b.lastN[1] * PB.bagKick;
-      touched[s.id] = true; pbScore(s.id, SANDBAG_SCORE_KG);
+      touched[s.id] = true; pbScore(s.id, SANDBAG_SCORE_KG, 'sandbag');
     }
   }
   for (const f of pb.flips) {
     const [x1, y1, x2, y2] = pbFlipperEnds(f);
-    const [cx, cy] = closestOnSeg(b.x, b.y, x1, y1, x2, y2);
+    const [cx, cy, t] = closestOnSeg(b.x, b.y, x1, y1, x2, y2);
     // surface speed of the flipper at the contact point: w x r (the right flipper turns the other way)
     const w = f.side < 0 ? f.w : -f.w, rx = cx - f.hx, ry = cy - f.hy;
-    pbCollide(b, cx, cy, PB.flipper.rad, PB.flipperE, -w * ry, w * rx);
+    const svx = -w * ry, svy = w * rx;
+    // closing speed along the contact normal, measured before the bounce changes it
+    const nd = Math.hypot(b.x - cx, b.y - cy) || 1;
+    const closing = -((b.vx - svx) * (b.x - cx) + (b.vy - svy) * (b.y - cy)) / nd;
+    const hit = pbCollide(b, cx, cy, PB.flipper.radHinge + (PB.flipper.radTip - PB.flipper.radHinge) * t, PB.flipperE, svx, svy);
+    if (hit) {
+      // sound: a fresh contact, or the swinging flipper driving into a ball that is already on it
+      const fresh = !f.contact || (f.w < 0 && closing > PB_SFX.minSpeed);
+      if (fresh && closing > PB_SFX.minSpeed && !(f.sfxCool > 0)) { f.sfxCool = PB_SFX.cooldown; pbPlayContact(f, closing); }
+    }
+    f.contact = hit;
   }
   for (const id of Object.keys(pb.hits)) if (!touched[id]) pb.hits[id].touching = false;
   const sp = Math.hypot(b.vx, b.vy);
@@ -298,6 +438,8 @@ function updatePinballPlay(dt) {
   const b = pb.ball, n = PB.substeps, h = dt / n;
   for (let i = 0; i < n; i++) { pbStep(h); if (pb.score >= DC52_GOAL_KG) break; }
   for (const id of Object.keys(pb.hits)) { const k = pb.hits[id]; k.cool = Math.max(0, k.cool - dt); k.flash = Math.max(0, k.flash - dt); }
+  for (const q of pb.pops) q.t += dt;
+  pb.pops = pb.pops.filter(q => q.t < 0.8);
   const sp = Math.hypot(b.vx, b.vy);
   b.roll += sp * dt / (2 * Math.PI * PB.r);
   if (Math.abs(b.vx) > 30) b.face = b.vx > 0 ? 1 : -1;
@@ -305,11 +447,19 @@ function updatePinballPlay(dt) {
   if (pb.score >= DC52_GOAL_KG) {
     pb.phase = 'success'; pb.t = 0;
     pbLog('success', { score: pb.score });
-    if (typeof tone === 'function') tone(1180, 0.3, 'triangle', 0.05);
+    pbPlay(PB_TARGET_SFX.clear, PB_TARGET_SFX.gain, PB_TARGET_SFX.clearDelay);
+    pbLog('sfx_clear', { sound: PB_TARGET_SFX.clear });
     return;
   }
-  // a weak launch that falls back down the lane: back on the launcher, nothing lost
-  if (b.x < PB_BOARD.laneX && b.y >= PB.plunger.y - PB.r - 1 && b.vy >= 0) { pbReady('lane_return'); return; }
+  // a weak launch that falls back down the lane: back on the launcher, nothing lost, launch again freely.
+  // v1.10.1 fix: the ball comes to rest on the spring 2px higher than where it starts (the spring's own thickness),
+  // so the old check (start height) never fired and the ball sat on the spring for good.
+  if (b.x < PB_BOARD.laneX && b.y >= PB.plunger.y - PB.r - 8 && b.vy >= -5) { pbReady('lane_return'); return; }
+  // any other way the ball comes to rest inside the lane: same
+  if (b.x < PB_BOARD.laneX && sp < 30 && b.y > PB_BOARD.laneTop) {
+    pb.laneStillT = (pb.laneStillT || 0) + dt;
+    if (pb.laneStillT > 0.4) { pb.laneStillT = 0; pbReady('lane_return'); return; }
+  } else pb.laneStillT = 0;
   if (b.y > PB.drainY) { pb.drains++; pbReady('drain'); return; }
   // a ball that comes to rest somewhere on the table gets a small nudge
   if (sp < PB.stuckSpeed && b.y < 600) {
@@ -396,20 +546,18 @@ function drawGymBackground() {
   const sc = Math.max(W / im.width, H / im.height);
   ctx.drawImage(im, Math.round((W - im.width * sc) / 2), Math.round((H - im.height * sc) / 2), im.width * sc, im.height * sc);
 }
-// a plain cut-stone slab in the gym's colours
+// gym ledges: the parts board's stone floor piece, its two ends kept and its middle repeated (evenly scaled)
 function drawGymLedge(a, x, y) {
-  const h = 46;
-  const g = ctx.createLinearGradient(0, y, 0, y + h);
-  g.addColorStop(0, '#7d736b'); g.addColorStop(0.18, '#5c534d'); g.addColorStop(1, '#2f2926');
-  ctx.save();
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, a.w, h, 8) : ctx.rect(x, y, a.w, h); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(x + 4, y + 2, a.w - 8, 3);
-  ctx.strokeStyle = 'rgba(20,14,12,0.6)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, a.w, h, 8) : ctx.rect(x, y, a.w, h); ctx.stroke();
-  ctx.fillStyle = 'rgba(220, 40, 40, 0.7)';
-  for (let k = x + 50; k < x + a.w - 30; k += 140) ctx.fillRect(k, y + 18 + ((k * 7) % 11), 14, 3);
-  ctx.restore();
+  const F = pbPart('floor');
+  if (!F) { ctx.fillStyle = '#5c534d'; ctx.fillRect(x, y, a.w, 40); return; }
+  const k = 46 / F.h, cap = 46, cw = cap * k;
+  ctx.drawImage(F.im, 0, 0, cap, F.h, x, y, cw, F.h * k);
+  const midSrc = F.w - cap * 2, midW = midSrc * k, end = x + a.w - cw;
+  for (let cx = x + cw - 1; cx < end; cx += midW - 1) {
+    const w = Math.min(midW, end - cx + 1);
+    ctx.drawImage(F.im, cap, 0, w / k, F.h, cx, y, w, F.h * k);
+  }
+  ctx.drawImage(F.im, F.w - cap, 0, cap, F.h, end - 1, y, cw, F.h * k);
 }
 function drawGymFront() {
   if (pb.phase === 'enter' || pb.phase === 'ready' || pb.phase === 'charging' || pb.phase === 'play' || pb.phase === 'success') return;
@@ -433,16 +581,52 @@ function drawGymFront() {
   dcSprite(pb.rude.key, pb.rude.t, DC52_GYM.rudeX, fy, p.x > DC52_GYM.rudeX ? 1 : -1, true);
 }
 
-// board units -> screen: the whole board fits the screen height
+// board units -> screen: the whole board, rails included, fits the screen height
+const PB_RAIL = 24;   // drawn thickness of the outer rail (it sits outside the frame line the ball bounces on)
 const PB_VIEW = (() => {
-  const B = PB_BOARD, s = 660 / (B.y1 - B.y0);
-  return { s, ox: W / 2 - ((B.x0 + B.x1) / 2) * s + 70, oy: 30 - B.y0 * s };
+  const B = PB_BOARD, m = PB_RAIL + 6, s = 680 / (B.y1 - B.y0 + m * 2);
+  return { s, ox: W / 2 - ((B.x0 + B.x1) / 2) * s + 70, oy: 20 - (B.y0 - m) * s };
 })();
-function pbText(txt, x, y, size, color, align = 'center', stroke = null) {
+function pbText(txt, x, y, size, color, align = 'center', stroke = null, glow = null) {
   ctx.font = `${size}px 'ONE Mobile POP', 'Malgun Gothic', sans-serif`;
   ctx.textAlign = align; ctx.textBaseline = 'middle';
   if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = Math.max(3, size / 5); ctx.lineJoin = 'round'; ctx.strokeText(txt, x, y); }
+  if (glow) { ctx.save(); ctx.shadowColor = glow; ctx.shadowBlur = size * 0.6; ctx.fillStyle = color; ctx.fillText(txt, x, y); ctx.restore(); }
   ctx.fillStyle = color; ctx.fillText(txt, x, y);
+}
+// draw part k with its point (px, py) (part pixels) at (x, y), scaled by k, turned by rot
+function pbDraw(name, x, y, k, px, py, rot = 0, alpha = 1) {
+  const P = pbPart(name);
+  if (!P) return false;
+  ctx.save();
+  ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  if (alpha < 1) ctx.globalAlpha = alpha;
+  ctx.drawImage(P.im, -px * k, -py * k, P.w * k, P.h * k);
+  ctx.restore();
+  return true;
+}
+// a metal rail along a segment, the rail art scaled evenly to its length (no stretching one way)
+function pbRail(name, x1, y1, x2, y2) {
+  const P = pbPart(name);
+  if (!P) return;
+  const len = Math.hypot(x2 - x1, y2 - y1), k = len / P.w;
+  pbDraw(name, (x1 + x2) / 2, (y1 + y2) / 2, k, P.w / 2, P.h / 2, Math.atan2(y2 - y1, x2 - x1));
+}
+// the outer rail in the parts' colours: dark edge, grey metal, red stripes, bolts
+function pbFramePath(grow) {
+  const B = PB_BOARD;
+  ctx.beginPath();
+  ctx.roundRect(B.x0 - grow, B.y0 - grow, B.x1 - B.x0 + grow * 2, B.y1 - B.y0 + grow * 2, B.corner + grow);
+}
+function drawPinballFrame() {
+  const g = PB_RAIL / 2;
+  ctx.save();
+  pbFramePath(g); ctx.lineWidth = PB_RAIL + 6; ctx.strokeStyle = '#34353b'; ctx.stroke();
+  pbFramePath(g); ctx.lineWidth = PB_RAIL; ctx.strokeStyle = '#b9bbc1'; ctx.stroke();
+  pbFramePath(g - 6); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.stroke();
+  pbFramePath(g + 3); ctx.lineWidth = 7; ctx.strokeStyle = '#c4313a'; ctx.setLineDash([30, 46]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.restore();
 }
 function drawPinballBoard() {
   const B = PB_BOARD, V = PB_VIEW;
@@ -453,59 +637,74 @@ function drawPinballBoard() {
   ctx.save();
   ctx.translate(V.ox, V.oy); ctx.scale(V.s, V.s);
   // table: a soft dark wash inside the frame so the targets read against the busy background
-  ctx.beginPath(); ctx.roundRect(B.x0, B.y0, B.x1 - B.x0, B.y1 - B.y0, B.corner);
-  ctx.fillStyle = 'rgba(28, 34, 44, 0.62)'; ctx.fill();
-  ctx.lineWidth = 12; ctx.strokeStyle = '#4a4f5a'; ctx.stroke();
-  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.stroke();
-  ctx.lineCap = 'round';
-  for (const w of PB_WALLS) {
-    if (w[4] === 'frame') continue;
-    ctx.strokeStyle = w[4] === 'plunger' ? '#6b7280' : '#596070'; ctx.lineWidth = w[4] === 'guide' ? 9 : 7;
-    ctx.beginPath(); ctx.moveTo(w[0], w[1]); ctx.lineTo(w[2], w[3]); ctx.stroke();
+  pbFramePath(0); ctx.fillStyle = 'rgba(30, 32, 40, 0.62)'; ctx.fill();
+  drawPinballFrame();
+  // lane wall, the two guides down to the flippers
+  const RV = pbPart('rail_vert');
+  if (RV) {
+    const k = 22 / RV.w, th = RV.h * k;
+    for (let y = B.laneTop - 10; y < 722; y += th - 2) pbDraw('rail_vert', B.laneX, y, k, RV.w / 2, 0);
   }
-  // score panel (UI only): current kg / 500kg
-  const P = PB_SCORE_PANEL;
-  ctx.fillStyle = 'rgba(62, 140, 220, 0.55)'; ctx.strokeStyle = 'rgba(165, 216, 255, 0.9)'; ctx.lineWidth = 2.5;
-  ctx.beginPath(); ctx.roundRect(P.x, P.y, P.w, P.h, 8); ctx.fill(); ctx.stroke();
-  pbText(`${Math.min(pb.score, DC52_GOAL_KG)} / ${DC52_GOAL_KG}kg`, P.x + P.w / 2, P.y + P.h / 2 + 1, 19, '#ffffff', 'center', 'rgba(20,50,90,0.8)');
-  // plates: weight plates with their kg
+  for (const w of PB_WALLS) if (w[4] === 'guide') pbRail('rail_short', w[0], w[1], w[2], w[3]);
+  // arrows up the lane while Dudu waits on the launcher
+  if (pb.phase === 'ready' || pb.phase === 'charging') {
+    const A = pbPart('arrows');
+    if (A) pbDraw('arrows', 365, 420, 74 / A.w, A.w / 2, A.h / 2, -Math.PI / 2, 0.55 + 0.35 * Math.sin(pb.rude.t * 5));
+  }
+  // score panel (UI only, never collided with): TOTAL and the current kg
+  const P = PB_SCORE_PANEL, PP = pbPart('panel');
+  if (PP) {
+    const k = P.w / PP.w;
+    pbDraw('panel', P.x, P.y, k, 0, 0);
+    pbText(`${Math.min(pb.score, DC52_GOAL_KG)}kg`, P.x + 210 * k, P.y + 152 * k, 25, '#ffe7b0', 'center', null, 'rgba(255,150,60,0.9)');
+    pbText(`/ ${DC52_GOAL_KG}kg`, P.x + 210 * k, P.y + 205 * k, 9, '#f3d7d7', 'center');
+  }
+  // plates: the weight plate art (disc and base together are about round) centred on the target, as wide as it
   for (const t of PB_PLATES) {
+    const name = t.kg >= 20 ? 'plate20' : t.kg >= 10 ? 'plate10' : 'plate3', A = pbPart(name);
     const fl = (pb.hits[t.id] && pb.hits[t.id].flash) || 0;
-    const base = t.kg >= 20 ? '#d6453d' : t.kg >= 10 ? '#3d78c9' : '#e0a92e';
-    ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
-    ctx.fillStyle = fl > 0 ? '#fff4d6' : base; ctx.fill();
-    ctx.lineWidth = 5; ctx.strokeStyle = '#2a2d34'; ctx.stroke();
-    ctx.beginPath(); ctx.arc(t.x, t.y, t.r * 0.68, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.stroke();
-    pbText(`${t.kg}kg`, t.x, t.y + 1, t.kg >= 20 ? 26 : t.kg >= 10 ? 17 : 12, fl > 0 ? base : '#ffffff', 'center', 'rgba(0,0,0,0.5)');
+    if (!A) continue;
+    const k = (t.r * 2) / A.w, bob = fl > 0 ? Math.sin(fl * 50) * 2 : 0;
+    pbDraw(name, t.x, t.y + bob, k, A.w / 2, A.h / 2);
+    if (fl > 0) {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      pbDraw(name, t.x, t.y + bob, k, A.w / 2, A.h / 2, 0, Math.min(0.6, fl * 2.4));
+      ctx.restore();
+    }
   }
-  // sandbags
+  // sandbags: the bag hangs along the sketch's tilted bar, the hook at its upper end
   for (const s of PB_BAGS) {
+    const A = pbPart('sandbag');
+    if (!A) continue;
     const fl = (pb.hits[s.id] && pb.hits[s.id].flash) || 0;
+    let ux = Math.cos(s.ang), uy = Math.sin(s.ang);
+    if (uy > 0) { ux = -ux; uy = -uy; }
+    const rot = Math.atan2(ux, -uy) + Math.sin(fl * 40) * fl * 0.5, k = s.thick / 125;
+    pbDraw('sandbag', s.x, s.y, k, A.w / 2, 180, rot);
+  }
+  // flippers: the art turned about its pivot (pivot and tip centres measured on the art)
+  for (const f of pb.flips) {
+    const left = f.side < 0, name = left ? 'flipper_l' : 'flipper_r', A = pbPart(name);
+    const ang = left ? f.a : Math.PI - f.a;
+    if (A) {
+      const k = PB.flipper.len / 287, hx = left ? 71 : A.w - 71, native = left ? 0.094 : Math.PI - 0.094;
+      pbDraw(name, f.hx, f.hy, k, hx, 73, ang - native);
+    }
+  }
+  // launcher (checkpoint 2): the spring box squeezed by the charge, the green flag on it, a light beside the lane
+  const pl = PB.plunger, u = pb.phase === 'charging' ? pb.charge / PB.charge : 0, PL = pbPart('plunger');
+  const sq = u * 18;
+  if (PL) {
+    const k = 80 / PL.w, h = PL.h * k;
     ctx.save();
-    ctx.translate(s.x, s.y); ctx.rotate(s.ang + Math.sin(fl * 40) * fl * 0.6);
-    ctx.fillStyle = fl > 0 ? '#ffb3a7' : '#c9483f'; ctx.strokeStyle = '#3a1f1c'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.roundRect(-s.len / 2 - s.thick / 2, -s.thick / 2, s.len + s.thick, s.thick, s.thick / 2); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.moveTo(-s.len / 2, 0); ctx.lineTo(s.len / 2, 0); ctx.stroke();
+    ctx.translate(pl.x, pl.y + h - 4); ctx.scale(1, (h - sq) / h);
+    ctx.drawImage(PL.im, -40, -h, 80, h);
     ctx.restore();
   }
-  // flippers
-  for (const f of pb.flips) {
-    const [x1, y1, x2, y2] = pbFlipperEnds(f);
-    ctx.strokeStyle = '#2a2d34'; ctx.lineWidth = PB.flipper.rad * 2 + 5;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = '#eef0f3'; ctx.lineWidth = PB.flipper.rad * 2;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.fillStyle = '#9aa3b2'; ctx.beginPath(); ctx.arc(x1, y1, 5, 0, Math.PI * 2); ctx.fill();
-  }
-  // launcher (checkpoint 2): spring squeezed by the charge, flag beside it
-  const pl = PB.plunger, sq = (pb.phase === 'charging' ? pb.charge / PB.charge : 0) * 18;
-  ctx.strokeStyle = '#9aa3b2'; ctx.lineWidth = 3;
-  ctx.beginPath();
-  for (let i = 0; i <= 8; i++) { const y = pl.y + 2 + sq + i * (40 - sq) / 8; ctx.lineTo(pl.x + (i % 2 ? 16 : -16), y); }
-  ctx.stroke();
-  ctx.fillStyle = '#7ccf3a'; ctx.beginPath(); ctx.moveTo(346, 664); ctx.lineTo(370, 672); ctx.lineTo(346, 680); ctx.fill();
-  ctx.strokeStyle = '#3d5a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(346, 664); ctx.lineTo(346, 708); ctx.stroke();
+  const FL = pbPart('flag');
+  if (FL) pbDraw('flag', 338, pl.y - 2 + sq, 40 / FL.w, FL.w * 0.2, FL.h);
+  const lightName = (pb.phase === 'ready' || pb.phase === 'charging') ? 'light_green' : 'light_red', LI = pbPart(lightName);
+  if (LI) pbDraw(lightName, B.x0 - PB_RAIL - 12, 640, 34 / LI.w, LI.w / 2, LI.h);
   // Dudu curled up: her double-jump spin frames (3-13 of the sheet), the ball's centre on the curl's centre
   const b = pb.ball;
   if (b) {
@@ -518,13 +717,21 @@ function drawPinballBoard() {
       ctx.restore();
     } else { ctx.fillStyle = '#9bd26a'; ctx.beginPath(); ctx.arc(bx, by, PB.r, 0, Math.PI * 2); ctx.fill(); }
   }
+  // +kg badges rising from each hit
+  const BD = pbPart('badge');
+  for (const q of pb.pops) {
+    const a = q.t < 0.1 ? q.t / 0.1 : Math.max(0, 1 - (q.t - 0.5) / 0.3), y = q.y - q.t * 40;
+    if (BD) pbDraw('badge', q.x, y, 70 / BD.w, BD.w / 2, BD.h / 2, 0, a);
+    ctx.save(); ctx.globalAlpha = a;
+    pbText(`+${q.kg}kg`, q.x, y + 1, 17, '#ffffff', 'center', 'rgba(110,20,20,0.7)');
+    ctx.restore();
+  }
   ctx.restore();
   // charge gauge beside the lane, and the controls (left of the board)
-  const gx = V.ox + 300 * V.s, gy0 = V.oy + 740 * V.s, gh = 180;
+  const gx = V.ox + (B.x0 - PB_RAIL - 22) * V.s, gy0 = V.oy + 600 * V.s, gh = 160;
   if (pb.phase === 'ready' || pb.phase === 'charging') {
-    const u = pb.phase === 'charging' ? pb.charge / PB.charge : 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(gx - 10, gy0 - gh, 14, gh);
-    ctx.fillStyle = u >= 1 ? '#ff6b6b' : '#ffd43b'; ctx.fillRect(gx - 8, gy0 - gh * u, 10, gh * u);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(gx - 7, gy0 - gh, 14, gh);
+    ctx.fillStyle = u >= 1 ? '#ff6b6b' : '#ffd43b'; ctx.fillRect(gx - 5, gy0 - gh * u, 10, gh * u);
   }
   const kt = (t) => (typeof duduKeyText === 'function' ? duduKeyText(t) : t);
   ctx.save();
@@ -535,8 +742,8 @@ function drawPinballBoard() {
   pbText(kt('{MOVE} 왼쪽, 오른쪽 핀 튕기기'), 178, 334, 16, '#ffffff', 'center');
   ctx.restore();
   if (pb.phase === 'success') {
-    const u = Math.min(1, pb.t / 0.25);
-    ctx.save(); ctx.globalAlpha = u;
+    const a = Math.min(1, pb.t / 0.25);
+    ctx.save(); ctx.globalAlpha = a;
     pbText('500kg 달성!', W / 2 + 70, H / 2 - 20, 56, '#fff3bf', 'center', 'rgba(120, 60, 0, 0.85)');
     ctx.restore();
   }

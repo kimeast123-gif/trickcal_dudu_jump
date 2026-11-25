@@ -15,7 +15,7 @@
 // ============================================================================
 
 const DC_WORLD_ID = 'world5_dragoncave';
-const DC_ASSET_Q = '?v=v1_10_0_261125'; // rewritten by tools/release.py on every deploy
+const DC_ASSET_Q = '?v=v1_10_6_261125'; // rewritten by tools/release.py on every deploy
 const DC_STAGE_ORDER = ['dragon_cave_1', 'dragon_cave_2', 'dragon_cave_3', 'dragon_cave_4', 'dragon_cave_5'];
 const DC_STAGE_INFO = {
   dragon_cave_1: { code: '5-1', name: '제이드의 금고', desc: '오팔이 던지는 책을 피하고, 울음이 터지면 눈물을 피해 금고 끝까지 가요.' },
@@ -183,13 +183,15 @@ window.activeDragonStage = activeDragonStage;
 // ----------------------------------------------------------------------------
 const DC_BOOK = {
   zones: ['A', 'B', 'C', 'D'],
-  count: { A: 2, B: 3, C: 3, D: 4 },
+  count: { A: 4, B: 6, C: 6, D: 8 },   // v1.10.1 (user): twice as many
   flight: [1.35, 1.6],          // seconds in the air (random in between)
   landRadius: 40, bodyRadius: 14
 };
 const DC_TEAR = {
   every: { T1: 2.1, T2: 1.8, T3: 1.55 },   // seconds between volleys while Opal cries
-  count: { T1: 3, T2: 4, T3: 5 },
+  count: { T1: 6, T2: 8, T3: 10 },   // v1.10.1 (user): twice as many, and more than the books
+  rain: { T1: 4, T2: 5, T3: 6 },     // plus tears pouring straight down at random spots around and below Dudu
+  rainSpread: 420, rainSpeed: 620,
   flight: [1.0, 1.25],
   landRadius: 30, bodyRadius: 11
 };
@@ -273,8 +275,8 @@ function dcFire(kind, count) {
   const ox = o.x + o.face * 10, oy = dcFloorY(o.x) - DC_OPAL.bookHand;
   for (let i = 0; i < count; i++) {
     const u = dcRand();
-    // the first lands near Dudu, the next ones on either side and further along her way
-    const off = i === 0 ? (u - 0.5) * 70 : (i % 2 ? 1 : -1) * (90 + u * 170) + (i >= 2 ? 60 : 0);
+    // the first lands near Dudu, the next ones on either side, further out the more there are
+    const off = i === 0 ? (u - 0.5) * 70 : (i % 2 ? 1 : -1) * (60 + i * 45 + u * 90);
     const tx = Math.round(Math.max(40, Math.min(DC51_WIDTH - 40, p.x + off + (isTear ? 0 : p.vx * 0.35))));
     const tgt = dcResolveTarget(tx, refY);
     const flight = C.flight[0] + (C.flight[1] - C.flight[0]) * dcRand();
@@ -283,8 +285,22 @@ function dcFire(kind, count) {
       arcH: 150 + Math.min(220, rise * 0.18) + dcRand() * 40, bx: ox, by: oy, prevBx: ox, prevBy: oy,
       spin: (dcRand() - 0.5) * 9, hue: Math.floor(dcRand() * 4), done: false, sounded: false });
   }
+  // tears also pour down from above the screen onto random spots around Dudu, landing on whatever ledge is below
+  // there (her own, a lower one, or none: then they fall on into the mist)
+  const rain = isTear ? DC_TEAR.rain[DC51_TEAR_ZONES[dc.zone].id] || 0 : 0;
+  const top = (typeof rCamY === 'number' ? rCamY : p.y - 400) - 50;
+  for (let i = 0; i < rain; i++) {
+    const tx = Math.round(Math.max(40, Math.min(DC51_WIDTH - 40, p.x + (dcRand() * 2 - 1) * DC_TEAR.rainSpread)));
+    let ty = null;
+    for (const a of platforms) if (a.dcDraw && tx >= a.x + 6 && tx <= a.x + a.w - 6 && a.y > top + 60 && (ty === null || a.y < ty)) ty = a.y;
+    const overPit = ty === null;
+    if (overPit) ty = dcFloorY(tx);
+    const flight = Math.max(0.6, (ty - top) / DC_TEAR.rainSpeed);
+    dc.shots.push({ kind, x0: tx, y0: top, tx, ty, overPit, flight, age: -0.2 - dcRand() * 0.9, arcH: 0,
+      bx: tx, by: top, prevBx: tx, prevBy: top, spin: 0, hue: 0, done: false, sounded: false });
+  }
   if (typeof tone === 'function') tone(isTear ? 620 : 360, 0.07, 'triangle', 0.025);
-  dcLog(isTear ? 'tear_volley' : 'book_volley', { count, motion: o.key, zoneName: isTear ? DC51_TEAR_ZONES[dc.zone].id : DC_BOOK.zones[dc.zone] });
+  dcLog(isTear ? 'tear_volley' : 'book_volley', { count, rain, motion: o.key, zoneName: isTear ? DC51_TEAR_ZONES[dc.zone].id : DC_BOOK.zones[dc.zone] });
 }
 function dcCanHurt() { return dc.stunT <= 0 && dc.safeT <= 0 && dc.holdT <= 0; }
 function updateDragonShots(dt) {
@@ -743,8 +759,57 @@ function drawDragonAfterDudu() {
   }
 }
 // screen space: the crying warning has to be seen even when Opal is below the screen
+// v1.10.3 (user): when Jade or Opal is below (or beside) the screen, a speech-bubble marker at the screen edge shows
+// where she is, with her face playing her current motion inside (the sheet frame itself, zoomed on the head).
+const DC_FACE = { jade: -84, opal: -64 };   // head centre above the feet (game px), measured on the sheets
+// per motion: face centre from the feet [x, y] with the sheet looking left (running poses lean forward)
+const DC_FACE_OFF = { jade_move: [-12, -86], jade_angry: [-2, -84], opal_move: [6, -70], opal_happy7: [0, -62],
+  opal_happy8: [0, -62], opal_sad6: [0, -62], opal_sad10: [6, -62] };
+function dcFaceOffset(n) {
+  const o = DC_FACE_OFF[n.key] || [0, DC_FACE[n.kind]];
+  return [n.face > 0 ? -o[0] : o[0], o[1]];
+}
+const DC_MARK = { r: 32, inner: 25, zoom: 1.15, edge: 18 };
+function drawDragonFaceMarkers() {
+  if (!dc.opal || !dcAtlas) return;
+  const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1, M = DC_MARK;
+  const marks = [];
+  for (const n of [dc.jade, dc.opal]) {
+    const a = typeof renderAlpha === 'number' ? renderAlpha : 1;
+    const wx = (n.prevX ?? n.x) + (n.x - (n.prevX ?? n.x)) * a;
+    const fo = dcFaceOffset(n);
+    const sx = (wx + fo[0] - Math.round(rCam)) * zoom, sy = (dcFloorY(wx) + fo[1] - Math.round(rCamY)) * zoom;
+    if (sy < H - 12 && sx > -20 && sx < W + 20) continue;   // her face is on screen: no marker
+    marks.push({ n, x: Math.max(M.r + M.edge, Math.min(W - M.r - M.edge, sx)), y: H - M.r - M.edge - 14, sx });
+  }
+  // two markers never cover each other
+  if (marks.length === 2 && Math.abs(marks[0].x - marks[1].x) < M.r * 2 + 8) {
+    const mid = (marks[0].x + marks[1].x) / 2, l = marks[0].sx <= marks[1].sx ? 0 : 1;
+    marks[l].x = mid - M.r - 4; marks[1 - l].x = mid + M.r + 4;
+  }
+  for (const m of marks) {
+    const { n, x, y } = m;
+    ctx.save();
+    // bubble with its tail pointing down towards her
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; ctx.strokeStyle = '#26302f'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x, y, M.r, Math.PI * 0.62, Math.PI * 0.38 + Math.PI * 2);
+    ctx.lineTo(x, y + M.r + 13);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, M.inner, 0, Math.PI * 2);
+    ctx.fillStyle = n.kind === 'jade' ? '#cfe9dc' : '#f4e3ef'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = n.kind === 'jade' ? '#4f8f7a' : '#b98aa8'; ctx.stroke();
+    ctx.clip();
+    ctx.translate(x, y); ctx.scale(M.zoom, M.zoom);
+    const fo = dcFaceOffset(n);
+    dcSprite(n.key, n.t, -fo[0], -fo[1], n.face, true);
+    ctx.restore();
+  }
+}
 function drawDragonOverlay() {
   if (dcHook('overlay')) return;
+  drawDragonFaceMarkers();
   const c = dc.cry;
   if (!c && dc.stunT <= 0) return;
   ctx.save();

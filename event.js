@@ -24,6 +24,8 @@ const BGM_LOOP_BOUNDS={
  dragon_trick_or_treat:{start:0.05,end:56.35}
 };
 window.__bgmLoopBounds=BGM_LOOP_BOUNDS;
+/* v1.10.4 (user: the pinball music was too loud): per-track level. 35. Trick Or Treat measures about 1.7x the loudness of the usual tracks (RMS 0.31 against 0.18) */
+const BGM_TRACK_GAIN={dragon_trick_or_treat:0.5};
 
 const tracks=musicNames.map(n=>{
  const a=new Audio(EVENT_ROOT+n+'.mp3');
@@ -61,7 +63,7 @@ function musicTick(dt){
    a.currentTime=a.loopStartSec||0;
   }
   const audible=getEffectiveSoundVolume()>0;
-  const target=i===musicSelected&&audible&&!halted?.38:0;
+  const target=i===musicSelected&&audible&&!halted?.38*(BGM_TRACK_GAIN[musicNames[i]]||1):0;
   gains[i]+=Math.sign(target-gains[i])*Math.min(Math.abs(target-gains[i]),dt*.22);
   a.volume=Math.max(0,Math.min(1,gains[i]*getEffectiveSoundVolume()));
   if((!audible||halted||i!==musicSelected)&&gains[i]<.001)a.pause();
