@@ -17,7 +17,7 @@
 const SM_WORLD_ID = 'world3_spiritmountain';
 const SM_CODE = '3-1';
 const SM_WIDTH = 3627;   // v1.6.3: x scale 4.6 so the maze keeps the sketch's proportions
-const SM_ASSET_Q = '?v=v1_10_6_261125'; // rewritten by tools/release.py on every deploy
+const SM_ASSET_Q = '?v=v1_10_7_261125'; // rewritten by tools/release.py on every deploy
 
 // Wind (directive section 4). All times in seconds of game time (physics steps), so pause and low FPS do not change them.
 const SM_WIND = {
@@ -833,49 +833,59 @@ window.drawSpiritFront = drawSpiritFront;
 // so they are never darkened.
 // v1.6.7: the mask is rebuilt each frame at quarter size with a light hole for Dudu and one for Gabia (she glows
 // with the same radius as Dudu's sight).
-let _smHole = null, _smMaskCanvas = null;
+// v1.10.7: the mask itself is drawSightMask, shared with World 5-3 (Kidian's dark maze), which needs other radii.
 const SM_SIGHT_R = 210, SM_MASK_SCALE = 4;
-function smHole() {
-  if (_smHole) return _smHole;
-  const r = SM_SIGHT_R / SM_MASK_SCALE, R = Math.ceil(r * 1.3);
+const _sightHoles = {};
+// the soft light hole for a sight radius (radii are rounded to 4px so a shrinking radius reuses a few holes)
+function sightHole(radius) {
+  const key = Math.max(8, Math.round(radius / 4) * 4);
+  if (_sightHoles[key]) return _sightHoles[key];
+  const r = key / SM_MASK_SCALE, R = Math.ceil(r * 1.3);
   const c = document.createElement('canvas'); c.width = c.height = 2 * R;
   const g = c.getContext('2d');
   const grad = g.createRadialGradient(R, R, r * 0.55, R, R, r * 1.25);
   grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = grad; g.beginPath(); g.arc(R, R, R, 0, Math.PI * 2); g.fill();
-  return (_smHole = c);
+  return (_sightHoles[key] = c);
 }
-function drawSpiritOverlay() {
-  if (!isSpiritActive()) return;
-  if (sm.mask > 0.01) {
-    const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
-    if (!_smMaskCanvas) { _smMaskCanvas = document.createElement('canvas'); _smMaskCanvas.width = W / SM_MASK_SCALE; _smMaskCanvas.height = H / SM_MASK_SCALE; }
-    const c = _smMaskCanvas, hole = smHole(), hr = hole.width / 2;
-    const gabia = sm.npcs && sm.npcs.find(n => n.kind === 'gabia');
-    const k1 = Math.round((rPx - rCam) * zoom / SM_MASK_SCALE), k2 = Math.round((rPy - 32 - rCamY) * zoom / SM_MASK_SCALE);
-    const k3 = gabia ? Math.round((gabia.x - rCam) * zoom / SM_MASK_SCALE) : 0, k4 = gabia ? Math.round((gabia.y - 50 - rCamY) * zoom / SM_MASK_SCALE) : 0;
-    const key = k1 + ',' + k2 + ',' + k3 + ',' + k4;
-    if (key !== sm.maskKey) {
-    sm.maskKey = key;
+// Darkness over the screen with a light hole at each [world x, world y] in `lights`. The mask is drawn at quarter
+// size into st.canvas and only redrawn when a light moves (st.maskKey). Call it from a screen-space overlay pass.
+function drawSightMask(st, lights, radius, alpha) {
+  if (alpha <= 0.01) return;
+  const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
+  if (!st.canvas) { st.canvas = document.createElement('canvas'); st.canvas.width = W / SM_MASK_SCALE; st.canvas.height = H / SM_MASK_SCALE; }
+  const c = st.canvas, hole = sightHole(radius), hr = hole.width / 2;
+  let key = hole.width + ':';
+  for (const [wx, wy] of lights) key += Math.round((wx - rCam) * zoom / SM_MASK_SCALE) + ',' + Math.round((wy - rCamY) * zoom / SM_MASK_SCALE) + ';';
+  if (key !== st.maskKey) {
+    st.maskKey = key;
     const g = c.__g || (c.__g = c.getContext('2d'));
     g.globalCompositeOperation = 'source-over';
     g.clearRect(0, 0, c.width, c.height);
     g.fillStyle = 'rgba(6,5,12,0.93)'; g.fillRect(0, 0, c.width, c.height);
     g.globalCompositeOperation = 'destination-out';
-    const lights = [[rPx, rPy - 32]];
-    if (gabia) lights.push([gabia.x, gabia.y - 50]);
     for (const [wx, wy] of lights) {
       const sx = (wx - rCam) * zoom / SM_MASK_SCALE, sy = (wy - rCamY) * zoom / SM_MASK_SCALE;
       if (sx < -hr || sy < -hr || sx > c.width + hr || sy > c.height + hr) continue;
       g.drawImage(hole, sx - hr, sy - hr);
     }
     g.globalCompositeOperation = 'source-over';
-    }
-    ctx.save();
-    ctx.globalAlpha = sm.mask;
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(c, 0, 0, W, H);
-    ctx.restore();
+  }
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(c, 0, 0, W, H);
+  ctx.restore();
+}
+window.drawSightMask = drawSightMask;
+const _smMask = {};
+function drawSpiritOverlay() {
+  if (!isSpiritActive()) return;
+  if (sm.mask > 0.01) {
+    const lights = [[rPx, rPy - 32]];
+    const gabia = sm.npcs && sm.npcs.find(n => n.kind === 'gabia');
+    if (gabia) lights.push([gabia.x, gabia.y - 50]);
+    drawSightMask(_smMask, lights, SM_SIGHT_R, sm.mask);
   }
 }
 window.drawSpiritOverlay = drawSpiritOverlay;

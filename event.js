@@ -6,9 +6,9 @@ let eventMode=false,eventElapsed=0,eventLast=0,sceneElapsed=0,typed=0,storyLine=
 let storySessionId=0,activeStoryKind=null;
 const LIMIT=1500,EVENT_ROOT='assets/event/';
 const eventImages={};
-const musicNames=['day','afternoon','sunset','opening','ending','monatium','ghost_dragon_cave','ghost_deep_cave','ghost_village','dragon_no_way_out','dragon_awkward','dragon_trick_or_treat']; /* v1.5.1: 5 = World 2 night map; v1.9 World 4 (docs/world4/BGM_STAGE_MAPPING.md): 6 = 20. Dragon Cave (Crystal), 7 = 22. Deep Cave, 8 = 23. Ghost Village; v1.10 World 5 (user): 9 = 07. No Way Out (5-1), 10 = 33. This Is Awkward (5-2 talk with Rude), 11 = 35. Trick Or Treat (5-2 pinball) */
+const musicNames=['day','afternoon','sunset','opening','ending','monatium','ghost_dragon_cave','ghost_deep_cave','ghost_village','dragon_no_way_out','dragon_awkward','dragon_trick_or_treat','dragon_abyss']; /* v1.5.1: 5 = World 2 night map; v1.9 World 4 (docs/world4/BGM_STAGE_MAPPING.md): 6 = 20. Dragon Cave (Crystal), 7 = 22. Deep Cave, 8 = 23. Ghost Village; v1.10 World 5 (user): 9 = 07. No Way Out (5-1), 10 = 33. This Is Awkward (5-2 talk with Rude), 11 = 35. Trick Or Treat (5-2 pinball), 12 = 19. Dragon Cave (Abyss) (5-3) */
 window.GHOST_BGM_TRACKS=Object.freeze({DRAGON:6,DEEP:7,VILLAGE:8});
-window.DRAGON_BGM_TRACKS=Object.freeze({JADE:9,RUDE_TALK:10,PINBALL:11});
+window.DRAGON_BGM_TRACKS=Object.freeze({JADE:9,RUDE_TALK:10,PINBALL:11,KIDIAN:12});
 const BGM_LOOP_BOUNDS={
  day:{start:0.05,end:88.85},
  afternoon:{start:0.05,end:73.75},
@@ -21,11 +21,12 @@ const BGM_LOOP_BOUNDS={
  ghost_village:{start:0.05,end:49.05},
  dragon_no_way_out:{start:0.05,end:154.25},
  dragon_awkward:{start:0.05,end:84.90},
- dragon_trick_or_treat:{start:0.05,end:56.35}
+ dragon_trick_or_treat:{start:0.05,end:56.35},
+ dragon_abyss:{start:0.05,end:40.41}
 };
 window.__bgmLoopBounds=BGM_LOOP_BOUNDS;
 /* v1.10.4 (user: the pinball music was too loud): per-track level. 35. Trick Or Treat measures about 1.7x the loudness of the usual tracks (RMS 0.31 against 0.18) */
-const BGM_TRACK_GAIN={dragon_trick_or_treat:0.5};
+const BGM_TRACK_GAIN={dragon_trick_or_treat:0.5,dragon_abyss:0.75}; /* 19. Dragon Cave (Abyss) RMS 0.245 */
 
 const tracks=musicNames.map(n=>{
  const a=new Audio(EVENT_ROOT+n+'.mp3');

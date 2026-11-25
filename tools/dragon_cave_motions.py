@@ -1,8 +1,9 @@
 """World 5 NPC motions from the user's packages:
 5-1 Jade and Opal (DUDU_WORLD5_STAGE51_JADE_OPAL_MOTION_REV3_*, folder 03_NPC_MOTIONS) and
-5-2 Rude (DUDU_WORLD5_STAGE52_RUDE_PINBALL_MOTION_REV2_*, folder assets/npc/rude).
+5-2 Rude (DUDU_WORLD5_STAGE52_RUDE_PINBALL_MOTION_REV2_*, folder assets/npc/rude) and
+5-3 Kidian (DUDU_WORLD5_STAGE53_KIDIAN_CLAUDE_MASTER_REV2_*, folder 02_NPC_GIF).
 
-    python tools/dragon_cave_motions.py <unpacked 5-1 package> <unpacked 5-2 package>
+    python tools/dragon_cave_motions.py <unpacked 5-1 package> <unpacked 5-2 package> <unpacked 5-3 package>
 
 Reads the GIFs (1024x1024 each) and writes
   assets/npc/dragoncave/<key>.webp   one packed sheet per motion (every frame cropped to its own bounds)
@@ -19,6 +20,8 @@ The Move shadow is erased (near-black pixels from 30px above its centre row down
 under every motion, so the shadow does not pop in and out when she stops.
 Rude: Idle_1 and Happy_3 share one zoom; Happy_5 is framed a little wider (her head about 0.88 as wide), so it gets
 the scale divided by 0.88.
+Kidian: Idle_2, Dance_1 and Dance_2 share one zoom; Move is framed a little closer (her head about 1.06 as wide, with a floor
+shadow, checked side by side at game scale), so it gets the scale divided by 1.06.
 """
 import json, os, sys
 import numpy as np
@@ -32,7 +35,9 @@ OPAL = 0.119      # Opal's close-ups: about 120px tall with her umbrella
 OPAL_MOVE_ZOOM = 0.96
 RUDE = 0.132      # Rude with horns about 133px tall (she is the tallest of the three)
 RUDE_HAPPY5_ZOOM = 0.88
-S51, S52 = '03_NPC_MOTIONS', os.path.join('assets', 'npc', 'rude')
+KIDIAN = 0.113    # Kidian about 115px tall (as tall as Jade)
+KIDIAN_MOVE_ZOOM = 1.06
+S51, S52, S53 = '03_NPC_MOTIONS', os.path.join('assets', 'npc', 'rude'), '02_NPC_GIF'
 # key: (package index, folder, gif, game px per GIF px)
 MOTIONS = {
     'jade_move':   (0, S51, 'Jade_Move', JADE),
@@ -45,6 +50,10 @@ MOTIONS = {
     'rude_idle':   (1, S52, 'Rude_Idle_1', RUDE),
     'rude_happy3': (1, S52, 'Rude_Happy_3', RUDE),
     'rude_happy5': (1, S52, 'Rude_Happy_5', RUDE / RUDE_HAPPY5_ZOOM),
+    'kidian_idle':   (2, S53, 'Kidian_Idle_2', KIDIAN),
+    'kidian_move':   (2, S53, 'Kidian_Move', KIDIAN / KIDIAN_MOVE_ZOOM),
+    'kidian_dance1': (2, S53, 'Kidian_Dance_1', KIDIAN),
+    'kidian_dance2': (2, S53, 'Kidian_Dance_2', KIDIAN),
 }
 
 
@@ -125,6 +134,6 @@ def main(pkgs):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 4:
         sys.exit(__doc__)
-    main(sys.argv[1:3])
+    main(sys.argv[1:4])

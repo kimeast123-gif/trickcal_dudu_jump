@@ -15,7 +15,7 @@
 // ============================================================================
 
 const DC_WORLD_ID = 'world5_dragoncave';
-const DC_ASSET_Q = '?v=v1_10_6_261125'; // rewritten by tools/release.py on every deploy
+const DC_ASSET_Q = '?v=v1_10_7_261125'; // rewritten by tools/release.py on every deploy
 const DC_STAGE_ORDER = ['dragon_cave_1', 'dragon_cave_2', 'dragon_cave_3', 'dragon_cave_4', 'dragon_cave_5'];
 const DC_STAGE_INFO = {
   dragon_cave_1: { code: '5-1', name: '제이드의 금고', desc: '오팔이 던지는 책을 피하고, 울음이 터지면 눈물을 피해 금고 끝까지 가요.' },
@@ -638,6 +638,7 @@ function drawDragonBack() {
 const DC_LONG_SCALE = 0.45;
 function drawDragonPlatform(a, x, y) {
   if (a.dcDraw === 'gym' && typeof drawGymLedge === 'function') { drawGymLedge(a, x, y); return; }
+  if (a.dcDraw.startsWith('kd_') && typeof drawKidianPiece === 'function') { drawKidianPiece(a, x, y); return; }
   if (a.dcDraw === 'long') {
     const L = dcPart('long_left'), M = dcPart('long_mid'), R = dcPart('long_right'), k = DC_LONG_SCALE;
     if (L && M && R && a.w >= (L.w + R.w) * k) {
