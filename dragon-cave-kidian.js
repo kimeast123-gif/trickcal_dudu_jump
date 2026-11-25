@@ -19,34 +19,38 @@
 // ============================================================================
 
 const DC53_CODE = 'dragon_cave_3';
-const DC53_WIDTH = 4100;
+const DC53_WIDTH = 3700;
+// v1.10.9 (user: the walls were low enough to double-jump over and the lower way did not work; "follow the sketch"):
+// the whole map is the sketch at ONE scale, x = 60 + sketch x * 3.2 and y = 580 + (sketch y - 252) * 3.2, so the
+// walls keep their height against the ledges (the ㄱ upright 458px, the bottom right pillar 291px: no double jump,
+// about 279px, gets over them) and the lower way runs as drawn: S, B1, down to G1, a hop under B1 to G2, under
+// the ㄱ upright, up B4, B3, B2, on to C2. No hand moves are left.
 // ledges: [id, x, y, w, art]  art: sand (the sketch's brown-bottomed ledges) | plain (black ones) | start | goal
 const DC53_LEDGES = [
-  ['S', 60, 580, 368, 'start'],
-  ['A1', 445, 442, 297, 'sand'], ['A2', 182, 318, 200, 'sand'], ['A3', 498, 232, 199, 'sand'],
-  // A4 raised 100px (v1.10.7, user): 312px above A1, out of reach of a double jump from A1 (about 279px), so the
-  // upper way can no longer skip A2 and A3; from A3 it is a 98px step up
-  ['A4', 890, 130, 202, 'sand'], ['A5', 1285, 232, 199, 'sand'],
-  ['B1', 410, 696, 332, 'sand'], ['B2', 942, 562, 196, 'plain'], ['B3', 935, 666, 203, 'plain'], ['B4', 935, 762, 217, 'plain'],
-  ['C1', 1400, 436, 190, 'sand'], ['C2', 1340, 600, 217, 'plain'], ['C3', 1600, 312, 217, 'sand'],
-  ['C4', 1764, 512, 186, 'sand'], ['C5', 1733, 680, 235, 'plain'], ['C6', 1940, 396, 248, 'sand'],
-  ['C7', 2114, 770, 246, 'plain'], ['C8', 2237, 270, 196, 'sand'], ['C9', 2363, 500, 245, 'sand'],
-  ['C10', 2412, 630, 248, 'plain'], ['D1', 2562, 222, 298, 'sand'], ['D2', 2860, 542, 350, 'plain'],
-  ['GOAL', 3430, 542, 347, 'goal']
+  ['S', 60, 580, 336, 'start'],
+  ['A1', 412, 359, 272, 'sand'], ['A2', 172, 161, 182, 'sand'], ['A3', 460, 23, 182, 'sand'],
+  ['A4', 818, 20, 186, 'sand'], ['A5', 1180, 23, 182, 'sand'],
+  ['B1', 380, 766, 304, 'sand'],
+  ['B2', 866, 551, 180, 'plain'], ['B3', 860, 718, 186, 'plain'], ['B4', 860, 871, 198, 'plain'],
+  ['C1', 1286, 350, 172, 'sand'], ['C2', 1270, 612, 198, 'plain'], ['C3', 1468, 151, 198, 'sand'],
+  ['C4', 1618, 471, 170, 'sand'], ['C5', 1590, 740, 214, 'plain'], ['C6', 1778, 286, 228, 'sand'],
+  ['C7', 1938, 884, 224, 'plain'], ['C8', 2050, 84, 180, 'sand'], ['C9', 2166, 452, 224, 'sand'],
+  ['C10', 2210, 660, 228, 'plain'], ['D1', 2348, 7, 272, 'sand'], ['D2', 2620, 519, 320, 'plain'],
+  ['GOAL', 3270, 519, 316, 'goal']
 ];
 // ground blocks along the bottom of the sketch (solid rock; between them is the drop): [id, x, y, w]
-const DC53_GROUND = [['G1', 60, 850, 385], ['G2', 742, 850, 420], ['G3', 2562, 832, 508]];
+const DC53_GROUND = [['G1', 60, 1012, 352], ['G2', 684, 1012, 384], ['G3', 2348, 983, 464]];
 // brown rock walls: [id, x, y, w, h]
 const DC53_WALLS = [
-  ['W1', 750, 420, 62, 286],    // the ㄱ: the upright, from the beam down to just above the floor (walk under it)
-  ['W2', 760, 420, 490, 20],    // the ㄱ: the beam along the top; v1.10.7 (user): no standing on it, obsidian on top
-  ['W3', 2860, 76, 88, 156],    // top right: from the ceiling down to the end of D1
-  ['W4', 2937, 656, 105, 180]   // bottom right: standing on G3
+  ['W1', 690, 324, 58, 458],     // the ㄱ: the upright, from the beam down to B1's end (pass under it on G2)
+  ['W2', 700, 324, 448, 32],     // the ㄱ: the beam along the top, obsidian along it (v1.10.7, user)
+  ['W3', 2620, -1200, 80, 1223], // top right: from far above the screen down to the end of D1
+  ['W4', 2690, 692, 96, 291]     // bottom right: on G3
 ];
 // obsidian (the sketch's red marks): [id, ledge id, offset from the ledge's left end]
-const DC53_OBSIDIAN = [['O1', 'A4', 101], ['O2', 'C1', 30], ['O3', 'C1', 160], ['O4', 'C4', 30], ['O5', 'C4', 156], ['O6', 'C6', 124],
-  // along the top of the ㄱ beam, so walking over it from A1 to C1 (a shortcut past both ways round) is closed
-  ['OB1', 'W2', 35], ['OB2', 'W2', 105], ['OB3', 'W2', 175], ['OB4', 'W2', 245], ['OB5', 'W2', 315], ['OB6', 'W2', 385], ['OB7', 'W2', 455]];
+const DC53_OBSIDIAN = [['O1', 'A4', 93], ['O2', 'C1', 26], ['O3', 'C1', 146], ['O4', 'C4', 26], ['O5', 'C4', 144], ['O6', 'C6', 114],
+  // along the top of the ㄱ beam: walking over it from A1 is closed (v1.10.7, user)
+  ['OB1', 'W2', 32], ['OB2', 'W2', 96], ['OB3', 'W2', 160], ['OB4', 'W2', 224], ['OB5', 'W2', 288], ['OB6', 'W2', 352], ['OB7', 'W2', 416]];
 const KD_OBS = { w: 66, hitHalfW: 22, hitH: 46 };
 const KD_SIGHT = { normal: 250, narrow: 150, every: 15, hold: 3, ease: 0.3 };   // Gabia's sight is 210
 const KD_FOLLOW = { behind: 110, moveSpeed: 26, standAfter: 0.15, maxTrail: 900 };
@@ -58,29 +62,31 @@ function buildDragonStage53() {
     name: '키디언의 어두운 미로',
     subtitle: '어둠 속 흑요석을 피해요',
     worldWidth: DC53_WIDTH,
-    killY: 1000,
-    minCamY: -300,
-    maxCamY: 400,
+    killY: 1250,
+    minCamY: -420,
+    maxCamY: 560,
     cameraProfile: 'world1_standard',
     entrySpawns: { default: { route: 'default', platformId: 'DC53-S', x: 200, feetY: 580 } },
     segments: [{ start: 0, end: DC53_WIDTH, bg: 'dragoncave' }],
     backgroundRanges: {},
-    goal: { id: 'dc53-goal', exitRoute: 'default', x: 3604, y: 542, w: 60, h: 120, hidden: true }
+    goal: { id: 'dc53-goal', exitRoute: 'default', x: 3428, y: 519, w: 60, h: 120, hidden: true }
   });
   s.worldId = DC_WORLD_ID;
   s.dragonCave = true;
   s.routeLabel = '월드 5';
   s.musicTrack = 12;   // 19. Dragon Cave (Abyss)
   s.customBackground = drawKidianBackground;
+  // the stage runner's own fall line is fixed at 850 for world stages without killYAt: the ground here is lower
+  s.killYAt = () => 1250;
   s.onLoad = () => { loadDragonAssets(); loadKidianAssets(); };
   s.onReset = () => resetKidianStage();
   s.onComplete = () => completeDragonStage(DC53_CODE);
   s.dcHooks = { update: updateKidianStage, back: drawKidianBack, front: drawKidianFront, overlay: drawKidianOverlay };
   for (const [id, x, y, w, art] of DC53_LEDGES) wSurface(s, x, y, w, 'stone', { id: 'DC53-' + id, dcDraw: 'kd_' + art });
   for (const [id, x, y, w] of DC53_GROUND) wFloor(s, x, w, 'stone', y, { id: 'DC53-' + id, dcDraw: 'kd_ground' });
-  for (const [id, x, y, w, h] of DC53_WALLS) wWall(s, x, y, w, h, 'stone', { id: 'DC53-' + id, dcDraw: w > h ? 'kd_beam' : 'kd_wall', noTopLand: id === 'W2' });
+  for (const [id, x, y, w, h] of DC53_WALLS) wWall(s, x, y, w, h, 'stone', { id: 'DC53-' + id, dcDraw: w > h ? 'kd_beam' : 'kd_wall' });
   wCheckpoint(s, '어두운 미로 입구', 200, 580);
-  const goalSec = { title: '미로 출구', x: 3604, y: 542, hint: '', flagX: 3604, hiddenFlag: true };   // the goal pad carries its own flag
+  const goalSec = { title: '미로 출구', x: 3428, y: 519, hint: '', flagX: 3428, hiddenFlag: true };   // the goal pad carries its own flag
   s.sections.push(goalSec);
   s.hudStars = 0;
   return s;
@@ -118,7 +124,7 @@ function activeKidianStage() { const st = activeDragonStage(); return st && st.s
 function resetKidianStage() {
   kd.clock = 0;
   kd.sight = KD_SIGHT.normal;
-  kd.trail = [[p.x - KD_FOLLOW.behind, p.y], [p.x, p.y]];   // she starts just behind Dudu
+  kd.trail = [[p.x - KD_FOLLOW.behind, p.y, true], [p.x, p.y, true]];   // she starts just behind Dudu
   kd.kid = { x: p.x - KD_FOLLOW.behind, y: p.y, prevX: p.x - KD_FOLLOW.behind, prevY: p.y, face: 1, key: 'kidian_idle', t: 0, still: 1, dist: 0 };
   kd.narrow = false;
   kdLog('reset');
@@ -134,12 +140,20 @@ function kdSightAt(t) {
   return S.normal + (S.narrow - S.normal) * e;
 }
 // Kidian walks the path Dudu took, KD_FOLLOW.behind px of path behind her
+// Each trail point remembers whether Dudu was on the ground there. Returns [x, y, on the ground].
+// v1.10.9: when the point `dist` back lies in the air (Dudu jumped and stopped soon after landing) and Dudu stands,
+// Kidian goes to where Dudu landed instead of hanging in the air.
 function kdTrailPoint(dist) {
   const tr = kd.trail;
-  let left = dist;
+  let left = dist, landed = null;
   for (let i = tr.length - 1; i > 0; i--) {
-    const [x1, y1] = tr[i], [x0, y0] = tr[i - 1], seg = Math.hypot(x1 - x0, y1 - y0);
-    if (seg >= left) { const u = seg ? left / seg : 0; return [x1 + (x0 - x1) * u, y1 + (y0 - y1) * u]; }
+    const [x1, y1, g1] = tr[i], [x0, y0, g0] = tr[i - 1], seg = Math.hypot(x1 - x0, y1 - y0);
+    if (g1 && !landed) landed = [x1, y1, true];
+    if (seg >= left) {
+      const u = seg ? left / seg : 0, onGround = g1 && g0;
+      if (!onGround && p.ground && Math.abs(p.vx) < 15 && landed) return landed;
+      return [x1 + (x0 - x1) * u, y1 + (y0 - y1) * u, onGround];
+    }
     left -= seg;
   }
   return tr[0];
@@ -147,16 +161,32 @@ function kdTrailPoint(dist) {
 function updateKidian(dt) {
   const k = kd.kid, tr = kd.trail, last = tr[tr.length - 1];
   if (Math.hypot(p.x - last[0], p.y - last[1]) > 3) {
-    tr.push([p.x, p.y]);
+    tr.push([p.x, p.y, Boolean(p.ground)]);
     if (tr.length > KD_FOLLOW.maxTrail) tr.shift();
   }
-  const [tx, ty] = kdTrailPoint(KD_FOLLOW.behind);
+  const [tx, ty, onGround] = kdTrailPoint(KD_FOLLOW.behind);
   k.prevX = k.x; k.prevY = k.y;
   const a = Math.min(1, dt * 14);
   k.x += (tx - k.x) * a; k.y += (ty - k.y) * a;
   const moved = Math.hypot(k.x - k.prevX, k.y - k.prevY) / Math.max(dt, 1e-6);
   if (Math.abs(k.x - k.prevX) > 0.15) k.face = k.x > k.prevX ? 1 : -1;
   k.t += dt;
+  // v1.10.9 (user): from take-off to the next landing she flies (her fly GIF, kidian_fly, looped; the somersault
+  // looked wrong); touching down she crouches once (kidian_land) before she walks or stands again. Both are pinned
+  // to her body, so the flight follows the path she is on.
+  // in the air while her point on the path is a stretch Dudu jumped over (with a little margin while she eases in)
+  const grounded = onGround && Math.abs(ty - k.y) < 10;
+  if (!grounded) {
+    if (k.key !== 'kidian_fly') { k.key = 'kidian_fly'; k.t = 0; }
+    k.still = 0; k.air = true;
+    return;
+  }
+  if (k.air) { k.air = false; k.key = 'kidian_land'; k.t = 0; }
+  if (k.key === 'kidian_land') {
+    const m = dcAtlas && dcAtlas.motions.kidian_land;
+    if (m && k.t * 1000 < m.duration) return;
+    k.key = moved > KD_FOLLOW.moveSpeed ? 'kidian_move' : 'kidian_idle'; k.t = 0;
+  }
   if (moved > KD_FOLLOW.moveSpeed) {
     k.still = 0;
     if (k.key !== 'kidian_move') { k.key = 'kidian_move'; k.t = 0; }   // moving wins over a dance
@@ -234,7 +264,7 @@ function drawKidianBackground() {
 function drawKidianBack() {
   if (!activeKidianStage()) return;
   const zoom = (typeof rCamZoom === 'number' && rCamZoom > 0) ? rCamZoom : 1;
-  const x1 = Math.floor(rCam) - 40, x2 = Math.ceil(rCam + W / zoom) + 40, top = 800, bot = rCamY + H / zoom + 40;
+  const x1 = Math.floor(rCam) - 40, x2 = Math.ceil(rCam + W / zoom) + 40, top = 960, bot = rCamY + H / zoom + 40;
   if (bot <= top) return;
   const g = ctx.createLinearGradient(0, top, 0, top + 180);
   g.addColorStop(0, 'rgba(8,6,12,0)'); g.addColorStop(0.5, 'rgba(8,6,12,0.8)'); g.addColorStop(1, 'rgba(4,3,6,0.97)');
